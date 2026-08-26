@@ -12,6 +12,10 @@ final class SelectionReader {
     private let timeout = Duration.milliseconds(300)
     private let pollStep = Duration.milliseconds(20)
 
+    /// Системный диалог показываем один раз за запуск: без этого каждое
+    /// нажатие хоткея при отсутствии разрешения открывает новое окно запроса.
+    private var didPrompt = false
+
     static var isTrusted: Bool {
         AXIsProcessTrusted()
     }
@@ -28,7 +32,10 @@ final class SelectionReader {
     /// Буфер обмена в любом случае остаётся таким, каким был.
     func readSelection() async -> String? {
         guard Self.isTrusted else {
-            Self.requestTrust()
+            if !didPrompt {
+                didPrompt = true
+                Self.requestTrust()
+            }
             return nil
         }
 
