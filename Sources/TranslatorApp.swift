@@ -1,5 +1,4 @@
 import SwiftUI
-import ServiceManagement
 @preconcurrency import Translation
 
 @main
@@ -63,21 +62,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         AppModel.shared.showPanel = { [weak self] in
             self?.togglePopover()
         }
+        // Шестерёнка в панели идёт тем же путём, что и пункт меню: SwiftUI
+        // openSettings из поповера окно не поднимает.
+        AppModel.shared.showSettings = { [weak self] in
+            self?.openSettingsFromMenu()
+        }
         AppModel.shared.applyAppearance()
-
-        // Окно настроек: показать → вернуть иконку в Dock, закрыть → убрать.
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(windowDidBecomeKey),
-            name: NSWindow.didBecomeKeyNotification,
-            object: nil
-        )
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(windowWillClose),
-            name: NSWindow.willCloseNotification,
-            object: nil
-        )
     }
 
     @objc private func statusItemClicked() {
@@ -134,6 +124,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         // Селектор SwiftUI-сцены Settings; на macOS 13 назывался иначе.
         if !NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil) {
             NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
+        }
+        // Окно сцены Settings появляется на следующем витке цикла событий,
+        // поэтому поднимаем его отдельно — иначе оно останется позади.
+        DispatchQueue.main.async {
+            NSApp.windows
+                .first { $0.styleMask.contains(.titled) && $0.isVisible }?
+                .makeKeyAndOrderFront(nil)
         }
     }
 
@@ -202,46 +199,4 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         fallbackAnchorPanel?.orderOut(nil)
     }
 
-    // MARK: - Политика активации для окна настроек
-
-    private func isAppWindow(_ window: NSWindow?) -> Bool {
-        guard let window else { return false }
-        return window != popover.contentViewController?.view.window
-            && window.isVisible
-            && window.canBecomeKey
-    }
-
-    @objc private func windowDidBecomeKey(_ notification: Notification) {
-        if isAppWindow(notification.object as? NSWindow) {
-            NSApp.setActivationPolicy(.regular)
-        }
-    }
-
-    @objc private func windowWillClose(_ notification: Notification) {
-        guard let window = notification.object as? NSWindow,
-              window != popover.contentViewController?.view.window
-        else { return }
-        DispatchQueue.main.async {
-            NSApp.setActivationPolicy(.accessory)
-        }
-    }
-}
-
-extension AppModel {
-    func setLaunchAtLogin(_ enabled: Bool) {
-        do {
-            if enabled {
-                try SMAppService.mainApp.register()
-            } else {
-                try SMAppService.mainApp.unregister()
-            }
-        } catch {
-            NSLog("AbubTranslate launch-at-login error: \(error)")
-        }
-        UserDefaults.standard.set(enabled, forKey: "launchAtLogin")
-    }
-
-    var isLaunchAtLoginEnabled: Bool {
-        SMAppService.mainApp.status == .enabled
-    }
 }

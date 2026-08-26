@@ -31,7 +31,6 @@ struct PanelView: View {
     static let width: CGFloat = 440
 
     @Environment(AppModel.self) private var model
-    @Environment(\.openSettings) private var openSettings
 
     var body: some View {
         VStack(spacing: 14) {
@@ -79,7 +78,7 @@ struct PanelView: View {
             Spacer()
 
             Button {
-                openSettings()
+                model.showSettings?()
             } label: {
                 Image(systemName: "gearshape")
             }

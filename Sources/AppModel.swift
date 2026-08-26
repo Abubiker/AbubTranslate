@@ -27,8 +27,9 @@ final class AppModel {
     /// Пока не загрузились — `fallbackLanguageCodes`.
     var availableLanguageCodes: [String] = AppModel.fallbackLanguageCodes
 
-    /// Коллбек показа панели — подставляет AppDelegate.
+    /// Коллбеки показа панели и окна настроек — подставляет AppDelegate.
     var showPanel: (() -> Void)?
+    var showSettings: (() -> Void)?
 
     private var pendingText = ""
     private var translationTask: Task<Void, Never>?
