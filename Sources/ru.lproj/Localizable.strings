@@ -1,0 +1,45 @@
+/* PanelView */
+"Swap languages" = "Поменять языки местами";
+"Settings" = "Настройки";
+"Original" = "Оригинал";
+"Select text and press the shortcut, or type here" = "Выделите текст и нажмите хоткей — или введите здесь";
+"Translate" = "Перевести";
+"Translation" = "Перевод";
+"Downloading the language pack…" = "Скачивается языковой пакет…";
+"Translating…" = "Переводим…";
+"The translation will appear here" = "Здесь появится перевод";
+"Copy translation" = "Скопировать перевод";
+"Speak translation" = "Озвучить перевод";
+"Stop" = "Стоп";
+
+/* SettingsView */
+"Languages" = "Языки";
+"First language:" = "Первый язык:";
+"Second language:" = "Второй язык:";
+"The source language is detected automatically. Text in the first language is translated into the second, anything else into the first." = "Исходный язык определяется автоматически. Текст на первом языке переводится во второй, любой другой — в первый.";
+"Shortcuts" = "Горячие клавиши";
+"Translate:" = "Перевести:";
+"Speak translation:" = "Озвучить перевод:";
+"Shortcuts work in any keyboard layout and ignore Caps Lock. Translation uses the current selection, falling back to the clipboard." = "Работают при любой раскладке и не зависят от Caps Lock. Переводится выделенный текст, а если выделения нет — буфер обмена.";
+"Translating the selection needs Accessibility access" = "Для перевода выделенного нужен «Универсальный доступ»";
+"Open System Settings…" = "Открыть Настройки системы…";
+"Appearance" = "Внешний вид";
+"Theme:" = "Тема:";
+"Automatic" = "Системная";
+"Light" = "Светлая";
+"Dark" = "Тёмная";
+"System" = "Система";
+"Launch at login" = "Запускать при входе в систему";
+
+/* HotkeyRecorder */
+"Press keys…" = "Нажмите клавиши…";
+"That shortcut is taken by another app" = "Комбинация занята другим приложением";
+
+/* Status menu */
+"Settings…" = "Настройки…";
+"Quit AbubTranslate" = "Выйти из AbubTranslate";
+
+/* AppModel */
+"Nothing to translate" = "Нечего переводить";
+"Could not detect the source language" = "Не удалось определить язык текста";
+"Translation from %@ to %@ is not supported" = "Перевод с «%1$@» на «%2$@» не поддерживается";

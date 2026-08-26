@@ -1,0 +1,15 @@
+# Сборка
+.build/
+DerivedData/
+
+# Генерируется из project.yml через xcodegen
+*.xcodeproj
+
+# Артефакт релиза — раздаётся через GitHub Releases, не через репозиторий
+*.dmg
+
+# macOS
+.DS_Store
+
+# Внутренний план разработки
+plan.md
