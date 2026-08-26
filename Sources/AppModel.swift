@@ -224,31 +224,53 @@ final class AppModel {
         }
         detectedLanguage = detected
 
-        let target = TranslationDirection.resolveTarget(detected: detected, a: languageA, b: languageB)
-        currentTargetCode = target.languageCode?.identifier ?? languageCodeB
         status = .working
         pendingText = text
 
+        let candidates = TranslationDirection.targetCandidates(
+            detected: detected,
+            a: languageA,
+            b: languageB
+        )
+
         translationTask = Task { @MainActor [weak self] in
             guard let self else { return }
-            let availability = await Self.availabilityStatus(from: detected, to: target)
-            guard !Task.isCancelled else { return }
-            switch availability {
-            case .installed:
-                break
-            case .supported:
-                // Пакет придётся качать — покажем это, иначе панель выглядит зависшей.
-                self.status = .preparing
-            case .unsupported:
-                self.status = .failed(String(
-                    localized: "Translation from \(self.languageName(detected)) to \(self.languageName(target)) is not supported"
-                ))
-                return
-            @unknown default:
-                break
+
+            // Пробуем оба языка пары: движок может не уметь A, но уметь B.
+            for target in candidates {
+                let availability = await Self.availabilityStatus(from: detected, to: target)
+                guard !Task.isCancelled else { return }
+                switch availability {
+                case .installed, .supported:
+                    if availability == .supported {
+                        // Пакет придётся качать — иначе панель выглядит зависшей.
+                        self.status = .preparing
+                    }
+                    self.currentTargetCode = target.languageCode?.identifier ?? self.languageCodeB
+                    self.startSession(source: detected, target: target)
+                    return
+                case .unsupported:
+                    continue
+                @unknown default:
+                    continue
+                }
             }
-            self.startSession(source: detected, target: target)
+
+            guard !Task.isCancelled else { return }
+            self.status = .failed(self.unsupportedMessage(for: detected))
         }
+    }
+
+    /// Различаем «движок не знает такой язык вообще» и «не умеет это
+    /// направление»: первое встречается чаще и чинится только сменой текста.
+    private func unsupportedMessage(for detected: Locale.Language) -> String {
+        let name = languageName(detected)
+        guard let code = detected.languageCode?.identifier,
+              availableLanguageCodes.contains(code)
+        else {
+            return String(localized: "Apple Translation does not support \(name)")
+        }
+        return String(localized: "No supported translation direction from \(name)")
     }
 
     /// `.translationTask` перезапускается только при смене конфигурации,

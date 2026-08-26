@@ -115,7 +115,19 @@ struct PanelView: View {
 
     private var sourceCard: some View {
         VStack(alignment: .leading, spacing: 6) {
-            cardTitle("Original", systemImage: "doc.text")
+            HStack(spacing: 6) {
+                cardTitle("Original", systemImage: "doc.text")
+                if let detected = model.detectedLanguage {
+                    // Иначе непонятно, что язык вообще определился: в шапке
+                    // висит пара A⇄B, и она может не совпадать с оригиналом.
+                    Text(model.languageName(detected))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Capsule().fill(Color.primary.opacity(0.06)))
+                }
+            }
             ZStack(alignment: .topLeading) {
                 TextEditor(text: Binding(
                     get: { model.sourceText },

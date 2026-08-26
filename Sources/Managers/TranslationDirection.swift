@@ -21,4 +21,24 @@ enum TranslationDirection {
     ) -> Locale.Language {
         sameLanguage(detected, a) ? b : a
     }
+
+    /// Куда пробовать переводить, в порядке предпочтения.
+    ///
+    /// Основное направление первым, вторым — оставшийся язык пары. Нужно для
+    /// случая «определился третий язык, а движок не умеет переводить его в A,
+    /// но умеет в B»: без отката получался бы отказ на ровном месте.
+    /// Совпадающие и вырожденные варианты отбрасываются.
+    static func targetCandidates(
+        detected: Locale.Language,
+        a: Locale.Language,
+        b: Locale.Language
+    ) -> [Locale.Language] {
+        let primary = resolveTarget(detected: detected, a: a, b: b)
+        let alternate = sameLanguage(primary, a) ? b : a
+        var result = [primary]
+        if !sameLanguage(alternate, primary), !sameLanguage(alternate, detected) {
+            result.append(alternate)
+        }
+        return result.filter { !sameLanguage($0, detected) }
+    }
 }

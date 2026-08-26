@@ -31,6 +31,15 @@ enum TestDirection {
         // Вырожденная пара A == B: направление остаётся определённым.
         precondition(TranslationDirection.resolveTarget(detected: ru, a: ru, b: ru) == ru)
 
+        // Кандидаты: основное направление первым, затем второй язык пары.
+        precondition(TranslationDirection.targetCandidates(detected: de, a: ru, b: en) == [ru, en])
+        precondition(TranslationDirection.targetCandidates(detected: ru, a: ru, b: en) == [en])
+        precondition(TranslationDirection.targetCandidates(detected: en, a: ru, b: en) == [ru])
+
+        // Язык оригинала не должен попасть в кандидаты ни при каком раскладе.
+        precondition(TranslationDirection.targetCandidates(detected: ru, a: ru, b: ru).isEmpty)
+        precondition(!TranslationDirection.targetCandidates(detected: lang("en-US"), a: ru, b: en).contains(en))
+
         print("TranslationDirection: OK")
     }
 }

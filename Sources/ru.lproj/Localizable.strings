@@ -42,4 +42,5 @@
 /* AppModel */
 "Nothing to translate" = "Нечего переводить";
 "Could not detect the source language" = "Не удалось определить язык текста";
-"Translation from %@ to %@ is not supported" = "Перевод с «%1$@» на «%2$@» не поддерживается";
+"Apple Translation does not support %@" = "Apple Translation не поддерживает язык «%@»";
+"No supported translation direction from %@" = "Нет поддерживаемого направления перевода с «%@»";
