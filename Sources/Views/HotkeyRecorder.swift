@@ -94,10 +94,10 @@ struct HotkeyRecorder: View {
     @State private var monitor: Any?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 8) {
-                Text(title)
-                Spacer()
+        // LabeledContent, а не свой HStack: иначе Form не видит подпись и
+        // строка теряет выравнивание по общей колонке лейблов.
+        LabeledContent(title) {
+            VStack(alignment: .leading, spacing: 4) {
                 Button {
                     isRecording ? cancelRecording() : startRecording()
                 } label: {
@@ -106,14 +106,16 @@ struct HotkeyRecorder: View {
                 }
                 .buttonStyle(.bordered)
                 .foregroundStyle(isRecording ? .orange : .primary)
-            }
-            if hasConflict {
-                Label(
-                    String(localized: "That shortcut is taken by another app"),
-                    systemImage: "exclamationmark.triangle"
-                )
-                .font(.footnote)
-                .foregroundStyle(.orange)
+
+                if hasConflict {
+                    Label(
+                        String(localized: "That shortcut is taken by another app"),
+                        systemImage: "exclamationmark.triangle"
+                    )
+                    .font(.footnote)
+                    .foregroundStyle(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
+                }
             }
         }
         .onAppear { binding = HotkeyBinding.load(slot: slot) }

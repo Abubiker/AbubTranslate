@@ -6,23 +6,15 @@ struct SettingsView: View {
     @State private var launchAtLogin = false
 
     var body: some View {
-        @Bindable var model = model
-
         Form {
             Section("Languages") {
                 Picker("First language:", selection: languageBinding(\.languageCodeA)) {
                     languageOptions
                 }
-                .pickerStyle(.menu)
-
                 Picker("Second language:", selection: languageBinding(\.languageCodeB)) {
                     languageOptions
                 }
-                .pickerStyle(.menu)
-
-                Text("The source language is detected automatically. Text in one of these two is translated into the other. A third language goes into whichever of the two matches your system language.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                footnote(Text("The source language is detected automatically. Text in one of these two is translated into the other. A third language goes into whichever of the two matches your system language."))
             }
 
             Section("Shortcuts") {
@@ -32,9 +24,7 @@ struct SettingsView: View {
                 HotkeyRecorder(title: "Speak translation:", slot: .speak) { _ in
                     model.applyHotKey(.speak)
                 }
-                Text("Shortcuts work in any keyboard layout and ignore Caps Lock. Translation uses the current selection, falling back to the clipboard.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                footnote(Text("Shortcuts work in any keyboard layout and ignore Caps Lock. Translation uses the current selection, falling back to the clipboard."))
 
                 if model.needsAccessibilityPermission {
                     accessibilityNotice
@@ -42,18 +32,12 @@ struct SettingsView: View {
             }
 
             Section("Cloud fallback") {
-                Toggle(
-                    "Use \(model.cloudProviderName) when Apple Translation cannot handle the pair",
-                    isOn: cloudBinding
-                )
+                Toggle("Translate unsupported languages online", isOn: cloudBinding)
 
-                TextField("Email for a higher quota (optional):", text: emailBinding)
-                    .textFieldStyle(.roundedBorder)
+                TextField("Email:", text: emailBinding, prompt: Text("optional"))
                     .disabled(!model.cloudFallbackEnabled)
 
-                Text("Apple Translation supports a limited set of languages. For the rest the text is sent to an online service — it leaves your Mac. Everything else stays on device.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                footnote(Text("Apple Translation supports a limited set of languages. For the rest the text is sent to \(model.cloudProviderName) — it leaves your Mac. Everything else stays on device. An email raises the daily quota."))
             }
 
             Section("Appearance") {
@@ -75,11 +59,24 @@ struct SettingsView: View {
                     }
             }
         }
-        .padding(20)
-        .frame(width: 440)
+        // .grouped — вид системных Настроек: подписи не жмутся в узкую колонку,
+        // длинный текст переносится. С формой по умолчанию колонка лейблов
+        // распиралась длинными подписями и уезжала за левый край окна.
+        .formStyle(.grouped)
+        .frame(width: 520, height: 640)
         .onAppear {
             launchAtLogin = model.isLaunchAtLoginEnabled
         }
+    }
+
+    /// Пояснение под секцией. `fixedSize` по вертикали обязателен: без него
+    /// Form сплющивает текст в одну обрезанную строку.
+    private func footnote(_ text: Text) -> some View {
+        text
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var accessibilityNotice: some View {
@@ -90,6 +87,7 @@ struct SettingsView: View {
             )
             .font(.footnote)
             .foregroundStyle(.orange)
+            .fixedSize(horizontal: false, vertical: true)
 
             Button("Open System Settings…") {
                 model.requestAccessibilityPermission()
@@ -99,6 +97,7 @@ struct SettingsView: View {
             }
             .controlSize(.small)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var cloudBinding: Binding<Bool> {

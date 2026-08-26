@@ -53,3 +53,7 @@
 "Translating via %@…" = "Переводим через %@…";
 "Daily cloud translation quota is used up" = "Суточный лимит облачного перевода исчерпан";
 "Cloud translator returned an unexpected response" = "Облачный переводчик вернул неожиданный ответ";
+"Translate unsupported languages online" = "Переводить неподдерживаемые языки онлайн";
+"Email:" = "Почта:";
+"optional" = "необязательно";
+"Apple Translation supports a limited set of languages. For the rest the text is sent to %@ — it leaves your Mac. Everything else stays on device. An email raises the daily quota." = "Apple Translation умеет ограниченный набор языков. Для остальных текст отправляется в %@ — он покидает ваш Mac. Всё прочее остаётся на устройстве. Почта поднимает суточный лимит.";
