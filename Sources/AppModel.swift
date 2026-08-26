@@ -11,6 +11,8 @@ final class AppModel {
         case working
         /// Языковой пакет ещё не скачан — система тянет его в фоне.
         case preparing
+        /// Системный движок не умеет пару — ушли в облачный запасной.
+        case workingCloud
         case done
         case failed(String)
     }
@@ -35,7 +37,10 @@ final class AppModel {
     private let selection = SelectionReader()
     let hotKeys = HotKeyManager()
 
-    var isWorking: Bool { status == .working || status == .preparing }
+    var isWorking: Bool { status == .working || status == .preparing || status == .workingCloud }
+
+    /// Последний перевод пришёл из облака, а не с устройства.
+    var lastUsedCloud = false
     var isSpeaking: Bool { speech.isSpeaking }
     var canSpeak: Bool { !translatedText.isEmpty || speech.lastSpokenText != nil }
 
@@ -61,6 +66,23 @@ final class AppModel {
         get { UserDefaults.standard.string(forKey: "languageB") ?? "en" }
         set { UserDefaults.standard.set(newValue, forKey: "languageB") }
     }
+
+    // MARK: - Облачный запасной переводчик
+
+    /// Включён по умолчанию: срабатывает только там, где системный движок
+    /// бессилен, иначе функция была бы бесполезна без похода в настройки.
+    var cloudFallbackEnabled: Bool {
+        get { UserDefaults.standard.object(forKey: "cloudFallback") as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: "cloudFallback") }
+    }
+
+    /// Необязательная почта — поднимает суточный лимит MyMemory.
+    var cloudContactEmail: String {
+        get { UserDefaults.standard.string(forKey: "cloudEmail") ?? "" }
+        set { UserDefaults.standard.set(newValue, forKey: "cloudEmail") }
+    }
+
+    var cloudProviderName: String { CloudTranslator().providerName }
 
     var languageA: Locale.Language { Locale.Language(identifier: languageCodeA) }
     var languageB: Locale.Language { Locale.Language(identifier: languageCodeB) }
@@ -216,6 +238,7 @@ final class AppModel {
         }
         sourceText = text
         translatedText = ""
+        lastUsedCloud = false
         speech.stop()
 
         guard let detected = LanguageDetector.detect(text) else {
@@ -257,7 +280,40 @@ final class AppModel {
             }
 
             guard !Task.isCancelled else { return }
-            self.status = .failed(self.unsupportedMessage(for: detected))
+            await self.translateViaCloud(text: text, detected: detected, candidates: candidates)
+        }
+    }
+
+    /// Системный движок не потянул ни одно направление — пробуем облако.
+    private func translateViaCloud(
+        text: String,
+        detected: Locale.Language,
+        candidates: [Locale.Language]
+    ) async {
+        guard cloudFallbackEnabled,
+              let target = candidates.first,
+              let sourceCode = detected.languageCode?.identifier,
+              let targetCode = target.languageCode?.identifier
+        else {
+            status = .failed(unsupportedMessage(for: detected))
+            return
+        }
+
+        status = .workingCloud
+        var translator = CloudTranslator()
+        translator.contactEmail = cloudContactEmail
+
+        do {
+            let result = try await translator.translate(text, from: sourceCode, to: targetCode)
+            guard !Task.isCancelled else { return }
+            currentTargetCode = targetCode
+            lastUsedCloud = true
+            finishTranslation(result)
+        } catch is CancellationError {
+            resetStatus()
+        } catch {
+            guard !Task.isCancelled else { return }
+            status = .failed(error.localizedDescription)
         }
     }
 

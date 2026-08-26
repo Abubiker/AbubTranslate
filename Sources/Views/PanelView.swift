@@ -176,6 +176,15 @@ struct PanelView: View {
                     ProgressView()
                         .controlSize(.small)
                 }
+                if model.lastUsedCloud, !model.translatedText.isEmpty {
+                    // Честно помечаем, что этот текст уходил в сеть.
+                    Label(model.cloudProviderName, systemImage: "cloud")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Capsule().fill(Color.primary.opacity(0.06)))
+                }
             }
 
             ZStack(alignment: .topLeading) {
@@ -202,6 +211,15 @@ struct PanelView: View {
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .topLeading)
+
+        case .workingCloud:
+            Label(
+                String(localized: "Translating via \(model.cloudProviderName)…"),
+                systemImage: "cloud"
+            )
+            .font(.body)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
 
         case .working:
             Text("Translating…")

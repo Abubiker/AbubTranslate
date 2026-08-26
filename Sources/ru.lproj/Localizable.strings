@@ -44,3 +44,12 @@
 "Could not detect the source language" = "Не удалось определить язык текста";
 "Apple Translation does not support %@" = "Apple Translation не поддерживает язык «%@»";
 "No supported translation direction from %@" = "Нет поддерживаемого направления перевода с «%@»";
+
+/* Облачный запасной переводчик */
+"Cloud fallback" = "Запасной облачный перевод";
+"Use %@ when Apple Translation cannot handle the pair" = "Использовать %@, когда Apple Translation не умеет пару";
+"Email for a higher quota (optional):" = "Почта для увеличения лимита (необязательно):";
+"Apple Translation supports a limited set of languages. For the rest the text is sent to an online service — it leaves your Mac. Everything else stays on device." = "Apple Translation умеет ограниченный набор языков. Для остальных текст отправляется в онлайн-сервис — он покидает ваш Mac. Всё прочее остаётся на устройстве.";
+"Translating via %@…" = "Переводим через %@…";
+"Daily cloud translation quota is used up" = "Суточный лимит облачного перевода исчерпан";
+"Cloud translator returned an unexpected response" = "Облачный переводчик вернул неожиданный ответ";

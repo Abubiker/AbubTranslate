@@ -2,7 +2,8 @@
 
 Меню-бар утилита для macOS: переводит выделенный текст через системный движок
 Apple Translation и озвучивает результат встроенным TTS. Перевод идёт локально
-на устройстве — в сеть приложение не ходит.
+на устройстве. Для языков, которых системный движок не знает, есть запасной
+онлайн-переводчик — он отключается в настройках.
 
 ![platform](https://img.shields.io/badge/macOS-15%2B-black) ![swift](https://img.shields.io/badge/Swift-6-orange) ![license](https://img.shields.io/badge/license-MIT-green)
 
@@ -26,8 +27,10 @@ Apple Translation и озвучивает результат встроенны�
 
 Apple Translation поддерживает не все языки — на момент написания это
 `ar da de en es fr hi id it ja ko nb nl pl pt ru sv th tr uk vi zh`. Финского,
-чешского и ряда других в списке нет, и обойти это приложение не может: движок
-системный. Точный список для вашей машины виден в выпадающих меню языков.
+чешского и ряда других в списке нет. Точный список для вашей машины виден в
+выпадающих меню языков.
+
+Для таких языков включается запасной онлайн-переводчик — см. ниже.
 
 Правый клик по иконке в строке меню — настройки и выход.
 
@@ -63,6 +66,20 @@ AbubTranslate из списка кнопкой **−** и добавьте за�
 ```bash
 tccutil reset Accessibility com.opensource.abubtranslate
 ```
+
+## Запасной онлайн-перевод
+
+Системный движок знает 22 языка. Если определённый язык не входит в их число,
+текст отправляется в [MyMemory](https://mymemory.translated.net) — бесплатно,
+без ключа и без привязки карты. Лимит: 5 000 слов в сутки анонимно, 50 000 при
+указании почты в настройках.
+
+**Такой перевод покидает ваш Mac.** Всё остальное остаётся на устройстве.
+Результат из облака помечается в панели значком с названием сервиса, а сама
+функция отключается в настройках одним переключателем.
+
+Ограничение сервиса — 500 символов на запрос, поэтому длинный текст режется по
+границам предложений и склеивается обратно.
 
 ## Лицензия
 
@@ -114,10 +131,11 @@ ad-hoc:      designated => cdhash H"3b95b95e…"
 включённым, но приложение считается недоверенным. С сертификатом требование
 привязано к самому сертификату и переживает пересборки.
 
-Проверка логики выбора направления перевода:
+Проверка чистой логики — выбор направления и нарезка текста под лимит запроса:
 
 ```bash
-swiftc -o /tmp/testdir Sources/Managers/TranslationDirection.swift Tools/TestDirection.swift && /tmp/testdir
+swiftc -o /tmp/selfcheck Sources/Managers/TranslationDirection.swift \
+    Sources/Managers/TextChunker.swift Tools/SelfCheck.swift && /tmp/selfcheck
 ```
 
 Либо просто откройте `AbubTranslate.xcodeproj` в Xcode и нажмите ⌘R.
@@ -135,6 +153,8 @@ Sources/
 ├── Managers/
 │   ├── SelectionReader.swift      # выделенный текст через синтетический ⌘C
 │   ├── TranslationDirection.swift # выбор направления A⇄B (чистая логика)
+│   ├── CloudTranslator.swift      # запасной онлайн-перевод (MyMemory)
+│   ├── TextChunker.swift          # нарезка под лимит 500 символов
 │   ├── ClipboardManager.swift     # NSPasteboard
 │   ├── LanguageDetector.swift     # NLLanguageRecognizer
 │   ├── SpeechManager.swift        # AVSpeechSynthesizer

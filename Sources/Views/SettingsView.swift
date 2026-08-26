@@ -41,6 +41,21 @@ struct SettingsView: View {
                 }
             }
 
+            Section("Cloud fallback") {
+                Toggle(
+                    "Use \(model.cloudProviderName) when Apple Translation cannot handle the pair",
+                    isOn: cloudBinding
+                )
+
+                TextField("Email for a higher quota (optional):", text: emailBinding)
+                    .textFieldStyle(.roundedBorder)
+                    .disabled(!model.cloudFallbackEnabled)
+
+                Text("Apple Translation supports a limited set of languages. For the rest the text is sent to an online service — it leaves your Mac. Everything else stays on device.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("Appearance") {
                 Picker("Theme:", selection: $appearanceMode) {
                     Text("Automatic").tag("system")
@@ -84,6 +99,14 @@ struct SettingsView: View {
             }
             .controlSize(.small)
         }
+    }
+
+    private var cloudBinding: Binding<Bool> {
+        Binding(get: { model.cloudFallbackEnabled }, set: { model.cloudFallbackEnabled = $0 })
+    }
+
+    private var emailBinding: Binding<String> {
+        Binding(get: { model.cloudContactEmail }, set: { model.cloudContactEmail = $0 })
     }
 
     private var languageOptions: some View {

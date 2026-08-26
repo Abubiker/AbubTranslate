@@ -1,15 +1,16 @@
 import Foundation
 
-// Проверка выбора направления перевода.
+// Проверка чистой логики: выбор направления перевода и нарезка текста.
 // Запуск:
-//   swiftc -o /tmp/testdir Sources/Managers/TranslationDirection.swift Tools/TestDirection.swift && /tmp/testdir
+//   swiftc -o /tmp/selfcheck Sources/Managers/TranslationDirection.swift \
+//       Sources/Managers/TextChunker.swift Tools/SelfCheck.swift && /tmp/selfcheck
 
 func lang(_ code: String) -> Locale.Language {
     Locale.Language(identifier: code)
 }
 
 @main
-enum TestDirection {
+enum SelfCheck {
     static func main() {
         let ru = lang("ru")
         let en = lang("en")
@@ -40,6 +41,39 @@ enum TestDirection {
         precondition(TranslationDirection.targetCandidates(detected: ru, a: ru, b: ru).isEmpty)
         precondition(!TranslationDirection.targetCandidates(detected: lang("en-US"), a: ru, b: en).contains(en))
 
+        checkChunker()
         print("TranslationDirection: OK")
+    }
+
+    static func checkChunker() {
+        // Короткий текст не режется.
+        precondition(TextChunker.chunks("Hello there.", limit: 480) == ["Hello there."])
+
+        // Пустой и пробельный вход не даёт пустых кусков.
+        precondition(TextChunker.chunks("").isEmpty)
+        precondition(TextChunker.chunks("   \n  ").isEmpty)
+
+        // Режется по предложениям, каждый кусок в пределах лимита.
+        let sentence = "Minun nimeni on Ella ja olen kahdeksantoista vuotias. "
+        let long = String(repeating: sentence, count: 12)
+        let parts = TextChunker.chunks(long, limit: 100)
+        precondition(parts.count > 1)
+        precondition(parts.allSatisfy { $0.count <= 100 })
+        precondition(parts.allSatisfy { !$0.isEmpty })
+
+        // Ничего не потеряно: слова сохраняются целиком и в прежнем порядке.
+        precondition(parts.joined(separator: " ").split(separator: " ").count
+            == long.split(separator: " ").count)
+
+        // Слово длиннее лимита рвётся, а не выбрасывается.
+        let huge = String(repeating: "a", count: 250)
+        let hugeParts = TextChunker.chunks(huge, limit: 100)
+        precondition(hugeParts.count == 3)
+        precondition(hugeParts.joined() == huge)
+
+        // Вырожденный лимит не уводит в бесконечный цикл.
+        precondition(TextChunker.chunks("abc", limit: 0).isEmpty)
+
+        print("TextChunker: OK")
     }
 }
