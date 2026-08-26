@@ -131,7 +131,7 @@ struct PanelView: View {
             ZStack(alignment: .topLeading) {
                 TextEditor(text: Binding(
                     get: { model.sourceText },
-                    set: { model.sourceText = $0 }
+                    set: { model.sourceTextEdited($0) }
                 ))
                 .font(.body)
                 .scrollContentBackground(.hidden)
@@ -139,7 +139,7 @@ struct PanelView: View {
                 .background(cardBackground)
 
                 if model.sourceText.isEmpty {
-                    Text("Select text and press the shortcut, or type here")
+                    Text("Paste text here — it translates automatically. Or select text anywhere and press the shortcut.")
                         .font(.body)
                         .foregroundStyle(.tertiary)
                         .padding(.horizontal, 15)

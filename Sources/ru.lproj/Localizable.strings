@@ -2,7 +2,7 @@
 "Swap languages" = "Поменять языки местами";
 "Settings" = "Настройки";
 "Original" = "Оригинал";
-"Select text and press the shortcut, or type here" = "Выделите текст и нажмите хоткей — или введите здесь";
+"Paste text here — it translates automatically. Or select text anywhere and press the shortcut." = "Вставьте текст сюда — переведётся сам. Или выделите текст где угодно и нажмите хоткей.";
 "Translate" = "Перевести";
 "Translation" = "Перевод";
 "Downloading the language pack…" = "Скачивается языковой пакет…";

@@ -87,10 +87,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             showStatusMenu()
             return
         }
-        let willOpen = !popover.isShown
+        // Клик по иконке только открывает панель. Перевод запускают хоткей
+        // и вставка текста в поле оригинала — иначе панель нельзя открыть,
+        // не тронув буфер обмена.
         togglePopover()
-        // Перевод запускаем только при открытии, а не при закрытии кликом.
-        if willOpen { AppModel.shared.translateFromClipboard() }
     }
 
     /// Правый клик по иконке — стандартное меню меню-бар утилиты.

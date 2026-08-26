@@ -32,6 +32,10 @@ final class AppModel {
 
     private var pendingText = ""
     private var translationTask: Task<Void, Never>?
+    private var autoTranslateTask: Task<Void, Never>?
+    /// Последний уже переведённый оригинал — чтобы правка текста не гоняла
+    /// один и тот же запрос повторно.
+    private var lastTranslatedSource = ""
     private let speech = SpeechManager()
     private let clipboard = ClipboardManager()
     private let selection = SelectionReader()
@@ -201,6 +205,31 @@ final class AppModel {
         }
     }
 
+    /// Текст в поле оригинала изменили руками или вставили.
+    /// Переводим сами, с паузой — иначе запрос уходил бы на каждый символ.
+    func sourceTextEdited(_ text: String) {
+        sourceText = text
+        autoTranslateTask?.cancel()
+
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            // Поле очистили — возвращаемся в исходное состояние, а не в ошибку.
+            translationTask?.cancel()
+            translatedText = ""
+            detectedLanguage = nil
+            lastTranslatedSource = ""
+            status = .idle
+            return
+        }
+        guard trimmed != lastTranslatedSource else { return }
+
+        autoTranslateTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(500))
+            guard !Task.isCancelled, let self else { return }
+            self.translate(text: text)
+        }
+    }
+
     func translateFromClipboard() {
         translate(text: clipboard.readText() ?? "")
     }
@@ -228,6 +257,7 @@ final class AppModel {
 
     func translate(text rawText: String) {
         translationTask?.cancel()
+        autoTranslateTask?.cancel()
 
         let text = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else {
@@ -236,7 +266,10 @@ final class AppModel {
             status = .failed(String(localized: "Nothing to translate"))
             return
         }
-        sourceText = text
+        // Присваиваем только при реальном отличии: иначе обрезка пробелов
+        // дёргает поле прямо под курсором во время набора.
+        if sourceText != text { sourceText = text }
+        lastTranslatedSource = text
         translatedText = ""
         lastUsedCloud = false
         speech.stop()
