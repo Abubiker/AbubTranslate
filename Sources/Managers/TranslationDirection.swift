@@ -9,17 +9,29 @@ enum TranslationDirection {
         lhs.languageCode?.identifier == rhs.languageCode?.identifier
     }
 
-    /// Текст на языке `detected` переводим в B, если он совпал с A,
-    /// и в A во всех остальных случаях.
+    /// Куда переводить текст на языке `detected`.
     ///
-    /// Из-за этого правила «текст уже на целевом языке» перестаёт быть
-    /// ошибкой: направление всегда определено.
+    /// Язык из пары уходит во второй язык пары. Третий язык — в тот из пары,
+    /// на котором говорит пользователь (`preferred`, обычно язык системы):
+    /// финский при паре en/ru должен становиться русским у русскоязычного и
+    /// английским у англоязычного, а не зависеть от того, какая пилюля в
+    /// интерфейсе оказалась первой.
+    ///
+    /// Направление определено всегда, поэтому «текст уже на целевом языке»
+    /// перестаёт быть ошибкой.
     static func resolveTarget(
         detected: Locale.Language,
         a: Locale.Language,
-        b: Locale.Language
+        b: Locale.Language,
+        preferred: Locale.Language? = nil
     ) -> Locale.Language {
-        sameLanguage(detected, a) ? b : a
+        if sameLanguage(detected, a) { return b }
+        if sameLanguage(detected, b) { return a }
+        if let preferred {
+            if sameLanguage(preferred, a) { return a }
+            if sameLanguage(preferred, b) { return b }
+        }
+        return a
     }
 
     /// Куда пробовать переводить, в порядке предпочтения.
@@ -31,9 +43,10 @@ enum TranslationDirection {
     static func targetCandidates(
         detected: Locale.Language,
         a: Locale.Language,
-        b: Locale.Language
+        b: Locale.Language,
+        preferred: Locale.Language? = nil
     ) -> [Locale.Language] {
-        let primary = resolveTarget(detected: detected, a: a, b: b)
+        let primary = resolveTarget(detected: detected, a: a, b: b, preferred: preferred)
         let alternate = sameLanguage(primary, a) ? b : a
         var result = [primary]
         if !sameLanguage(alternate, primary), !sameLanguage(alternate, detected) {

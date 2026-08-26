@@ -22,8 +22,24 @@ enum SelfCheck {
         // Совпал с B → уходим в A.
         precondition(TranslationDirection.resolveTarget(detected: en, a: ru, b: en) == ru)
 
-        // Третий язык → уходим в A, а не в ошибку.
+        // Третий язык без подсказки → уходим в A, а не в ошибку.
         precondition(TranslationDirection.resolveTarget(detected: de, a: ru, b: en) == ru)
+
+        // Третий язык с подсказкой → в язык пользователя, а не в первый по счёту.
+        let fi = lang("fi")
+        precondition(TranslationDirection.resolveTarget(detected: fi, a: en, b: ru, preferred: ru) == ru)
+        precondition(TranslationDirection.resolveTarget(detected: fi, a: ru, b: en, preferred: ru) == ru)
+        precondition(TranslationDirection.resolveTarget(detected: fi, a: en, b: ru, preferred: en) == en)
+
+        // Подсказка не из пары ничего не ломает.
+        precondition(TranslationDirection.resolveTarget(detected: fi, a: en, b: ru, preferred: de) == en)
+
+        // Подсказка не должна перебивать язык из самой пары.
+        precondition(TranslationDirection.resolveTarget(detected: ru, a: ru, b: en, preferred: ru) == en)
+        precondition(TranslationDirection.resolveTarget(detected: en, a: en, b: ru, preferred: en) == ru)
+
+        // Кандидаты: сначала предпочтительный, вторым — оставшийся.
+        precondition(TranslationDirection.targetCandidates(detected: fi, a: en, b: ru, preferred: ru) == [ru, en])
 
         // Регион не должен влиять: en-GB это тот же английский.
         precondition(TranslationDirection.resolveTarget(detected: lang("en-GB"), a: ru, b: en) == ru)

@@ -20,7 +20,7 @@ struct SettingsView: View {
                 }
                 .pickerStyle(.menu)
 
-                Text("The source language is detected automatically. Text in the first language is translated into the second, anything else into the first.")
+                Text("The source language is detected automatically. Text in one of these two is translated into the other. A third language goes into whichever of the two matches your system language.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }

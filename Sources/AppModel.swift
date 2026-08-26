@@ -286,7 +286,8 @@ final class AppModel {
         let candidates = TranslationDirection.targetCandidates(
             detected: detected,
             a: languageA,
-            b: languageB
+            b: languageB,
+            preferred: Locale.current.language
         )
 
         translationTask = Task { @MainActor [weak self] in

@@ -16,7 +16,7 @@
 "Languages" = "Языки";
 "First language:" = "Первый язык:";
 "Second language:" = "Второй язык:";
-"The source language is detected automatically. Text in the first language is translated into the second, anything else into the first." = "Исходный язык определяется автоматически. Текст на первом языке переводится во второй, любой другой — в первый.";
+"The source language is detected automatically. Text in one of these two is translated into the other. A third language goes into whichever of the two matches your system language." = "Исходный язык определяется автоматически. Текст на одном из этих двух переводится в другой. Третий язык уходит в тот из двух, который совпадает с языком системы.";
 "Shortcuts" = "Горячие клавиши";
 "Translate:" = "Перевести:";
 "Speak translation:" = "Озвучить перевод:";
