@@ -205,3 +205,9 @@
 "Source is detected automatically unless fixed." = "Оригинал определяется автоматически, если не задан вручную.";
 "Sources to download for %@" = "Исходные языки для «%@»";
 "hf_…" = "hf_…";
+
+/* Кнопка сохранения для движка/токена/почты */
+"Unsaved changes" = "Есть несохранённые изменения";
+"Discard" = "Отменить";
+"Save" = "Сохранить";
+"Most changes apply immediately. Engine and credentials need Save." = "Большинство изменений применяется сразу. Движок и учётные данные — по кнопке «Сохранить».";

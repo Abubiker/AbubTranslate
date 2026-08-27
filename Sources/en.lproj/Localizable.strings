@@ -185,3 +185,9 @@
 "Source is detected automatically unless fixed." = "Source is detected automatically unless fixed.";
 "Sources to download for %@" = "Sources to download for %@";
 "hf_…" = "hf_…";
+
+/* Save button for engine/token/email */
+"Unsaved changes" = "Unsaved changes";
+"Discard" = "Discard";
+"Save" = "Save";
+"Most changes apply immediately. Engine and credentials need Save." = "Most changes apply immediately. Engine and credentials need Save.";

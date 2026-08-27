@@ -5,18 +5,25 @@ struct SettingsView: View {
     @Environment(AppModel.self) private var model
     @AppStorage("appearanceMode") private var appearanceMode = "system"
     @State private var launchAtLogin = false
+    // Движок, токен HuggingFace и почта MyMemory — единственные поля в этом
+    // экране, которые НЕ применяются на лету: смена движка посреди набора
+    // токена гоняла бы перевод по недописанному ключу. Черновик живёт здесь
+    // и уходит в модель только по нажатию «Сохранить».
     @State private var hfToken: String = ""
+    @State private var cloudEmail: String = ""
     @State private var engineMode: String = "apple"
     @State private var sourceLanguage: String = "auto"
     @State private var selectedModelSources: Set<String> = []
     @State private var appLocaleRaw: String = "auto"
     @State private var modelDownloaderStateTick = 0
-    @State private var hfDebounce: Task<Void, Never>?
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DSTokens.xl) {
                 pageHeader
+                if hasCloudDraftChanges {
+                    unsavedCloudBar
+                }
                 summaryGrid
                 lanes
                 systemCard
@@ -29,22 +36,37 @@ struct SettingsView: View {
         .environment(\.locale, model.effectiveLocale)
         .onAppear {
             launchAtLogin = model.isLaunchAtLoginEnabled
-            engineMode = model.engineMode.rawValue
+            resetCloudDraft()
             sourceLanguage = model.sourceLanguageCode ?? "auto"
             appLocaleRaw = model.appLocaleRaw
-            hfToken = model.huggingFaceToken ?? ""
-        }
-        .onDisappear {
-            hfDebounce?.cancel(); hfDebounce = nil
-        }
-        .onReceive(NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)) { notif in
-            guard let win = notif.object as? NSWindow,
-                  win.identifier?.rawValue == "AbubTranslateSettings" else { return }
-            hfDebounce?.cancel(); hfDebounce = nil
         }
         .onChange(of: sourceLanguage) { _, newValue in
             model.setSourceLanguageAndRetranslate(newValue == "auto" ? nil : newValue)
         }
+    }
+
+    /// Черновик движка/токена/почты не сохранён при закрытии окна — тихо
+    /// пропадает, ровно как в любой форме за кнопкой «Сохранить». Ничего
+    /// не коммитим за пользователя молча.
+    private func resetCloudDraft() {
+        engineMode = model.engineMode.rawValue
+        hfToken = model.huggingFaceToken ?? ""
+        cloudEmail = model.cloudContactEmail
+    }
+
+    private var hasCloudDraftChanges: Bool {
+        engineMode != model.engineMode.rawValue
+            || hfToken != (model.huggingFaceToken ?? "")
+            || cloudEmail != model.cloudContactEmail
+    }
+
+    private func saveCloudDraft() {
+        if let mode = EngineMode(rawValue: engineMode) ?? EngineMode.migrated(from: engineMode) {
+            model.engineMode = mode
+            engineMode = mode.rawValue
+        }
+        model.huggingFaceToken = hfToken
+        model.cloudContactEmail = cloudEmail
     }
 
     // MARK: - Page header — отвечает "what is active"
@@ -53,7 +75,7 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: DSTokens.sm) {
             Text("Settings")
                 .pageTitleStyle()
-            Text("Languages, engines and shortcuts. Changes apply immediately.")
+            Text("Most changes apply immediately. Engine and credentials need Save.")
                 .font(.system(size: DSTokens.bodySize))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -62,10 +84,49 @@ struct SettingsView: View {
         .padding(.bottom, DSTokens.sm)
     }
 
+    // MARK: - Unsaved cloud draft
+
+    /// Появляется только когда в движке/токене/почте есть несохранённое —
+    /// эти три поля единственные, где пользователь явно попросил Save
+    /// вместо применения на лету: смена движка посреди набора токена
+    /// не должна перезапускать перевод по недописанному ключу.
+    private var unsavedCloudBar: some View {
+        HStack(spacing: DSTokens.md) {
+            Label("Unsaved changes", systemImage: "circle.fill")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.orange)
+                .labelStyle(.titleAndIcon)
+                .imageScale(.small)
+
+            Spacer(minLength: 0)
+
+            Button("Discard") { resetCloudDraft() }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+
+            Button("Save") { saveCloudDraft() }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+        }
+        .padding(.horizontal, DSTokens.md)
+        .padding(.vertical, DSTokens.sm)
+        .background(
+            RoundedRectangle(cornerRadius: DSTokens.radiusControl)
+                .fill(Color.orange.opacity(0.08))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: DSTokens.radiusControl)
+                .stroke(Color.orange.opacity(0.18), lineWidth: 0.5)
+        )
+    }
+
     // MARK: - Summary — current state
 
     private var summaryGrid: some View {
-        let engine = EngineMode(rawValue: engineMode) ?? EngineMode.migrated(from: engineMode) ?? .appleOnly
+        // Реально применённое значение, а не черновик из Picker'а: сводка
+        // отвечает «что активно сейчас», а движок за Save может отличаться
+        // от того, что уже выбрано в форме, но ещё не подтверждено.
+        let engine = model.engineMode
         return LazyVGrid(columns: [GridItem(.flexible(), spacing: DSTokens.md), GridItem(.flexible(), spacing: DSTokens.md)], spacing: DSTokens.md) {
             summaryCard(
                 overline: "Translating into",
@@ -277,6 +338,9 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: DSTokens.md) {
             cardHeader(overline: "Engine", title: "Translation engine", icon: "cpu", description: nil)
 
+            // Черновик: contextualCard ниже следует за ним сразу (чтобы можно
+            // было настроить поля нового режима до сохранения), а вот сам
+            // model.engineMode меняется только в saveCloudDraft().
             Picker("Engine", selection: $engineMode) {
                 ForEach(EngineMode.pickerCases, id: \.rawValue) { mode in
                     Text(mode.displayName).tag(mode.rawValue)
@@ -285,14 +349,6 @@ struct SettingsView: View {
             .labelsHidden()
             .pickerStyle(.menu)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .onChange(of: engineMode) { _, newValue in
-                if let mode = EngineMode(rawValue: newValue) {
-                    model.engineMode = mode
-                } else if let migrated = EngineMode.migrated(from: newValue) {
-                    model.engineMode = migrated
-                    engineMode = migrated.rawValue
-                }
-            }
 
             // mode.description уже даёт одну сухую строку — второй, более
             // длинный пересказ того же самого был чистым дублированием
@@ -367,7 +423,7 @@ struct SettingsView: View {
     private var myMemoryCard: some View {
         VStack(alignment: .leading, spacing: DSTokens.md) {
             cardHeader(overline: "Cloud", title: "MyMemory", icon: "envelope", description: nil)
-            TextField("Email", text: emailBinding, prompt: Text("optional"))
+            TextField("Email", text: $cloudEmail, prompt: Text("optional"))
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: 13))
             Text("No key needed. 5k words/day, 50k with email.")
@@ -389,15 +445,6 @@ struct SettingsView: View {
             SecureField("HuggingFace token", text: $hfToken, prompt: Text("hf_…"))
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: 13))
-                .onChange(of: hfToken) { _, newValue in
-                    hfDebounce?.cancel()
-                    hfDebounce = Task { @MainActor in
-                        try? await Task.sleep(for: .milliseconds(500))
-                        guard !Task.isCancelled else { return }
-                        model.huggingFaceToken = newValue
-                        hfDebounce = nil
-                    }
-                }
             Text("Anonymous access is blocked. Get one at huggingface.co/settings/tokens")
                 .footnoteMuted()
 
@@ -409,7 +456,7 @@ struct SettingsView: View {
             // провайдер плюс его фолбэк.
             VStack(alignment: .leading, spacing: DSTokens.xs) {
                 providerLabel("MyMemory — fallback")
-                TextField("Email", text: emailBinding, prompt: Text("optional"))
+                TextField("Email", text: $cloudEmail, prompt: Text("optional"))
                     .textFieldStyle(.roundedBorder)
                     .font(.system(size: 13))
                 Text("Automatic fallback if HuggingFace has no token or fails.")
@@ -649,10 +696,6 @@ struct SettingsView: View {
                 .stroke(Color.orange.opacity(0.18), lineWidth: 0.5)
         )
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private var emailBinding: Binding<String> {
-        Binding(get: { model.cloudContactEmail }, set: { model.cloudContactEmail = $0 })
     }
 
     /// Сетка чекбоксов исходных языков. Grid, а не список: пар много,
