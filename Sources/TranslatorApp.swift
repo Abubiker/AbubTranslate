@@ -84,6 +84,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
         if ProcessInfo.processInfo.arguments.contains("--open-settings") {
             openSettingsFromMenu()
         }
+
+        // Диагностика HuggingFace: реальный запрос от лица уже доверенного
+        // процесса, без нового бинарника — тот получал бы диалог доступа к
+        // Keychain, а этот его уже давно прошёл.
+        if ProcessInfo.processInfo.arguments.contains("--hf-selftest") {
+            Task { await runHuggingFaceSelfTest() }
+        }
+    }
+
+    private func runHuggingFaceSelfTest() async {
+        let logURL = URL(fileURLWithPath: NSHomeDirectory() + "/Library/Logs/AbubTranslate.log")
+        func log(_ line: String) {
+            let data = Data((line + "\n").utf8)
+            if let handle = try? FileHandle(forWritingTo: logURL) {
+                handle.seekToEndOfFile()
+                handle.write(data)
+                try? handle.close()
+            } else {
+                try? data.write(to: logURL)
+            }
+        }
+
+        let provider = HuggingFaceProvider()
+        let token = provider.token
+        log("=== HF selftest ===")
+        log("token найден: \(token != nil), длина: \(token?.count ?? 0)")
+        log("isConfigured(): \(provider.isConfigured())")
+
+        do {
+            let result = try await provider.translate("Hello, how are you?", from: "en", to: "ru")
+            log("УСПЕХ: \(result)")
+        } catch {
+            log("ОШИБКА: \(error)")
+            log("ОШИБКА (localizedDescription): \(error.localizedDescription)")
+        }
     }
 
     @objc private func statusItemClicked() {
