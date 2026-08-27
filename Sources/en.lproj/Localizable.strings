@@ -81,7 +81,6 @@
 "Delete" = "Delete";
 "hf_... — optional, raises limits" = "hf_... — optional, raises limits";
 "https://libretranslate.de/translate" = "https://libretranslate.de/translate";
-"optional — raises MyMemory quota to 50k words/day" = "optional — raises MyMemory quota to 50k words/day";
 "Downloaded (%.1f MB)" = "Downloaded (%.1f MB)";
 "Downloading %d%%…" = "Downloading %d%%…";
 "Source language:" = "Source language:";
@@ -108,7 +107,6 @@
 "Auto (System)" = "Auto (System)";
 "Auto follows macOS system language. Interface updates immediately." = "Auto follows macOS system language. Interface updates immediately.";
 "HuggingFace works without a key (rate-limited) but a free token raises limits. Get at huggingface.co/settings/tokens" = "HuggingFace works without a key (rate-limited) but a free token raises limits. Get at huggingface.co/settings/tokens";
-"MyMemory is free without a key. Email raises quota from 5k to 50k words/day." = "MyMemory is free without a key. Email raises quota from 5k to 50k words/day.";
 "Local OPUS is fully offline. No network, no key needed — just download models below." = "Local OPUS is fully offline. No network, no key needed — just download models below.";
 "Fully offline. No network requests." = "Fully offline. No network requests.";
 "HuggingFace Inference is free, works in Russia, no card. Without token rate-limited; with token limits higher. Get at huggingface.co/settings/tokens" = "HuggingFace Inference is free, works in Russia, no card. Without token rate-limited; with token limits higher. Get at huggingface.co/settings/tokens";
@@ -140,7 +138,6 @@
 "Model not found (404) for this pair" = "Model not found (404) for this pair";
 "Models are downloaded one at a time and kept until you delete them. Only the model currently in use is loaded into memory; it is released after a minute of inactivity." = "Models are downloaded one at a time and kept until you delete them. Only the model currently in use is loaded into memory; it is released after a minute of inactivity.";
 "MyMemory" = "MyMemory";
-"MyMemory works without a key and without a card, in Russia without VPN. Anonymous 5k words/day, with email 50k. No HuggingFace key needed in this mode." = "MyMemory works without a key and without a card, in Russia without VPN. Anonymous 5k words/day, with email 50k. No HuggingFace key needed in this mode.";
 "On disk: %lld models, %lld MB" = "On disk: %lld models, %lld MB";
 "Pick source languages to download for %@" = "Pick source languages to download for %@";
 "Select to download" = "Select to download";
@@ -179,7 +176,7 @@
 "HuggingFace token" = "HuggingFace token";
 "HuggingFace. Requires a token." = "HuggingFace. Requires a token.";
 "MyMemory — fallback" = "MyMemory — fallback";
-"No key needed. 5k words/day, 50k with email." = "No key needed. 5k words/day, 50k with email.";
+"No key needed. 5k characters/day, 50k with any email — no signup." = "No key needed. 5k characters/day, 50k with any email — no signup.";
 "Offline OPUS models. Download below." = "Offline OPUS models. Download below.";
 "On-device. No network." = "On-device. No network.";
 "Source is detected automatically unless fixed." = "Source is detected automatically unless fixed.";

@@ -355,7 +355,7 @@ struct SettingsView: View {
             TextField("Email", text: $cloudEmail, prompt: Text("optional"))
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: 13))
-            Text("No key needed. 5k words/day, 50k with email.")
+            Text("No key needed. 5k characters/day, 50k with any email — no signup.")
                 .footnoteMuted()
         }
         .cardSurface()

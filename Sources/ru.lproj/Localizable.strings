@@ -93,7 +93,6 @@
 "Delete" = "Удалить";
 "hf_... — optional, raises limits" = "hf_... — необязательно, повышает лимиты";
 "https://libretranslate.de/translate" = "https://libretranslate.de/translate";
-"optional — raises MyMemory quota to 50k words/day" = "необязательно — повышает лимит MyMemory до 50k слов/сутки";
 "Downloaded (%.1f MB)" = "Скачана (%.1f MB)";
 "Downloading %d%%…" = "Скачивается %d%%…";
 "Source language:" = "Язык оригинала:";
@@ -122,7 +121,6 @@
 "Auto (System)" = "Авто (система)";
 "Auto follows macOS system language. Interface updates immediately." = "Авто — язык macOS. Интерфейс обновляется сразу.";
 "HuggingFace works without a key (rate-limited) but a free token raises limits. Get at huggingface.co/settings/tokens" = "HuggingFace работает без ключа (лимитирован), токен повышает лимиты. Получить: huggingface.co/settings/tokens";
-"MyMemory is free without a key. Email raises quota from 5k to 50k words/day." = "MyMemory бесплатно без ключа. Почта повышает лимит с 5k до 50k слов/сутки.";
 "Local OPUS is fully offline. No network, no key needed — just download models below." = "Локальный OPUS полностью офлайн. Без сети, без ключа — просто скачайте модели ниже.";
 "Fully offline. No network requests." = "Полностью офлайн. Без сетевых запросов.";
 "HuggingFace Inference is free, works in Russia, no card. Without token rate-limited; with token limits higher. Get at huggingface.co/settings/tokens" = "HuggingFace Inference бесплатно, работает в России без карты. Без токена лимитирован, с токеном лимиты выше. Получить: huggingface.co/settings/tokens";
@@ -152,7 +150,6 @@
 "Download failed (HTTP %@)" = "Не удалось скачать (HTTP %@)";
 "Available for %@: %@ languages. Switch engine to see different sets." = "Доступно для %@: языков — %@. Смените движок, чтобы увидеть другой набор.";
 "hf_… — optional, raises limits" = "hf_… — необязательно, повышает лимиты";
-"MyMemory works without a key and without a card, in Russia without VPN. Anonymous 5k words/day, with email 50k. No HuggingFace key needed in this mode." = "MyMemory работает без ключа и без карты, в России без VPN. Анонимно 5 тыс. слов в сутки, с почтой — 50 тыс. Ключ HuggingFace в этом режиме не нужен.";
 "Downloading %lld%…" = "Скачивается %lld%…";
 
 /* Редизайн панели: явная цель вместо пары */
@@ -199,7 +196,7 @@
 "HuggingFace token" = "Токен HuggingFace";
 "HuggingFace. Requires a token." = "HuggingFace. Нужен токен.";
 "MyMemory — fallback" = "MyMemory — запасной вариант";
-"No key needed. 5k words/day, 50k with email." = "Ключ не нужен. 5 тыс. слов в сутки, 50 тыс. с почтой.";
+"No key needed. 5k characters/day, 50k with any email — no signup." = "Ключ не нужен. 5 тыс. символов в сутки, 50 тыс. с любой почтой — без проверки и регистрации.";
 "Offline OPUS models. Download below." = "Офлайн-модели OPUS. Скачивание ниже.";
 "On-device. No network." = "На устройстве. Без сети.";
 "Source is detected automatically unless fixed." = "Оригинал определяется автоматически, если не задан вручную.";
