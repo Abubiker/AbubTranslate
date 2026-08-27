@@ -112,13 +112,50 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
         log("token найден: \(token != nil), длина: \(token?.count ?? 0)")
         log("isConfigured(): \(provider.isConfigured())")
 
-        do {
-            let result = try await provider.translate("Hello, how are you?", from: "en", to: "ru")
-            log("УСПЕХ: \(result)")
-        } catch {
-            log("ОШИБКА: \(error)")
-            log("ОШИБКА (localizedDescription): \(error.localizedDescription)")
+        // Несколько живых пар напрямую через провайдер — не только en-ru.
+        let pairs: [(String, String, String)] = [
+            ("en", "ru", "Hello, how are you?"),
+            ("ru", "en", "Привет, как дела?"),
+            ("en", "de", "Good morning"),
+            ("en", "fr", "Thank you very much"),
+        ]
+        for (src, tgt, text) in pairs {
+            do {
+                let result = try await provider.translate(text, from: src, to: tgt)
+                log("\(src)->\(tgt): УСПЕХ: \(result)")
+            } catch {
+                log("\(src)->\(tgt): ОШИБКА: \(error.localizedDescription)")
+            }
         }
+
+        // Пара, для которой нет opus-mt модели — должна честно упасть
+        // notSupported, а не зависнуть и не крашнуть.
+        do {
+            let result = try await provider.translate("Hello", from: "en", to: "ja")
+            log("en->ja (ожидаем отказ): неожиданно УСПЕХ: \(result)")
+        } catch {
+            log("en->ja (ожидаем отказ): \(error.localizedDescription)")
+        }
+
+        // Полная цепочка через AppModel, как в реальном использовании:
+        // движок hfCloud, пара без HF-модели — должна докатиться до MyMemory,
+        // а не просто зависнуть в ошибке.
+        let model = AppModel.shared
+        let previousEngine = model.engineMode
+        let previousTarget = model.targetLanguageCode
+        model.engineMode = .hfCloud
+        model.targetLanguageCode = "ja"
+        model.translate(text: "Hello, this is a fallback chain test")
+        for _ in 0..<40 {
+            try? await Task.sleep(for: .milliseconds(500))
+            if case .done = model.status { break }
+            if case .failed = model.status { break }
+        }
+        log("цепочка hfCloud, en->ja: status=\(model.status), lastProvider=\(model.lastProviderName ?? "nil"), lastUsedCloud=\(model.lastUsedCloud), text=\(model.translatedText)")
+        model.engineMode = previousEngine
+        model.targetLanguageCode = previousTarget
+
+        log("=== конец HF selftest ===")
     }
 
     @objc private func statusItemClicked() {
