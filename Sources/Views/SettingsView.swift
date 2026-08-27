@@ -10,6 +10,7 @@ struct SettingsView: View {
     @State private var libreKey: String = ""
     @State private var engineMode: String = "apple"
     @State private var sourceLanguage: String = "auto"
+    @State private var selectedModelSources: Set<String> = []
     @State private var appLocaleRaw: String = "auto"
     @State private var modelDownloaderStateTick = 0
     @State private var hfDebounce: Task<Void, Never>?
@@ -77,10 +78,10 @@ struct SettingsView: View {
         let engine = EngineMode(rawValue: engineMode) ?? EngineMode.migrated(from: engineMode) ?? .appleOnly
         return LazyVGrid(columns: [GridItem(.flexible(), spacing: DSTokens.md), GridItem(.flexible(), spacing: DSTokens.md)], spacing: DSTokens.md) {
             summaryCard(
-                overline: "Language pair",
-                title: "\(model.displayName(for: model.languageCodeA)) ⇄ \(model.displayName(for: model.languageCodeB))",
+                overline: "Translating into",
+                title: model.displayName(for: model.targetLanguageCode),
                 subtitle: sourceLanguage == "auto" ? "Source: Auto-detect" : "Source: \(model.displayName(for: sourceLanguage))",
-                icon: "arrow.left.arrow.right"
+                icon: "arrow.right"
             )
             summaryCard(
                 overline: "Engine",
@@ -180,31 +181,24 @@ struct SettingsView: View {
 
     private var languagesCard: some View {
         VStack(alignment: .leading, spacing: DSTokens.md) {
-            cardHeader(overline: "Languages", title: "Pair & source", icon: "globe", description: "Source is translated into the other language of the pair. Third language goes into whichever matches your system language.")
-
-            Picker("Source language", selection: $sourceLanguage) {
-                Text("Auto-detect").tag("auto")
-                ForEach(sourceOptions, id: \.self) { code in
-                    Text(model.displayName(for: code)).tag(code)
-                }
-            }
-            .pickerStyle(.menu)
+            cardHeader(overline: "Languages", title: "Target & source", icon: "globe", description: "Text is translated into the target language. The source is detected automatically unless you fix it.")
 
             Grid(alignment: .leading, horizontalSpacing: DSTokens.md, verticalSpacing: DSTokens.sm) {
                 GridRow {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("First language").font(.system(size: 12, weight: .medium)).foregroundStyle(.secondary)
-                        Picker("", selection: languageBinding(\.languageCodeA)) {
-                            ForEach(targetOptions(for: model.languageCodeA), id: \.self) { code in
+                        Text("Translate into").font(.system(size: 12, weight: .medium)).foregroundStyle(.secondary)
+                        Picker("", selection: targetBinding) {
+                            ForEach(targetOptions(for: model.targetLanguageCode), id: \.self) { code in
                                 Text(model.displayName(for: code)).tag(code)
                             }
                         }
                         .labelsHidden()
                     }
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Second language").font(.system(size: 12, weight: .medium)).foregroundStyle(.secondary)
-                        Picker("", selection: languageBinding(\.languageCodeB)) {
-                            ForEach(targetOptions(for: model.languageCodeB), id: \.self) { code in
+                        Text("Source language").font(.system(size: 12, weight: .medium)).foregroundStyle(.secondary)
+                        Picker("", selection: $sourceLanguage) {
+                            Text("Auto-detect").tag("auto")
+                            ForEach(sourceOptions, id: \.self) { code in
                                 Text(model.displayName(for: code)).tag(code)
                             }
                         }
@@ -270,24 +264,56 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: DSTokens.md) {
             cardHeader(overline: "Offline", title: "Local neural models (OPUS)", icon: "internaldrive", description: nil)
 
-            let pairAB = model.modelDownloader.pairKey(from: model.languageCodeA, to: model.languageCodeB)
-            let pairBA = model.modelDownloader.pairKey(from: model.languageCodeB, to: model.languageCodeA)
+            Text("Pick source languages to download for \(model.displayName(for: model.targetLanguageCode))")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-            localModelRow(pairKey: pairAB, label: "\(model.displayName(for: model.languageCodeA)) → \(model.displayName(for: model.languageCodeB))")
-            Divider().opacity(0.5)
-            localModelRow(pairKey: pairBA, label: "\(model.displayName(for: model.languageCodeB)) → \(model.displayName(for: model.languageCodeA))")
+            sourceCheckboxGrid
 
-            Text("Local OPUS models work offline and use ~150 MB RAM only during translation (Neural Engine). Downloaded only when you press Download. Keep 3 most recent (LRU).")
-                .footnoteMuted()
+            HStack(spacing: DSTokens.sm) {
+                Button {
+                    let keys = selectedModelSources.map {
+                        model.modelDownloader.pairKey(from: $0, to: model.targetLanguageCode)
+                    }
+                    model.modelDownloader.enqueue(keys)
+                    selectedModelSources.removeAll()
+                    startTicking()
+                } label: {
+                    Text("Download selected")
+                        .font(.system(size: 13, weight: .medium))
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .disabled(selectedModelSources.isEmpty)
 
-            let all = model.modelDownloader.allDownloadedPairs()
-            if !all.isEmpty {
-                Text("Downloaded: \(all.joined(separator: ", "))")
-                    .font(.system(size: 11))
+                if !model.modelDownloader.queue.isEmpty {
+                    Text("In queue: \(model.modelDownloader.queue.count)")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
+            }
+
+            let downloaded = model.modelDownloader.allDownloadedPairs()
+            let active = model.modelDownloader.queue + downloaded
+            if !active.isEmpty {
+                Divider().opacity(0.5)
+                ForEach(active, id: \.self) { pairKey in
+                    localModelRow(pairKey: pairKey, label: pairLabel(pairKey))
+                }
+            }
+
+            if !downloaded.isEmpty {
+                Text("On disk: \(downloaded.count) models, \(Int(model.modelDownloader.totalSizeMB())) MB")
+                    .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
+
+            Text("Models are downloaded one at a time and kept until you delete them. Only the model currently in use is loaded into memory; it is released after a minute of inactivity.")
+                .footnoteMuted()
         }
         .cardSurface()
     }
@@ -591,12 +617,12 @@ struct SettingsView: View {
             for _ in 0..<200 {
                 try? await Task.sleep(for: .milliseconds(500))
                 modelDownloaderStateTick += 1
-                let states = [
-                    model.modelDownloader.state(for: model.modelDownloader.pairKey(from: model.languageCodeA, to: model.languageCodeB)),
-                    model.modelDownloader.state(for: model.modelDownloader.pairKey(from: model.languageCodeB, to: model.languageCodeA)),
-                ]
-                let anyDownloading = states.contains { if case .downloading = $0 { return true } else { return false } }
-                if !anyDownloading { break }
+                let downloading = model.modelDownloader.queue.isEmpty == false
+                    || model.modelDownloader.allDownloadedPairs().contains {
+                        if case .downloading = model.modelDownloader.state(for: $0) { return true } else { return false }
+                    }
+                    || model.modelDownloader.hasActiveDownload
+                if !downloading { break }
             }
         }
     }
@@ -634,6 +660,50 @@ struct SettingsView: View {
 
     private var emailBinding: Binding<String> {
         Binding(get: { model.cloudContactEmail }, set: { model.cloudContactEmail = $0 })
+    }
+
+    /// Сетка чекбоксов исходных языков. Grid, а не список: пар много,
+    /// вертикальный список на 22 строки утопил бы карточку.
+    private var sourceCheckboxGrid: some View {
+        let codes = model.targetAvailableCodes.filter { $0 != model.targetLanguageCode }
+        return LazyVGrid(
+            columns: Array(repeating: GridItem(.flexible(), alignment: .leading), count: 3),
+            alignment: .leading,
+            spacing: DSTokens.xs
+        ) {
+            ForEach(codes, id: \.self) { code in
+                let key = model.modelDownloader.pairKey(from: code, to: model.targetLanguageCode)
+                let already = model.modelDownloader.isDownloaded(pairKey: key)
+                Toggle(isOn: Binding(
+                    get: { selectedModelSources.contains(code) },
+                    set: { on in
+                        if on { selectedModelSources.insert(code) } else { selectedModelSources.remove(code) }
+                    }
+                )) {
+                    Text(model.displayName(for: code))
+                        .font(.system(size: 12))
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
+                .toggleStyle(.checkbox)
+                .disabled(already)
+                .opacity(already ? 0.45 : 1)
+                .help(already ? Text("Already downloaded") : Text("Select to download"))
+            }
+        }
+    }
+
+    private func pairLabel(_ pairKey: String) -> String {
+        let parts = pairKey.split(separator: "-", maxSplits: 1).map(String.init)
+        guard parts.count == 2 else { return pairKey }
+        return "\(model.displayName(for: parts[0])) → \(model.displayName(for: parts[1]))"
+    }
+
+    private var targetBinding: Binding<String> {
+        Binding(
+            get: { model.targetLanguageCode },
+            set: { model.retarget(to: Locale.Language(identifier: $0)) }
+        )
     }
 
     private func languageBinding(_ keyPath: ReferenceWritableKeyPath<AppModel, String>) -> Binding<String> {

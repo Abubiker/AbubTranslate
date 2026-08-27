@@ -34,9 +34,8 @@ struct PanelView: View {
 
     var body: some View {
         VStack(spacing: DSTokens.lg) {
-            header
             sourceCard
-            translateButton
+            actionRow
             resultCard
             controls
         }
@@ -60,54 +59,24 @@ struct PanelView: View {
         }
     }
 
-    // MARK: - Шапка: пара языков + своп + настройки
+    // MARK: - Языковые меню
 
-    private var header: some View {
-        HStack(spacing: DSTokens.sm) {
-            languageMenu(code: model.languageCodeA) { model.languageCodeA = $0 }
-
-            Button {
-                model.swapLanguages()
-            } label: {
-                Image(systemName: "arrow.left.arrow.right")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 24, height: 24)
-                    .background(Circle().fill(Color.primary.opacity(0.06)))
-            }
-            .buttonStyle(.plain)
-            .hoverLift()
-            .accessibilityLabel(Text("Swap languages"))
-            .help(Text("Swap languages"))
-
-            languageMenu(code: model.languageCodeB) { model.languageCodeB = $0 }
-
-            Spacer(minLength: DSTokens.sm)
-
-            Button {
-                model.showSettings?()
-            } label: {
-                Image(systemName: "gearshape")
-                    .font(.system(size: 12, weight: .medium))
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-            .help(Text("Settings"))
-        }
-    }
-
-    private func languageMenu(code: String, onPick: @escaping (String) -> Void) -> some View {
-        Menu {
-            let codes = model.targetAvailableCodes
-            let all = codes.contains(code) ? codes : ([code] + codes)
+    /// Меню целевого языка — живёт в шапке карточки «Перевод»,
+    /// чтобы подпись и контрол читались как одно целое.
+    private var targetLanguageMenu: some View {
+        let code = model.targetLanguageCode
+        let codes = model.targetAvailableCodes
+        let all = codes.contains(code) ? codes : ([code] + codes)
+        return Menu {
             ForEach(all, id: \.self) { option in
-                Button(model.displayName(for: option)) { onPick(option) }
+                Button(model.displayName(for: option)) { model.retarget(to: Locale.Language(identifier: option)) }
             }
         } label: {
             languagePill(title: model.displayName(for: code))
         }
         .menuStyle(.borderlessButton)
         .fixedSize()
+        .help(Text("Translate into this language"))
     }
 
     private var sourceLanguageMenu: some View {
@@ -206,6 +175,26 @@ struct PanelView: View {
 
     // MARK: - Кнопка перевода — единственный primary на панель
 
+    /// Своп — вторичная утилита слева, «Перевести» — единственный primary.
+    /// Раньше своп стоял между языковыми пилюлями и спорил с кнопкой за внимание.
+    private var actionRow: some View {
+        HStack(spacing: DSTokens.sm) {
+            Button {
+                model.swapLanguages()
+            } label: {
+                Image(systemName: "arrow.left.arrow.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .frame(width: 28, height: 22)
+            }
+            .buttonStyle(.bordered)
+            .disabled(!model.canSwap)
+            .help(Text("Swap source and target"))
+            .accessibilityLabel(Text("Swap source and target"))
+
+            translateButton
+        }
+    }
+
     private var translateButton: some View {
         Button {
             model.translate(text: model.sourceText)
@@ -226,23 +215,6 @@ struct PanelView: View {
 
     // MARK: - Карточка перевода
 
-    private var predictedTargetCode: String? {
-        if let detected = model.detectedLanguage {
-            let candidates = TranslationDirection.targetCandidates(
-                detected: detected,
-                a: model.languageA,
-                b: model.languageB,
-                preferred: Locale.current.language
-            )
-            return candidates.first?.languageCode?.identifier
-        }
-        if !model.sourceText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            // до детекта показываем язык из пары который не совпадает с auto? fallback на B
-            return model.languageCodeB
-        }
-        return nil
-    }
-
     private var resultCard: some View {
         VStack(alignment: .leading, spacing: DSTokens.sm) {
             HStack(spacing: DSTokens.sm) {
@@ -253,15 +225,13 @@ struct PanelView: View {
                         .tint(.secondary)
                 }
                 Spacer(minLength: DSTokens.sm)
-                if let predicted = predictedTargetCode, model.translatedText.isEmpty, !model.isWorking {
-                    smallCapsule("→ " + model.displayName(for: predicted))
-                } else if (model.lastUsedCloud || model.lastUsedLocal), !model.translatedText.isEmpty, let name = model.lastProviderName {
-                    providerCapsule(name: name, isLocal: model.lastUsedLocal)
-                } else if model.lastUsedCloud, !model.translatedText.isEmpty {
-                    providerCapsule(name: model.cloudProviderName, isLocal: false)
-                } else if let predicted = predictedTargetCode {
-                    smallCapsule("→ " + model.displayName(for: predicted))
+                if (model.lastUsedCloud || model.lastUsedLocal), !model.translatedText.isEmpty {
+                    providerCapsule(
+                        name: model.lastProviderName ?? model.cloudProviderName,
+                        isLocal: model.lastUsedLocal
+                    )
                 }
+                targetLanguageMenu
             }
 
             ZStack(alignment: .topLeading) {
@@ -285,6 +255,29 @@ struct PanelView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .topLeading)
             }
+
+        case .sameLanguage(let detected, let suggestion):
+            VStack(alignment: .leading, spacing: DSTokens.sm) {
+                Label(
+                    String(localized: "Text is already in \(model.languageName(detected))"),
+                    systemImage: "text.badge.checkmark"
+                )
+                .font(.system(size: DSTokens.labelSize, weight: .medium))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+                if let suggestion {
+                    Button {
+                        model.retarget(to: suggestion)
+                    } label: {
+                        Text("Translate into \(model.languageName(suggestion))")
+                            .font(.system(size: DSTokens.labelSize, weight: .medium))
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
 
         case .failedNeedsDownload(let message):
             VStack(alignment: .leading, spacing: DSTokens.sm) {
@@ -368,10 +361,11 @@ struct PanelView: View {
                 model.stopSpeech()
             }
             Spacer()
-            Text(verbatim: "AbubTranslate")
-                .font(.system(size: 10, weight: .medium))
-                .tracking(0.4)
-                .foregroundStyle(.quaternary)
+            // Шестерёнка переехала сюда из шапки: наверху она одна держала
+            // целую строку ради одной кнопки.
+            controlButton(systemImage: "gearshape", help: "Settings", enabled: true) {
+                model.showSettings?()
+            }
         }
     }
 

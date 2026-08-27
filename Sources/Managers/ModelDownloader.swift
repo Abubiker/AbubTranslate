@@ -86,12 +86,37 @@ final class ModelDownloader {
     private var activeTasks: [String: ActiveTask] = [:]
     private var observers: [String: NSKeyValueObservation] = [:]
     private var failedStates: [String: String] = [:]
+    /// Очередь мультизагрузки. Одна активная закачка за раз: параллельный
+    /// старт пяти моделей упирается в канал и диск без всякой выгоды.
+    private(set) var queue: [String] = []
 
     /// Скачать модель для пары. URL — HuggingFace или coreml-community.
     /// Для MVP: качаем архив с моделью (zip), распаковываем в папку пары.
     /// Если URL не указан — берём дефолтный HF coreml-community.
+    /// Поставить в очередь несколько пар. Уже скачанные и уже качающиеся
+    /// отбрасываются, порядок сохраняется.
+    func enqueue(_ pairKeys: [String]) {
+        for key in pairKeys where !isDownloaded(pairKey: key)
+            && activeTasks[key] == nil
+            && !queue.contains(key)
+        {
+            queue.append(key)
+        }
+        pumpQueue()
+    }
+
+    func isQueued(pairKey: String) -> Bool { queue.contains(pairKey) }
+
+    var hasActiveDownload: Bool { !activeTasks.isEmpty }
+
+    private func pumpQueue() {
+        guard activeTasks.isEmpty, !queue.isEmpty else { return }
+        download(pairKey: queue.removeFirst())
+    }
+
     func download(pairKey: String, from url: URL? = nil) {
         guard activeTasks[pairKey] == nil else { return }
+        queue.removeAll { $0 == pairKey }
         failedStates.removeValue(forKey: pairKey)
         invalidateCache(for: pairKey)
         let sourceURL = url ?? defaultURL(for: pairKey)
@@ -108,6 +133,7 @@ final class ModelDownloader {
                 defer {
                     self.activeTasks.removeValue(forKey: pairKey)
                     self.observers.removeValue(forKey: pairKey)
+                    self.pumpQueue()
                 }
                 if let error {
                     self.invalidateCache(for: pairKey)
@@ -125,7 +151,6 @@ final class ModelDownloader {
                 }
                 // Если это zip — распаковываем, иначе просто перемещаем
                 self.handleDownloadedFile(tempURL: tempURL, destDir: destDir, response: response)
-                self.enforceLRU(maxKeep: 3)
             }
         }
 
@@ -197,24 +222,14 @@ final class ModelDownloader {
         return URL(string: "https://huggingface.co/coreml-community/\(modelName)/resolve/main/model.zip")
     }
 
-    private func enforceLRU(maxKeep: Int) {
-        guard let contents = try? FileManager.default.contentsOfDirectory(at: modelsDirectory, includingPropertiesForKeys: [.contentModificationDateKey]) else { return }
-        let dirs = contents.filter { $0.hasDirectoryPath }
-        guard dirs.count > maxKeep else { return }
-        let sorted = dirs.sorted { a, b in
-            let da = (try? a.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
-            let db = (try? b.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
-            return da < db
-        }
-        for dir in sorted.prefix(dirs.count - maxKeep) {
-            let key = dir.lastPathComponent
-            guard activeTasks[key] == nil else { continue } // не трогаем качающуюся модель
-            try? FileManager.default.removeItem(at: dir)
-            invalidateCache(for: key)
-        }
-    }
 
     // MARK: - Список доступных локально
+
+    /// Суммарный вес скачанных моделей — показываем в настройках,
+    /// потому что автоочистки больше нет и следит за диском пользователь.
+    func totalSizeMB() -> Double {
+        allDownloadedPairs().reduce(0) { $0 + sizeMB(for: $1) }
+    }
 
     func allDownloadedPairs() -> [String] {
         guard let contents = try? FileManager.default.contentsOfDirectory(at: modelsDirectory, includingPropertiesForKeys: nil) else { return [] }

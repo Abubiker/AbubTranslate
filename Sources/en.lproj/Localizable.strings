@@ -123,3 +123,35 @@
 "LibreTranslate API key (if your server needs)" = "LibreTranslate API key (if your server needs)";
 "MyMemory email (optional, fallback)" = "MyMemory email (optional, fallback)";
 "If HuggingFace/Libre fail (quota/network), MyMemory is tried as last resort. Text leaves your Mac only in this engine mode. Order: HuggingFace → LibreTranslate → MyMemory." = "If HuggingFace/Libre fail (quota/network), MyMemory is tried as last resort. Text leaves your Mac only in this engine mode. Order: HuggingFace → LibreTranslate → MyMemory.";
+
+/* Redesign: explicit target language */
+"%@ is not configured" = "%@ is not configured";
+"%lld languages" = "%lld languages";
+"Already downloaded" = "Already downloaded";
+"Available for %@: %@ languages. Switch engine to see different sets." = "Available for %@: %@ languages. Switch engine to see different sets.";
+"Download failed (HTTP %@)" = "Download failed (HTTP %@)";
+"Download selected" = "Download selected";
+"Downloading %lld%…" = "Downloading %lld%…";
+"Email (optional)" = "Email (optional)";
+"HuggingFace / LibreTranslate" = "HuggingFace / LibreTranslate";
+"In queue: %lld" = "In queue: %lld";
+"Local neural models (OPUS)" = "Local neural models (OPUS)";
+"Model not available for this pair" = "Model not available for this pair";
+"Model not found (404) for this pair" = "Model not found (404) for this pair";
+"Models are downloaded one at a time and kept until you delete them. Only the model currently in use is loaded into memory; it is released after a minute of inactivity." = "Models are downloaded one at a time and kept until you delete them. Only the model currently in use is loaded into memory; it is released after a minute of inactivity.";
+"MyMemory" = "MyMemory";
+"MyMemory works without a key and without a card, in Russia without VPN. Anonymous 5k words/day, with email 50k. No HuggingFace key needed in this mode." = "MyMemory works without a key and without a card, in Russia without VPN. Anonymous 5k words/day, with email 50k. No HuggingFace key needed in this mode.";
+"On disk: %lld models, %lld MB" = "On disk: %lld models, %lld MB";
+"Pick source languages to download for %@" = "Pick source languages to download for %@";
+"Select to download" = "Select to download";
+"Swap source and target" = "Swap source and target";
+"Target & source" = "Target & source";
+"Text is already in %@" = "Text is already in %@";
+"Text is translated into the target language. The source is detected automatically unless you fix it." = "Text is translated into the target language. The source is detected automatically unless you fix it.";
+"Translate into" = "Translate into";
+"Translate into %@" = "Translate into %@";
+"Translate into this language" = "Translate into this language";
+"Translate original text" = "Translate original text";
+"Translating into" = "Translating into";
+"Translation not supported for this language pair" = "Translation not supported for this language pair";
+"hf_… — optional, raises limits" = "hf_… — optional, raises limits";

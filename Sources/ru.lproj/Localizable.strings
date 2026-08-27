@@ -154,3 +154,24 @@
 "hf_… — optional, raises limits" = "hf_… — необязательно, повышает лимиты";
 "MyMemory works without a key and without a card, in Russia without VPN. Anonymous 5k words/day, with email 50k. No HuggingFace key needed in this mode." = "MyMemory работает без ключа и без карты, в России без VPN. Анонимно 5 тыс. слов в сутки, с почтой — 50 тыс. Ключ HuggingFace в этом режиме не нужен.";
 "Downloading %lld%…" = "Скачивается %lld%…";
+
+/* Редизайн панели: явная цель вместо пары */
+"Translating into" = "Перевод на";
+"Translate into" = "Перевод на";
+"Translate into this language" = "Язык, на который переводим";
+"Target & source" = "Цель и оригинал";
+"Text is translated into the target language. The source is detected automatically unless you fix it." = "Текст переводится на целевой язык. Оригинал определяется автоматически, пока вы не зададите его вручную.";
+"Swap source and target" = "Поменять оригинал и цель местами";
+"Text is already in %@" = "Текст уже на языке «%@»";
+"Translate into %@" = "Перевести на «%@»";
+"%lld languages" = "языков: %lld";
+"MyMemory" = "MyMemory";
+
+/* Мультиселект локальных моделей */
+"Pick source languages to download for %@" = "Выберите исходные языки для скачивания в «%@»";
+"Download selected" = "Скачать выбранные";
+"In queue: %lld" = "В очереди: %lld";
+"On disk: %lld models, %lld MB" = "На диске: моделей — %lld, %lld МБ";
+"Already downloaded" = "Уже скачано";
+"Select to download" = "Отметьте для скачивания";
+"Models are downloaded one at a time and kept until you delete them. Only the model currently in use is loaded into memory; it is released after a minute of inactivity." = "Модели скачиваются по одной и хранятся, пока вы их не удалите. В память загружается только используемая — она выгружается после минуты простоя.";

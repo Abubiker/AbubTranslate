@@ -19,6 +19,8 @@ final class AppModel {
         case failed(String)
         /// Локальная модель не скачана — в панели покажем кнопку в настройки.
         case failedNeedsDownload(String)
+        /// Оригинал уже на целевом языке. `suggestion` — что предложить кнопкой.
+        case sameLanguage(detected: Locale.Language, suggestion: Locale.Language?)
     }
 
     var sourceText = ""
@@ -64,7 +66,7 @@ final class AppModel {
         KeychainHelper.migrateIfNeeded()
         migrateLegacyTargetLanguage()
         migrateEngineModeIfNeeded()
-        currentTargetCode = languageCodeB
+        currentTargetCode = targetLanguageCode
         Task { await loadAvailableLanguages() }
     }
 
@@ -76,14 +78,23 @@ final class AppModel {
         "zh", "ja", "ko", "ar", "tr", "pl", "nl", "cs",
     ]
 
-    var languageCodeA: String {
-        get { UserDefaults.standard.string(forKey: "languageA") ?? "ru" }
-        set { UserDefaults.standard.set(newValue, forKey: "languageA") }
+    /// Язык перевода. Явный, а не выведенный из пары: пара A⇄B не показывала,
+    /// куда именно уйдёт текст, и требовала эвристик для языков вне пары.
+    /// Ключ новый — `targetLanguage` занят легаси-значением первой версии.
+    var targetLanguageCode: String {
+        get {
+            if let stored = UserDefaults.standard.string(forKey: "targetLanguageV2"), !stored.isEmpty {
+                return stored
+            }
+            return Self.systemLanguageCode
+        }
+        set { UserDefaults.standard.set(newValue, forKey: "targetLanguageV2") }
     }
 
-    var languageCodeB: String {
-        get { UserDefaults.standard.string(forKey: "languageB") ?? "en" }
-        set { UserDefaults.standard.set(newValue, forKey: "languageB") }
+    /// Язык macOS, если движок его знает, иначе английский.
+    static var systemLanguageCode: String {
+        guard let code = Locale.current.language.languageCode?.identifier else { return "en" }
+        return fallbackLanguageCodes.contains(code) ? code : "en"
     }
 
     /// Язык-источник: nil = авто-определение (NLLanguageRecognizer), иначе фиксированный код.
@@ -222,26 +233,36 @@ final class AppModel {
         }
     }
 
-    var languageA: Locale.Language { Locale.Language(identifier: languageCodeA) }
-    var languageB: Locale.Language { Locale.Language(identifier: languageCodeB) }
+    var targetLanguage: Locale.Language { Locale.Language(identifier: targetLanguageCode) }
 
+    /// Менять местами нечего, пока исходный язык неизвестен.
+    var canSwap: Bool {
+        sourceLanguageCode != nil || detectedLanguage != nil
+    }
+
+    /// Источник ⇄ цель: прежний источник фиксируется как цель, прежняя цель
+    /// становится заданным вручную источником.
     func swapLanguages() {
-        let a = languageCodeA
-        languageCodeA = languageCodeB
-        languageCodeB = a
+        guard let current = sourceLanguage ?? detectedLanguage,
+              let currentCode = current.languageCode?.identifier
+        else { return }
+        let previousTarget = targetLanguageCode
+        targetLanguageCode = currentCode
+        sourceLanguageCode = previousTarget
+        lastTranslatedSource = ""
         if !sourceText.isEmpty {
             translate(text: sourceText)
         }
     }
 
-    /// Старая одиночная настройка `targetLanguage` → пара A/B.
+    /// Пара A/B → один целевой язык. Старые ключи не удаляем, просто
+    /// перестаём читать: откат на предыдущую сборку останется рабочим.
     private func migrateLegacyTargetLanguage() {
         let defaults = UserDefaults.standard
-        guard defaults.object(forKey: "languageA") == nil,
-              let legacy = defaults.string(forKey: "targetLanguage")
-        else { return }
-        defaults.set(legacy, forKey: "languageA")
-        defaults.set(legacy == "en" ? "ru" : "en", forKey: "languageB")
+        guard defaults.object(forKey: "targetLanguageV2") == nil else { return }
+        // Язык системы и есть новое поведение по умолчанию, старая пара
+        // ничего полезного о желаемой цели не сообщала.
+        defaults.set(Self.systemLanguageCode, forKey: "targetLanguageV2")
     }
 
     private func loadAvailableLanguages() async {
@@ -496,15 +517,23 @@ final class AppModel {
         }
         detectedLanguage = detected
 
+        // Переводить текст в его же язык бессмысленно. Молча подменять цель
+        // не станем — предложим альтернативу кнопкой, решает пользователь.
+        if TranslationDirection.sameLanguage(detected, targetLanguage) {
+            let suggestion = TranslationDirection.suggestedAlternative(
+                detected: detected,
+                preferred: Locale.current.language,
+                supported: targetAvailableCodes
+            )
+            status = .sameLanguage(detected: detected, suggestion: suggestion)
+            return
+        }
+
         status = .working
         pendingText = text
 
-        let candidates = TranslationDirection.targetCandidates(
-            detected: detected,
-            a: languageA,
-            b: languageB,
-            preferred: Locale.current.language
-        )
+        // Цель ровно одна; движковые ветки ниже по-прежнему принимают список.
+        let candidates = [targetLanguage]
 
         translationTask = Task { @MainActor [weak self] in
             guard let self else { return }
@@ -568,6 +597,15 @@ final class AppModel {
         }
     }
 
+    /// Кнопка из подсказки «текст уже на целевом языке».
+    func retarget(to language: Locale.Language) {
+        guard let code = language.languageCode?.identifier else { return }
+        targetLanguageCode = code
+        lastTranslatedSource = ""
+        guard !sourceText.isEmpty else { return }
+        translate(text: sourceText)
+    }
+
     /// Пробует Apple Translation для кандидатов. true = запущен session.
     private func tryAppleTranslation(detected: Locale.Language, candidates: [Locale.Language]) async -> Bool {
         for target in candidates {
@@ -578,7 +616,7 @@ final class AppModel {
                 if availability == .supported {
                     self.status = .preparing
                 }
-                self.currentTargetCode = target.languageCode?.identifier ?? self.languageCodeB
+                self.currentTargetCode = target.languageCode?.identifier ?? self.targetLanguageCode
                 self.startSession(source: detected, target: target)
                 return true
             case .unsupported:
