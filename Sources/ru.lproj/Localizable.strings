@@ -208,3 +208,14 @@
 "Discard" = "Отменить";
 "Save" = "Сохранить";
 "Most changes apply immediately. Engine and credentials need Save." = "Большинство изменений применяется сразу. Движок и учётные данные — по кнопке «Сохранить».";
+
+/* Azure Translator — новый движок */
+"Cloud models (Azure)" = "Облачные модели (Azure)";
+"Azure Translator. Requires a key." = "Azure Translator. Нужен ключ.";
+"Azure Translator" = "Azure Translator";
+"Azure key" = "Ключ Azure";
+"subscription key" = "ключ подписки";
+"Azure region" = "Регион Azure";
+"e.g. westeurope — optional for global resources" = "например westeurope — необязательно для глобального ресурса";
+"Region is only required for regional Azure resources; leave empty for a global single-service resource. Get a key at portal.azure.com — free F0 tier: 2M characters/month, cannot bill past it." = "Регион нужен только для регионального ресурса Azure; для глобального single-service оставьте пустым. Ключ — на portal.azure.com, бесплатный тариф F0: 2 млн символов/месяц, списать деньги сверх него физически нельзя.";
+"Automatic fallback if Azure has no key or fails." = "Автоматический запасной вариант, если у Azure нет ключа или он не сработал.";

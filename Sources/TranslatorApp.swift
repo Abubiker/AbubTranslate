@@ -85,27 +85,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
             openSettingsFromMenu()
         }
 
-        // Диагностика HuggingFace: реальный запрос от лица уже доверенного
-        // процесса, без нового бинарника — тот получал бы диалог доступа к
-        // Keychain, а этот его уже давно прошёл.
+        // Диагностика HuggingFace/Azure: реальный запрос от лица уже
+        // доверенного процесса, без нового бинарника — тот получал бы
+        // диалог доступа к Keychain, а этот его уже давно прошёл.
         if ProcessInfo.processInfo.arguments.contains("--hf-selftest") {
             Task { await runHuggingFaceSelfTest() }
+        }
+        if ProcessInfo.processInfo.arguments.contains("--azure-selftest") {
+            Task { await runAzureSelfTest() }
+        }
+    }
+
+    private func selfTestLog(_ line: String) {
+        let logURL = URL(fileURLWithPath: NSHomeDirectory() + "/Library/Logs/AbubTranslate.log")
+        let data = Data((line + "\n").utf8)
+        if let handle = try? FileHandle(forWritingTo: logURL) {
+            handle.seekToEndOfFile()
+            handle.write(data)
+            try? handle.close()
+        } else {
+            try? data.write(to: logURL)
         }
     }
 
     private func runHuggingFaceSelfTest() async {
-        let logURL = URL(fileURLWithPath: NSHomeDirectory() + "/Library/Logs/AbubTranslate.log")
-        func log(_ line: String) {
-            let data = Data((line + "\n").utf8)
-            if let handle = try? FileHandle(forWritingTo: logURL) {
-                handle.seekToEndOfFile()
-                handle.write(data)
-                try? handle.close()
-            } else {
-                try? data.write(to: logURL)
-            }
-        }
-
+        let log = selfTestLog
         let provider = HuggingFaceProvider()
         let token = provider.token
         log("=== HF selftest ===")
@@ -156,6 +160,56 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
         model.targetLanguageCode = previousTarget
 
         log("=== конец HF selftest ===")
+    }
+
+    /// Контракт собран строго по официальной документации Microsoft, живым
+    /// запросом не проверен — завести Azure-аккаунт с картой приложение не
+    /// может (см. правила: не заводить аккаунты за пользователя). Прогнать
+    /// эту самопроверку можно, как только в настройках сохранён реальный
+    /// ключ: `open -a /Applications/AbubTranslate.app --args --azure-selftest`.
+    private func runAzureSelfTest() async {
+        let log = selfTestLog
+        let provider = AzureTranslatorProvider()
+        log("=== Azure selftest ===")
+        log("key найден: \(provider.key != nil), длина: \(provider.key?.count ?? 0)")
+        log("region: \(provider.region ?? "не задан (ок для global-ресурса)")")
+        log("isConfigured(): \(provider.isConfigured())")
+
+        guard provider.isConfigured() else {
+            log("нет ключа — сохраните его в настройках и повторите")
+            return
+        }
+
+        let pairs: [(String, String, String)] = [
+            ("en", "ru", "Hello, how are you?"),
+            ("ru", "en", "Привет, как дела?"),
+            ("en", "de", "Good morning"),
+        ]
+        for (src, tgt, text) in pairs {
+            do {
+                let result = try await provider.translate(text, from: src, to: tgt)
+                log("\(src)->\(tgt): УСПЕХ: \(result)")
+            } catch {
+                log("\(src)->\(tgt): ОШИБКА: \(error.localizedDescription)")
+            }
+        }
+
+        let model = AppModel.shared
+        let previousEngine = model.engineMode
+        let previousTarget = model.targetLanguageCode
+        model.engineMode = .azureCloud
+        model.targetLanguageCode = "ru"
+        model.translate(text: "Hello, this is an Azure chain test")
+        for _ in 0..<40 {
+            try? await Task.sleep(for: .milliseconds(500))
+            if case .done = model.status { break }
+            if case .failed = model.status { break }
+        }
+        log("цепочка azureCloud: status=\(model.status), lastProvider=\(model.lastProviderName ?? "nil"), lastUsedCloud=\(model.lastUsedCloud), text=\(model.translatedText)")
+        model.engineMode = previousEngine
+        model.targetLanguageCode = previousTarget
+
+        log("=== конец Azure selftest ===")
     }
 
     @objc private func statusItemClicked() {

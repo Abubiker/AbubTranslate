@@ -213,6 +213,17 @@ final class AppModel {
         set { KeychainHelper.huggingFaceToken = newValue }
     }
 
+    var azureKey: String? {
+        get { KeychainHelper.azureKey }
+        set { KeychainHelper.azureKey = newValue }
+    }
+
+    /// Не секрет — не в Keychain по необходимости, а для единообразия с ключом.
+    var azureRegion: String? {
+        get { KeychainHelper.azureRegion }
+        set { KeychainHelper.azureRegion = newValue }
+    }
+
     var targetLanguage: Locale.Language { Locale.Language(identifier: targetLanguageCode) }
 
     /// Менять местами нечего, пока исходный язык неизвестен.
@@ -531,7 +542,11 @@ final class AppModel {
 
             case .hfCloud:
                 // Облачные модели: HuggingFace (требует токен) → MyMemory, без Apple
-                await self.translateViaHFChain(text: text, detected: detected, candidates: candidates)
+                await self.translateViaCloudChain(mode: .hfCloud, text: text, detected: detected, candidates: candidates)
+
+            case .azureCloud:
+                // Облачные модели: Azure Translator (требует ключ) → MyMemory, без Apple
+                await self.translateViaCloudChain(mode: .azureCloud, text: text, detected: detected, candidates: candidates)
             }
         }
     }
@@ -581,6 +596,10 @@ final class AppModel {
             var my = MyMemoryProvider()
             my.contactEmail = cloudContactEmail
             return [HuggingFaceProvider(), my]
+        case .azureCloud:
+            var my = MyMemoryProvider()
+            my.contactEmail = cloudContactEmail
+            return [AzureTranslatorProvider(), my]
         default:
             return []
         }
@@ -623,8 +642,14 @@ final class AppModel {
         }
     }
 
-    /// Цепочка: HuggingFace (если есть токен) → MyMemory
-    private func translateViaHFChain(
+    /// Общая цепочка для облачных движков: HuggingFace→MyMemory,
+    /// Azure→MyMemory — перебираем провайдеров по очереди для `mode`, пока
+    /// один не вернёт результат. Раньше это было отдельной функцией только
+    /// под HuggingFace плюс два мёртвых метода-обёртки без вызовов
+    /// (translateViaCloud → translateViaCloudChain → тот же самый chain) —
+    /// убраны, при добавлении Azure проще было обобщить, чем плодить копию.
+    private func translateViaCloudChain(
+        mode: EngineMode,
         text: String,
         detected: Locale.Language,
         candidates: [Locale.Language]
@@ -637,7 +662,7 @@ final class AppModel {
             return
         }
 
-        let providers = activeCloudProviders(for: .hfCloud)
+        let providers = activeCloudProviders(for: mode)
         var lastError: String?
 
         for provider in providers {
@@ -679,24 +704,6 @@ final class AppModel {
         } else {
             status = .failed(unsupportedMessage(for: detected))
         }
-    }
-
-    /// Цепочка облачных провайдеров — пробуем по очереди, пока один не вернёт результат.
-    private func translateViaCloudChain(
-        text: String,
-        detected: Locale.Language,
-        candidates: [Locale.Language]
-    ) async {
-        await translateViaHFChain(text: text, detected: detected, candidates: candidates)
-    }
-
-    /// Старый метод оставлен для совместимости, теперь делегирует в chain.
-    private func translateViaCloud(
-        text: String,
-        detected: Locale.Language,
-        candidates: [Locale.Language]
-    ) async {
-        await translateViaCloudChain(text: text, detected: detected, candidates: candidates)
     }
 
     /// Различаем «движок не знает такой язык вообще» и «не умеет это

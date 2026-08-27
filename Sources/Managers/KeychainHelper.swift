@@ -61,6 +61,24 @@ enum KeychainHelper {
         }
     }
 
+    static var azureKey: String? {
+        get { load(for: "azure_key") }
+        set {
+            if let v = newValue, !v.isEmpty { save(v, for: "azure_key") }
+            else { delete(for: "azure_key") }
+        }
+    }
+
+    /// Не секрет (просто "westeurope" и т.п.), но хранится тут же для
+    /// единообразия — тот же паттерн, что уже был у libre_url.
+    static var azureRegion: String? {
+        get { load(for: "azure_region") }
+        set {
+            if let v = newValue, !v.isEmpty { save(v, for: "azure_region") }
+            else { delete(for: "azure_region") }
+        }
+    }
+
     /// Миграция старых UserDefaults ключей в Keychain (если были).
     static func migrateIfNeeded() {
         let defaults = UserDefaults.standard

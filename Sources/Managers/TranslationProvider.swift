@@ -47,9 +47,10 @@ enum EngineMode: String, CaseIterable, Sendable {
     case appleOnly = "apple"
     case appleMyMemory = "apple_mymemory"
     case hfCloud = "hf_cloud"
+    case azureCloud = "azure_cloud"
 
     static var pickerCases: [EngineMode] {
-        [.appleOnly, .appleMyMemory, .hfCloud]
+        [.appleOnly, .appleMyMemory, .hfCloud, .azureCloud]
     }
 
     /// Имя провайдера, который в этом режиме пробуется первым — сравнивается
@@ -63,6 +64,8 @@ enum EngineMode: String, CaseIterable, Sendable {
             return "MyMemory"
         case .hfCloud:
             return "HuggingFace"
+        case .azureCloud:
+            return "Azure Translator"
         }
     }
 
@@ -74,6 +77,8 @@ enum EngineMode: String, CaseIterable, Sendable {
             return String(localized: "Apple + MyMemory")
         case .hfCloud:
             return String(localized: "Cloud models (HuggingFace)")
+        case .azureCloud:
+            return String(localized: "Cloud models (Azure)")
         }
     }
 
@@ -85,6 +90,8 @@ enum EngineMode: String, CaseIterable, Sendable {
             return String(localized: "Apple, then MyMemory for unsupported pairs.")
         case .hfCloud:
             return String(localized: "HuggingFace. Requires a token.")
+        case .azureCloud:
+            return String(localized: "Azure Translator. Requires a key.")
         }
     }
 
@@ -135,6 +142,22 @@ enum EngineLanguageSupport {
         "tg","tt","ba","cv","ce","yi","jv","su","tl","haw","mi","sm","to","fj",
     ]
 
+    /// Полный список Azure Translator (text translation), простые коды без
+    /// диалектных вариантов (fr-ca, pt-pt, zh-Hant, sr-Cyrl и т.п. опущены —
+    /// остальные списки в файле тоже держат один код на язык). Источник:
+    /// learn.microsoft.com/azure/ai-services/translator/language-support,
+    /// колонка "Cloud – Text translation", снято целиком 2026-08-27.
+    static let azureCodes = [
+        "af","sq","am","ar","hy","as","az","bn","ba","eu","bho","brx","bs","bg","yue","ca",
+        "hne","lzh","zh","sn","hr","cs","da","prs","dv","doi","nl","en","et","fo","fj","fil",
+        "fi","fr","gl","ka","de","el","gu","ht","ha","he","hi","mww","hu","is","ig","id","ikt",
+        "iu","ga","it","ja","kn","ks","kk","km","rw","gom","ko","ku","kmr","ky","lo","lv","lt",
+        "ln","dsb","lug","mk","mai","mg","ms","ml","mt","mni","mi","mr","mn","my","ne","nb",
+        "nya","or","ps","fa","pl","pt","pa","otq","ro","run","ru","sm","sr","st","nso","tn",
+        "sd","si","sk","sl","so","es","sw","sv","ty","ta","tt","te","th","bo","ti","to","tr",
+        "tk","uk","hsb","ur","ug","uz","vi","cy","xh","yo","yua","zu",
+    ]
+
     static func codes(for mode: EngineMode, appleAvailable: [String]) -> [String] {
         switch mode {
         case .appleOnly:
@@ -146,6 +169,8 @@ enum EngineLanguageSupport {
             return Array(set)
         case .hfCloud:
             return hfCodes
+        case .azureCloud:
+            return azureCodes
         }
     }
 }
