@@ -199,3 +199,12 @@
 "e.g. westeurope — optional for global resources" = "e.g. westeurope — optional for global resources";
 "Region is only required for regional Azure resources; leave empty for a global single-service resource. Get a key at portal.azure.com — free F0 tier: 2M characters/month, cannot bill past it." = "Region is only required for regional Azure resources; leave empty for a global single-service resource. Get a key at portal.azure.com — free F0 tier: 2M characters/month, cannot bill past it.";
 "Automatic fallback if Azure has no key or fails." = "Automatic fallback if Azure has no key or fails.";
+
+/* Google Translate — new engine */
+"Cloud models (Google)" = "Cloud models (Google)";
+"Google Translate. Requires a key, billed past free tier." = "Google Translate. Requires a key, billed past free tier.";
+"Google Translate" = "Google Translate";
+"Google key" = "Google key";
+"API key" = "API key";
+"Billed past the free tier — no hard cap like Azure's F0. Get a key at console.cloud.google.com, watching your own quota is on you." = "Billed past the free tier — no hard cap like Azure's F0. Get a key at console.cloud.google.com, watching your own quota is on you.";
+"Automatic fallback if Google has no key or fails." = "Automatic fallback if Google has no key or fails.";

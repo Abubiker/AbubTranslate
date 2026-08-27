@@ -219,3 +219,12 @@
 "e.g. westeurope — optional for global resources" = "например westeurope — необязательно для глобального ресурса";
 "Region is only required for regional Azure resources; leave empty for a global single-service resource. Get a key at portal.azure.com — free F0 tier: 2M characters/month, cannot bill past it." = "Регион нужен только для регионального ресурса Azure; для глобального single-service оставьте пустым. Ключ — на portal.azure.com, бесплатный тариф F0: 2 млн символов/месяц, списать деньги сверх него физически нельзя.";
 "Automatic fallback if Azure has no key or fails." = "Автоматический запасной вариант, если у Azure нет ключа или он не сработал.";
+
+/* Google Translate — новый движок */
+"Cloud models (Google)" = "Облачные модели (Google)";
+"Google Translate. Requires a key, billed past free tier." = "Google Translate. Нужен ключ, платно сверх бесплатного лимита.";
+"Google Translate" = "Google Translate";
+"Google key" = "Ключ Google";
+"API key" = "API-ключ";
+"Billed past the free tier — no hard cap like Azure's F0. Get a key at console.cloud.google.com, watching your own quota is on you." = "Платно сверх бесплатного лимита — жёсткого барьера как у Azure F0 здесь нет. Ключ — на console.cloud.google.com, следить за своей квотой — на вас.";
+"Automatic fallback if Google has no key or fails." = "Автоматический запасной вариант, если у Google нет ключа или он не сработал.";

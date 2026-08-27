@@ -79,6 +79,14 @@ enum KeychainHelper {
         }
     }
 
+    static var googleKey: String? {
+        get { load(for: "google_key") }
+        set {
+            if let v = newValue, !v.isEmpty { save(v, for: "google_key") }
+            else { delete(for: "google_key") }
+        }
+    }
+
     /// Миграция старых UserDefaults ключей в Keychain (если были).
     static func migrateIfNeeded() {
         let defaults = UserDefaults.standard

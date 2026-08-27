@@ -13,6 +13,7 @@ struct SettingsView: View {
     @State private var cloudEmail: String = ""
     @State private var azureKey: String = ""
     @State private var azureRegion: String = ""
+    @State private var googleKey: String = ""
     @State private var engineMode: String = "apple"
     // Снимок последнего сохранённого состояния — сравнение hasCloudDraftChanges
     // идёт против ЭТИХ @State, не против model.*. model.engineMode/
@@ -27,6 +28,7 @@ struct SettingsView: View {
     @State private var savedCloudEmail: String = ""
     @State private var savedAzureKey: String = ""
     @State private var savedAzureRegion: String = ""
+    @State private var savedGoogleKey: String = ""
     @State private var sourceLanguage: String = "auto"
     @State private var appLocaleRaw: String = "auto"
 
@@ -67,11 +69,13 @@ struct SettingsView: View {
         cloudEmail = model.cloudContactEmail
         azureKey = model.azureKey ?? ""
         azureRegion = model.azureRegion ?? ""
+        googleKey = model.googleKey ?? ""
         savedEngineMode = engineMode
         savedHFToken = hfToken
         savedCloudEmail = cloudEmail
         savedAzureKey = azureKey
         savedAzureRegion = azureRegion
+        savedGoogleKey = googleKey
     }
 
     private var hasCloudDraftChanges: Bool {
@@ -80,6 +84,7 @@ struct SettingsView: View {
             || cloudEmail != savedCloudEmail
             || azureKey != savedAzureKey
             || azureRegion != savedAzureRegion
+            || googleKey != savedGoogleKey
     }
 
     private func saveCloudDraft() {
@@ -91,11 +96,13 @@ struct SettingsView: View {
         model.cloudContactEmail = cloudEmail
         model.azureKey = azureKey
         model.azureRegion = azureRegion
+        model.googleKey = googleKey
         savedEngineMode = engineMode
         savedHFToken = hfToken
         savedCloudEmail = cloudEmail
         savedAzureKey = azureKey
         savedAzureRegion = azureRegion
+        savedGoogleKey = googleKey
     }
 
     // MARK: - Page header — отвечает "what is active"
@@ -239,7 +246,7 @@ struct SettingsView: View {
     private func engineIcon(for mode: EngineMode) -> String {
         switch mode {
         case .appleOnly, .appleMyMemory: return "apple.logo"
-        case .hfCloud, .azureCloud: return "cloud"
+        case .hfCloud, .azureCloud, .googleCloud: return "cloud"
         }
     }
 
@@ -313,6 +320,8 @@ struct SettingsView: View {
             hfCard
         } else if engineMode == EngineMode.azureCloud.rawValue {
             azureCard
+        } else if engineMode == EngineMode.googleCloud.rawValue {
+            googleCard
         }
     }
 
@@ -449,6 +458,30 @@ struct SettingsView: View {
                     .textFieldStyle(.roundedBorder)
                     .font(.system(size: 13))
                 Text("Automatic fallback if Azure has no key or fails.")
+                    .footnoteMuted()
+            }
+        }
+        .cardSurface()
+    }
+
+    private var googleCard: some View {
+        VStack(alignment: .leading, spacing: DSTokens.md) {
+            cardHeader(overline: "Cloud", title: "Google Translate", icon: "cloud", description: nil)
+
+            SecureField("Google key", text: $googleKey, prompt: Text("API key"))
+                .textFieldStyle(.roundedBorder)
+                .font(.system(size: 13))
+            Text("Billed past the free tier — no hard cap like Azure's F0. Get a key at console.cloud.google.com, watching your own quota is on you.")
+                .footnoteMuted()
+
+            Divider().opacity(0.5)
+
+            VStack(alignment: .leading, spacing: DSTokens.xs) {
+                providerLabel("MyMemory — fallback")
+                TextField("Email", text: $cloudEmail, prompt: Text("optional"))
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: 13))
+                Text("Automatic fallback if Google has no key or fails.")
                     .footnoteMuted()
             }
         }

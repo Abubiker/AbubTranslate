@@ -224,6 +224,11 @@ final class AppModel {
         set { KeychainHelper.azureRegion = newValue }
     }
 
+    var googleKey: String? {
+        get { KeychainHelper.googleKey }
+        set { KeychainHelper.googleKey = newValue }
+    }
+
     var targetLanguage: Locale.Language { Locale.Language(identifier: targetLanguageCode) }
 
     /// Менять местами нечего, пока исходный язык неизвестен.
@@ -547,6 +552,10 @@ final class AppModel {
             case .azureCloud:
                 // Облачные модели: Azure Translator (требует ключ) → MyMemory, без Apple
                 await self.translateViaCloudChain(mode: .azureCloud, text: text, detected: detected, candidates: candidates)
+
+            case .googleCloud:
+                // Облачные модели: Google Translate (требует ключ) → MyMemory, без Apple
+                await self.translateViaCloudChain(mode: .googleCloud, text: text, detected: detected, candidates: candidates)
             }
         }
     }
@@ -600,6 +609,10 @@ final class AppModel {
             var my = MyMemoryProvider()
             my.contactEmail = cloudContactEmail
             return [AzureTranslatorProvider(), my]
+        case .googleCloud:
+            var my = MyMemoryProvider()
+            my.contactEmail = cloudContactEmail
+            return [GoogleTranslateProvider(), my]
         default:
             return []
         }

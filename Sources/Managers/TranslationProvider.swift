@@ -48,9 +48,10 @@ enum EngineMode: String, CaseIterable, Sendable {
     case appleMyMemory = "apple_mymemory"
     case hfCloud = "hf_cloud"
     case azureCloud = "azure_cloud"
+    case googleCloud = "google_cloud"
 
     static var pickerCases: [EngineMode] {
-        [.appleOnly, .appleMyMemory, .hfCloud, .azureCloud]
+        [.appleOnly, .appleMyMemory, .hfCloud, .azureCloud, .googleCloud]
     }
 
     /// Имя провайдера, который в этом режиме пробуется первым — сравнивается
@@ -66,6 +67,8 @@ enum EngineMode: String, CaseIterable, Sendable {
             return "HuggingFace"
         case .azureCloud:
             return "Azure Translator"
+        case .googleCloud:
+            return "Google Translate"
         }
     }
 
@@ -79,6 +82,8 @@ enum EngineMode: String, CaseIterable, Sendable {
             return String(localized: "Cloud models (HuggingFace)")
         case .azureCloud:
             return String(localized: "Cloud models (Azure)")
+        case .googleCloud:
+            return String(localized: "Cloud models (Google)")
         }
     }
 
@@ -92,6 +97,8 @@ enum EngineMode: String, CaseIterable, Sendable {
             return String(localized: "HuggingFace. Requires a token.")
         case .azureCloud:
             return String(localized: "Azure Translator. Requires a key.")
+        case .googleCloud:
+            return String(localized: "Google Translate. Requires a key, billed past free tier.")
         }
     }
 
@@ -158,6 +165,27 @@ enum EngineLanguageSupport {
         "tk","uk","hsb","ur","ug","uz","vi","cy","xh","yo","yua","zu",
     ]
 
+    /// Google Cloud Translation (NMT) — самый широкий список из всех
+    /// движков. Простые коды без региональных/скриптовых вариантов
+    /// (zh-CN/zh-TW → "zh", fr-FR/fr-CA → "fr", pt-PT/pt-BR → "pt",
+    /// ms-Arab/pa-Arab/mni-Mtei опущены — тот же принцип, что у остальных
+    /// списков в файле). Источник: docs.cloud.google.com/translate/docs/languages,
+    /// раздел NMT, снято целиком 2026-08-27.
+    static let googleCodes = [
+        "ab","ace","ach","af","sq","alz","am","ar","hy","as","awa","ay","az","ban","bm","ba",
+        "eu","btx","bts","bbc","be","bem","bn","bew","bho","bik","bs","br","bg","bua","yue","ca",
+        "ceb","ny","zh","cv","co","crh","hr","cs","da","din","dv","doi","dov","nl","dz","en",
+        "eo","et","ee","fj","fil","tl","fi","fr","fy","ff","gaa","gl","lg","ka","de","el",
+        "gn","gu","ht","cnh","ha","haw","he","hil","hi","hmn","hu","hrx","is","ig","ilo","id",
+        "ga","it","ja","jw","jv","kn","pam","kk","km","cgg","rw","ktu","gom","ko","kri","ku",
+        "ckb","ky","lo","ltg","la","lv","lij","li","ln","lt","lmo","luo","lb","mk","mai","mak",
+        "mg","ms","ml","mt","mi","mr","chm","min","lus","mn","my","nr","new","ne","no","nus",
+        "oc","or","om","pag","pap","ps","fa","pl","pt","pa","qu","rom","ro","rn","ru","sm",
+        "sg","sa","gd","sr","st","crs","shn","sn","scn","szl","sd","si","sk","sl","so","es",
+        "su","sw","ss","sv","tg","ta","tt","te","tet","th","ti","ts","tn","tr","tk","ak",
+        "uk","ur","ug","uz","vi","cy","xh","yi","yo","yua","zu",
+    ]
+
     static func codes(for mode: EngineMode, appleAvailable: [String]) -> [String] {
         switch mode {
         case .appleOnly:
@@ -171,6 +199,8 @@ enum EngineLanguageSupport {
             return hfCodes
         case .azureCloud:
             return azureCodes
+        case .googleCloud:
+            return googleCodes
         }
     }
 }

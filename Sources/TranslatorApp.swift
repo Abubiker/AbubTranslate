@@ -94,6 +94,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
         if ProcessInfo.processInfo.arguments.contains("--azure-selftest") {
             Task { await runAzureSelfTest() }
         }
+        if ProcessInfo.processInfo.arguments.contains("--google-selftest") {
+            Task { await runGoogleSelfTest() }
+        }
     }
 
     private func selfTestLog(_ line: String) {
@@ -210,6 +213,55 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
         model.targetLanguageCode = previousTarget
 
         log("=== конец Azure selftest ===")
+    }
+
+    /// Контракт собран по официальной документации Google Cloud, живым
+    /// запросом не проверен — то же ограничение, что у Azure: завести GCP-
+    /// проект с биллингом за пользователя приложение не может. Прогнать
+    /// можно тем же приёмом: `--args --google-selftest`, как только в
+    /// настройках сохранён реальный ключ.
+    private func runGoogleSelfTest() async {
+        let log = selfTestLog
+        let provider = GoogleTranslateProvider()
+        log("=== Google selftest ===")
+        log("key найден: \(provider.key != nil), длина: \(provider.key?.count ?? 0)")
+        log("isConfigured(): \(provider.isConfigured())")
+
+        guard provider.isConfigured() else {
+            log("нет ключа — сохраните его в настройках и повторите")
+            return
+        }
+
+        let pairs: [(String, String, String)] = [
+            ("en", "ru", "Hello, how are you?"),
+            ("ru", "en", "Привет, как дела?"),
+            ("en", "de", "Good morning"),
+        ]
+        for (src, tgt, text) in pairs {
+            do {
+                let result = try await provider.translate(text, from: src, to: tgt)
+                log("\(src)->\(tgt): УСПЕХ: \(result)")
+            } catch {
+                log("\(src)->\(tgt): ОШИБКА: \(error.localizedDescription)")
+            }
+        }
+
+        let model = AppModel.shared
+        let previousEngine = model.engineMode
+        let previousTarget = model.targetLanguageCode
+        model.engineMode = .googleCloud
+        model.targetLanguageCode = "ru"
+        model.translate(text: "Hello, this is a Google chain test")
+        for _ in 0..<40 {
+            try? await Task.sleep(for: .milliseconds(500))
+            if case .done = model.status { break }
+            if case .failed = model.status { break }
+        }
+        log("цепочка googleCloud: status=\(model.status), lastProvider=\(model.lastProviderName ?? "nil"), lastUsedCloud=\(model.lastUsedCloud), text=\(model.translatedText)")
+        model.engineMode = previousEngine
+        model.targetLanguageCode = previousTarget
+
+        log("=== конец Google selftest ===")
     }
 
     @objc private func statusItemClicked() {
