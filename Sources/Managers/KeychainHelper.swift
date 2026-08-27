@@ -6,18 +6,29 @@ import Security
 enum KeychainHelper {
     private static let service = "com.opensource.abubtranslate.keys"
 
-    @discardableResult
-    static func save(_ value: String, for key: String) -> OSStatus {
-        let data = Data(value.utf8)
-        let query: [String: Any] = [
+    /// Без kSecUseDataProtectionKeychain — сознательно. Приложение не несёт
+    /// entitlements-файла с keychain-access-group, а SecItemAdd с этим
+    /// флагом на неподписанном такой группой процессе падает
+    /// errSecMissingEntitlement (-34018), проверено вручную. Раньше save()
+    /// писал без флага, а load() читал с ним — SecItemAdd тихо успевал,
+    /// SecItemCopyMatching в другой связке ничего не находил: Save выглядел
+    /// рабочим, токен пропадал молча. Симметрия — по проверенному рабочему
+    /// пути, не по формально более новому API.
+    private static func baseQuery(for key: String) -> [String: Any] {
+        [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: key,
         ]
-        SecItemDelete(query as CFDictionary)
+    }
+
+    @discardableResult
+    static func save(_ value: String, for key: String) -> OSStatus {
+        SecItemDelete(baseQuery(for: key) as CFDictionary)
         guard !value.isEmpty else { return errSecSuccess }
-        var addQuery = query
-        addQuery[kSecValueData as String] = data
+
+        var addQuery = baseQuery(for: key)
+        addQuery[kSecValueData as String] = Data(value.utf8)
         addQuery[kSecAttrAccessible as String] = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
         let status = SecItemAdd(addQuery as CFDictionary, nil)
         if status != errSecSuccess {
@@ -27,32 +38,17 @@ enum KeychainHelper {
     }
 
     static func load(for key: String) -> String? {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: key,
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
-            kSecUseDataProtectionKeychain as String: true,
-        ]
+        var query = baseQuery(for: key)
+        query[kSecReturnData as String] = true
+        query[kSecMatchLimit as String] = kSecMatchLimitOne
         var item: CFTypeRef?
-        var status = SecItemCopyMatching(query as CFDictionary, &item)
-        if status == errSecUnimplemented || status == errSecParam {
-            var fallback = query
-            fallback.removeValue(forKey: kSecUseDataProtectionKeychain as String)
-            status = SecItemCopyMatching(fallback as CFDictionary, &item)
-        }
+        let status = SecItemCopyMatching(query as CFDictionary, &item)
         guard status == errSecSuccess, let data = item as? Data else { return nil }
         return String(data: data, encoding: .utf8)
     }
 
     static func delete(for key: String) {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: key,
-        ]
-        SecItemDelete(query as CFDictionary)
+        SecItemDelete(baseQuery(for: key) as CFDictionary)
     }
 
     // MARK: - Typed keys
