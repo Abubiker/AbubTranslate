@@ -101,37 +101,44 @@ struct PanelView: View {
         .fixedSize()
     }
 
+    // Три пилюли ниже отличались только размером/цветом текста и наличием
+    // иконки, а Capsule-фон с обводкой повторяли дословно — один хелпер,
+    // три тонких обёртки с прежними параметрами, поведение не изменилось.
+    private func pill(
+        _ title: String,
+        systemImage: String? = nil,
+        size: CGFloat,
+        weight: Font.Weight = .medium,
+        primary: Bool = false,
+        muted: Bool = false
+    ) -> some View {
+        Group {
+            if let systemImage {
+                Label(title, systemImage: systemImage)
+            } else {
+                Text(title)
+            }
+        }
+        .font(.system(size: size, weight: weight))
+        .foregroundStyle(primary ? AnyShapeStyle(Color.primary) : AnyShapeStyle(.secondary))
+        .lineLimit(1)
+        .truncationMode(.middle)
+        .padding(.horizontal, primary ? 10 : 7)
+        .padding(.vertical, primary ? 5 : 3)
+        .background(Capsule().fill(muted ? DSTokens.Colors.bgCard.opacity(0.6) : Color.primary.opacity(0.06)))
+        .overlay(Capsule().stroke(DSTokens.Colors.border, lineWidth: 0.5))
+    }
+
     private func languagePill(title: String, isAuto: Bool = false) -> some View {
-        Text(title)
-            .font(.system(size: DSTokens.labelSize, weight: .medium))
-            .lineLimit(1)
-            .truncationMode(.middle)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(Capsule().fill(isAuto ? DSTokens.Colors.bgCard.opacity(0.6) : Color.primary.opacity(0.06)))
-            .overlay(Capsule().stroke(DSTokens.Colors.border, lineWidth: 0.5))
+        pill(title, size: DSTokens.labelSize, primary: true, muted: isAuto)
     }
 
     private func smallCapsule(_ text: String) -> some View {
-        Text(text)
-            .font(.system(size: DSTokens.metaSize, weight: .medium))
-            .foregroundStyle(.secondary)
-            .lineLimit(1)
-            .padding(.horizontal, 7)
-            .padding(.vertical, 3)
-            .background(Capsule().fill(Color.primary.opacity(0.06)))
-            .overlay(Capsule().stroke(DSTokens.Colors.border, lineWidth: 0.5))
+        pill(text, size: DSTokens.metaSize)
     }
 
     private func providerCapsule(name: String, isLocal: Bool) -> some View {
-        Label(name, systemImage: isLocal ? "cpu" : "cloud")
-            .font(.system(size: 11, weight: .medium))
-            .foregroundStyle(.secondary)
-            .lineLimit(1)
-            .padding(.horizontal, 7)
-            .padding(.vertical, 3)
-            .background(Capsule().fill(Color.primary.opacity(0.06)))
-            .overlay(Capsule().stroke(DSTokens.Colors.border, lineWidth: 0.5))
+        pill(name, systemImage: isLocal ? "cpu" : "cloud", size: 11)
     }
 
     // MARK: - Карточка оригинала

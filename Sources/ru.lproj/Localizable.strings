@@ -179,3 +179,6 @@
 /* Аудит: summaryCard теперь локализуется, а не выводится дословно */
 "Source: %@" = "Источник: %@";
 "Waiting in queue…" = "Ждёт своей очереди…";
+"MyMemory fallback" = "Запасной вариант — MyMemory";
+"HuggingFace" = "HuggingFace";
+"LibreTranslate" = "LibreTranslate";

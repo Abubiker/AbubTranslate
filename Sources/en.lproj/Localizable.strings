@@ -159,3 +159,6 @@
 /* Audit: summaryCard is now localized instead of verbatim */
 "Source: %@" = "Source: %@";
 "Waiting in queue…" = "Waiting in queue…";
+"MyMemory fallback" = "MyMemory fallback";
+"HuggingFace" = "HuggingFace";
+"LibreTranslate" = "LibreTranslate";

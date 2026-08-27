@@ -385,49 +385,30 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: DSTokens.md) {
             cardHeader(overline: "Cloud", title: "HuggingFace / LibreTranslate", icon: "cloud", description: nil)
 
-            VStack(alignment: .leading, spacing: DSTokens.sm) {
-                SecureField("HuggingFace token (optional)", text: $hfToken, prompt: Text("hf_… — optional, raises limits"))
-                    .textFieldStyle(.roundedBorder)
-                    .font(.system(size: 13))
-                    .onChange(of: hfToken) { _, newValue in
-                        hfDebounce?.cancel()
-                        hfDebounce = Task { @MainActor in
-                            try? await Task.sleep(for: .milliseconds(500))
-                            guard !Task.isCancelled else { return }
-                            model.huggingFaceToken = newValue
-                            hfDebounce = nil
-                        }
-                    }
-                Text("HuggingFace Inference is free, works in Russia, no card. Without token rate-limited; with token limits higher. Get at huggingface.co/settings/tokens")
-                    .footnoteMuted()
+            // Два независимых провайдера — колонками, когда есть место; ниже
+            // ~340pt на колонку плейсхолдеры вроде "hf_… — optional, raises
+            // limits" обрежутся, так что узкая раскладка складывает их в
+            // одну колонку. Тот же приём, что уже держит `lanes` на уровне
+            // страницы — не вводим второй способ решать одну задачу.
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .top, spacing: DSTokens.lgPlus) {
+                    huggingFaceBlock.frame(maxWidth: .infinity, alignment: .leading)
+                    libreTranslateBlock.frame(maxWidth: .infinity, alignment: .leading)
+                }
+                VStack(alignment: .leading, spacing: DSTokens.lgPlus) {
+                    huggingFaceBlock
+                    libreTranslateBlock
+                }
+            }
 
-                TextField("LibreTranslate URL (optional)", text: $libreURL, prompt: Text("https://libretranslate.de/translate"))
-                    .textFieldStyle(.roundedBorder)
-                    .font(.system(size: 13))
-                    .onChange(of: libreURL) { _, newValue in
-                        libreDebounce?.cancel()
-                        libreDebounce = Task { @MainActor in
-                            try? await Task.sleep(for: .milliseconds(500))
-                            guard !Task.isCancelled else { return }
-                            model.libreTranslateURL = newValue
-                            libreDebounce = nil
-                        }
-                    }
-                SecureField("LibreTranslate API key (if your server needs)", text: $libreKey, prompt: Text("optional"))
-                    .textFieldStyle(.roundedBorder)
-                    .font(.system(size: 13))
-                    .onChange(of: libreKey) { _, newValue in
-                        libreKeyDebounce?.cancel()
-                        libreKeyDebounce = Task { @MainActor in
-                            try? await Task.sleep(for: .milliseconds(500))
-                            guard !Task.isCancelled else { return }
-                            model.libreTranslateApiKey = newValue
-                            libreKeyDebounce = nil
-                        }
-                    }
-                Text("LibreTranslate is open-source. Public libretranslate.de works without a key. You can run your own server and enter its URL here.")
-                    .footnoteMuted()
+            Divider().opacity(0.5)
 
+            // Общий запасной вариант обоих провайдеров — не часть пары,
+            // поэтому не в сетке: смешивать в одной колонке с
+            // HuggingFace/LibreTranslate было бы «unrelated sections in one
+            // grid» ровно по антипаттерну из скилла.
+            VStack(alignment: .leading, spacing: DSTokens.xs) {
+                providerLabel("MyMemory fallback")
                 TextField("MyMemory email (optional, fallback)", text: emailBinding, prompt: Text("optional"))
                     .textFieldStyle(.roundedBorder)
                     .font(.system(size: 13))
@@ -436,6 +417,64 @@ struct SettingsView: View {
             }
         }
         .cardSurface()
+    }
+
+    private func providerLabel(_ title: LocalizedStringKey) -> some View {
+        Text(title)
+            .font(.system(size: 12, weight: .medium))
+            .foregroundStyle(.secondary)
+    }
+
+    private var huggingFaceBlock: some View {
+        VStack(alignment: .leading, spacing: DSTokens.xs) {
+            providerLabel("HuggingFace")
+            SecureField("HuggingFace token (optional)", text: $hfToken, prompt: Text("hf_… — optional, raises limits"))
+                .textFieldStyle(.roundedBorder)
+                .font(.system(size: 13))
+                .onChange(of: hfToken) { _, newValue in
+                    hfDebounce?.cancel()
+                    hfDebounce = Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(500))
+                        guard !Task.isCancelled else { return }
+                        model.huggingFaceToken = newValue
+                        hfDebounce = nil
+                    }
+                }
+            Text("HuggingFace Inference is free, works in Russia, no card. Without token rate-limited; with token limits higher. Get at huggingface.co/settings/tokens")
+                .footnoteMuted()
+        }
+    }
+
+    private var libreTranslateBlock: some View {
+        VStack(alignment: .leading, spacing: DSTokens.xs) {
+            providerLabel("LibreTranslate")
+            TextField("LibreTranslate URL (optional)", text: $libreURL, prompt: Text("https://libretranslate.de/translate"))
+                .textFieldStyle(.roundedBorder)
+                .font(.system(size: 13))
+                .onChange(of: libreURL) { _, newValue in
+                    libreDebounce?.cancel()
+                    libreDebounce = Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(500))
+                        guard !Task.isCancelled else { return }
+                        model.libreTranslateURL = newValue
+                        libreDebounce = nil
+                    }
+                }
+            SecureField("LibreTranslate API key (if your server needs)", text: $libreKey, prompt: Text("optional"))
+                .textFieldStyle(.roundedBorder)
+                .font(.system(size: 13))
+                .onChange(of: libreKey) { _, newValue in
+                    libreKeyDebounce?.cancel()
+                    libreKeyDebounce = Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(500))
+                        guard !Task.isCancelled else { return }
+                        model.libreTranslateApiKey = newValue
+                        libreKeyDebounce = nil
+                    }
+                }
+            Text("LibreTranslate is open-source. Public libretranslate.de works without a key. You can run your own server and enter its URL here.")
+                .footnoteMuted()
+        }
     }
 
     private var shortcutsCard: some View {
