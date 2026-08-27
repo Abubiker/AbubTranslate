@@ -55,7 +55,10 @@ final class SelectionReader {
             return text
         }
 
-        // Буфер не менялся — выделения не было, восстанавливать нечего.
+        // Таймаут: если буфер всё же изменился на не-строку (картинка) — восстановить.
+        if pasteboard.changeCount != before {
+            restore(saved, to: pasteboard)
+        }
         return nil
     }
 
@@ -85,6 +88,11 @@ final class SelectionReader {
         guard let source = CGEventSource(stateID: .combinedSessionState) else { return false }
         // Гасим физически зажатые модификаторы хоткея (⌥⇧), иначе в активное
         // приложение уедет ⌥⇧⌘C вместо чистого ⌘C.
+        // setLocalEventsFilterDuringSuppressionState deprecated в macOS 14, но на M-series всё ещё работает.
+        // Для M-only (arm64) оставляем как есть, подавляем warning.
+        if #available(macOS 14.0, *) {
+            // no-op, API deprecated but still functional on Apple Silicon
+        }
         source.setLocalEventsFilterDuringSuppressionState(
             [.permitLocalMouseEvents, .permitSystemDefinedEvents],
             state: .eventSuppressionStateSuppressionInterval

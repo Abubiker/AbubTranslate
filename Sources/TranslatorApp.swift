@@ -10,18 +10,19 @@ struct TranslatorApp: App {
         AppModel.shared.startHotKeys()
     }
 
+    // Окно настроек создаёт AppDelegate вручную: сцена Settings открывается
+    // только приватным селектором showSettingsWindow:, который из accessory
+    // приложения без строки меню не срабатывает.
     var body: some Scene {
-        Settings {
-            SettingsView()
-                .environment(model)
-        }
+        Settings { EmptyView() }
     }
 }
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSMenuDelegate {
     private var statusItem: NSStatusItem?
     private let popover = NSPopover()
+    private var settingsWindow: NSWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -68,6 +69,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             self?.openSettingsFromMenu()
         }
         AppModel.shared.applyAppearance()
+
+        // Разрешение выдают в Настройках системы: ловим возврат фокуса,
+        // иначе предупреждение висит до перезапуска приложения.
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
+        ) { _ in
+            MainActor.assumeIsolated { AppModel.shared.refreshAccessibility() }
+        }
+
+        // Тестовый вход: позволяет проверить окно настроек без кликов мышью.
+        if ProcessInfo.processInfo.arguments.contains("--open-settings") {
+            openSettingsFromMenu()
+        }
     }
 
     @objc private func statusItemClicked() {
@@ -97,41 +113,70 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
         let menu = NSMenu()
         let settings = menu.addItem(
-            withTitle: String(localized: "Settings…"),
+            withTitle: AppModel.shared.localizedString("Settings…"),
             action: #selector(openSettingsFromMenu),
             keyEquivalent: ","
         )
         settings.target = self
         menu.addItem(.separator())
         let quit = menu.addItem(
-            withTitle: String(localized: "Quit AbubTranslate"),
+            withTitle: AppModel.shared.localizedString("Quit AbubTranslate"),
             action: #selector(quitFromMenu),
             keyEquivalent: "q"
         )
         quit.target = self
 
+        // Меню снимаем в menuDidClose, а не сразу после performClick:
+        // performClick не блокирует, и синхронная очистка убивала меню
+        // раньше, чем оно успевало показаться.
+        menu.delegate = self
         item.menu = menu
         button.performClick(nil)
-        item.menu = nil
+    }
+
+    func menuDidClose(_ menu: NSMenu) {
+        // Снять обязательно, иначе левый клик уйдёт в меню вместо действия
+        // и панель перестанет открываться.
+        DispatchQueue.main.async { [weak self] in
+            self?.statusItem?.menu = nil
+        }
     }
 
     @objc private func quitFromMenu() {
         NSApp.terminate(nil)
     }
 
+    /// Своё окно настроек вместо сцены SwiftUI: сцену можно открыть только
+    /// приватным селектором, а он у accessory-приложения без строки меню
+    /// не находит цели и молча ничего не делает.
     @objc private func openSettingsFromMenu() {
-        NSApp.activate(ignoringOtherApps: true)
-        // Селектор SwiftUI-сцены Settings; на macOS 13 назывался иначе.
-        if !NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil) {
-            NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
-        }
-        // Окно сцены Settings появляется на следующем витке цикла событий,
-        // поэтому поднимаем его отдельно — иначе оно останется позади.
-        DispatchQueue.main.async {
-            NSApp.windows
-                .first { $0.styleMask.contains(.titled) && $0.isVisible }?
-                .makeKeyAndOrderFront(nil)
-        }
+        if popover.isShown { popover.performClose(nil) }
+
+        let window = settingsWindow ?? makeSettingsWindow()
+        settingsWindow = window
+        window.center()
+        // activate(ignoringOtherApps:) на macOS 14+ deprecated и молча не
+        // активирует приложение — окно оставалось позади чужих окон.
+        NSApp.activate()
+        window.makeKeyAndOrderFront(nil)
+    }
+
+    private func makeSettingsWindow() -> NSWindow {
+        let controller = NSHostingController(
+            rootView: SettingsView().environment(AppModel.shared)
+        )
+        let window = NSWindow(contentViewController: controller)
+        window.identifier = NSUserInterfaceItemIdentifier("AbubTranslateSettings")
+        window.title = AppModel.shared.localizedString("AbubTranslate Settings")
+        window.styleMask = [.titled, .closable, .resizable]
+        window.minSize = NSSize(width: 640, height: 640)
+        window.setContentSize(NSSize(width: 720, height: 760))
+        // Окно переживает закрытие: пересоздавать его на каждый показ значит
+        // терять состояние полей и каждый раз платить за сборку иерархии.
+        window.isReleasedWhenClosed = false
+        window.collectionBehavior = [.moveToActiveSpace]
+        window.center()
+        return window
     }
 
     func togglePopover() {
@@ -140,7 +185,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             popover.performClose(nil)
             return
         }
-        NSApp.activate(ignoringOtherApps: true)
+        NSApp.activate()
         if let window = button.window, window.screen != nil {
             // Обычный путь: поповер из иконки в статус-баре.
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)

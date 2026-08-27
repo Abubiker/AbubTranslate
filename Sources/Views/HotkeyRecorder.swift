@@ -94,31 +94,39 @@ struct HotkeyRecorder: View {
     @State private var monitor: Any?
 
     var body: some View {
-        // LabeledContent, а не свой HStack: иначе Form не видит подпись и
-        // строка теряет выравнивание по общей колонке лейблов.
-        LabeledContent(title) {
-            VStack(alignment: .leading, spacing: 4) {
+        HStack(alignment: .top, spacing: DSTokens.md) {
+            Text(title)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.secondary)
+                .frame(minWidth: 140, alignment: .leading)
+                .padding(.top, 6)
+            VStack(alignment: .leading, spacing: DSTokens.xs) {
                 Button {
                     isRecording ? cancelRecording() : startRecording()
                 } label: {
                     Text(isRecording ? String(localized: "Press keys…") : binding.displayString)
-                        .frame(minWidth: 90)
+                        .font(.system(size: DSTokens.labelSize, weight: .medium))
+                        .frame(minWidth: 96)
                 }
                 .buttonStyle(.bordered)
+                .tint(isRecording ? .orange : .accentColor)
                 .foregroundStyle(isRecording ? .orange : .primary)
 
                 if hasConflict {
                     Label(
                         String(localized: "That shortcut is taken by another app"),
-                        systemImage: "exclamationmark.triangle"
+                        systemImage: "exclamationmark.triangle.fill"
                     )
-                    .font(.footnote)
+                    .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(.orange)
                     .fixedSize(horizontal: false, vertical: true)
                 }
             }
+            Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .onAppear { binding = HotkeyBinding.load(slot: slot) }
+        .onDisappear { cancelRecording() }
     }
 
     private func startRecording() {

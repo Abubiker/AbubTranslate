@@ -16,7 +16,11 @@ final class SpeechManager: NSObject, AVSpeechSynthesizerDelegate {
         guard !text.isEmpty else { return }
         stop()
         let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = AVSpeechSynthesisVoice(language: languageCode)
+        if let voice = AVSpeechSynthesisVoice(language: languageCode) {
+            utterance.voice = voice
+        } else if let fallback = AVSpeechSynthesisVoice(language: "en-US") {
+            utterance.voice = fallback
+        }
         utterance.rate = AVSpeechUtteranceDefaultSpeechRate
         synthesizer.speak(utterance)
     }

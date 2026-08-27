@@ -8,8 +8,11 @@ DerivedData/
 # Артефакт релиза — раздаётся через GitHub Releases, не через репозиторий
 *.dmg
 
-# macOS
-.DS_Store
-
 # Внутренний план разработки
 plan.md
+
+# Локальные конфиги агентов
+.agents/
+
+# macOS
+.DS_Store

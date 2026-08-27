@@ -33,16 +33,19 @@ struct PanelView: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: DSTokens.lg) {
             header
             sourceCard
             translateButton
             resultCard
             controls
         }
-        .padding(16)
-        .frame(width: Self.width)
-        .animation(.smooth(duration: 0.25), value: model.status)
+        .padding(DSTokens.lg)
+        .frame(minWidth: 360, idealWidth: Self.width, maxWidth: Self.width)
+        .fixedSize(horizontal: true, vertical: false)
+        .environment(\.locale, model.effectiveLocale)
+        .animation(.smooth(duration: 0.22), value: model.status)
+        .animation(.smooth(duration: 0.2), value: model.translatedText)
         .translationTask(model.translationConfig) { session in
             let text = model.takePendingText()
             guard !text.isEmpty else { return }
@@ -60,29 +63,34 @@ struct PanelView: View {
     // MARK: - Шапка: пара языков + своп + настройки
 
     private var header: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: DSTokens.sm) {
             languageMenu(code: model.languageCodeA) { model.languageCodeA = $0 }
 
             Button {
                 model.swapLanguages()
             } label: {
                 Image(systemName: "arrow.left.arrow.right")
-                    .font(.caption.weight(.bold))
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 24, height: 24)
+                    .background(Circle().fill(Color.primary.opacity(0.06)))
             }
             .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
+            .hoverLift()
+            .accessibilityLabel(Text("Swap languages"))
             .help(Text("Swap languages"))
 
             languageMenu(code: model.languageCodeB) { model.languageCodeB = $0 }
 
-            Spacer()
+            Spacer(minLength: DSTokens.sm)
 
             Button {
                 model.showSettings?()
             } label: {
                 Image(systemName: "gearshape")
+                    .font(.system(size: 12, weight: .medium))
             }
-            .glassCompat()
+            .buttonStyle(.bordered)
             .controlSize(.small)
             .help(Text("Settings"))
         }
@@ -90,7 +98,9 @@ struct PanelView: View {
 
     private func languageMenu(code: String, onPick: @escaping (String) -> Void) -> some View {
         Menu {
-            ForEach(model.availableLanguageCodes, id: \.self) { option in
+            let codes = model.targetAvailableCodes
+            let all = codes.contains(code) ? codes : ([code] + codes)
+            ForEach(all, id: \.self) { option in
                 Button(model.displayName(for: option)) { onPick(option) }
             }
         } label: {
@@ -100,31 +110,72 @@ struct PanelView: View {
         .fixedSize()
     }
 
-    private func languagePill(title: String) -> some View {
+    private var sourceLanguageMenu: some View {
+        let all: [String] = {
+            var list = model.sourceAvailableCodes
+            if let cur = model.sourceLanguageCode, !list.contains(cur) {
+                list.insert(cur, at: 0)
+            }
+            return list
+        }()
+        return Menu {
+            Button("Auto-detect") { model.sourceLanguageCode = nil }
+            Divider()
+            ForEach(all, id: \.self) { option in
+                Button(model.displayName(for: option)) { model.sourceLanguageCode = option }
+            }
+        } label: {
+            let title = model.sourceLanguageCode.map { model.displayName(for: $0) } ?? String(localized: "Auto-detect")
+            languagePill(title: title, isAuto: model.sourceLanguageCode == nil)
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+    }
+
+    private func languagePill(title: String, isAuto: Bool = false) -> some View {
         Text(title)
-            .font(.callout.weight(.medium))
+            .font(.system(size: DSTokens.labelSize, weight: .medium))
             .lineLimit(1)
+            .truncationMode(.middle)
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
+            .background(Capsule().fill(isAuto ? DSTokens.Colors.bgCard.opacity(0.6) : Color.primary.opacity(0.06)))
+            .overlay(Capsule().stroke(DSTokens.Colors.border, lineWidth: 0.5))
+    }
+
+    private func smallCapsule(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: DSTokens.metaSize, weight: .medium))
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
             .background(Capsule().fill(Color.primary.opacity(0.06)))
-            .overlay(Capsule().stroke(Color.primary.opacity(0.12), lineWidth: 0.5))
+            .overlay(Capsule().stroke(DSTokens.Colors.border, lineWidth: 0.5))
+    }
+
+    private func providerCapsule(name: String, isLocal: Bool) -> some View {
+        Label(name, systemImage: isLocal ? "cpu" : "cloud")
+            .font(.system(size: 11, weight: .medium))
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
+            .background(Capsule().fill(Color.primary.opacity(0.06)))
+            .overlay(Capsule().stroke(DSTokens.Colors.border, lineWidth: 0.5))
     }
 
     // MARK: - Карточка оригинала
 
     private var sourceCard: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
+        VStack(alignment: .leading, spacing: DSTokens.sm) {
+            HStack(spacing: DSTokens.sm) {
                 cardTitle("Original", systemImage: "doc.text")
+                Spacer(minLength: DSTokens.sm)
+                sourceLanguageMenu
+                    .help(Text("Source language — Auto-detect or fixed", comment: "Panel source menu help"))
                 if let detected = model.detectedLanguage {
-                    // Иначе непонятно, что язык вообще определился: в шапке
-                    // висит пара A⇄B, и она может не совпадать с оригиналом.
-                    Text(model.languageName(detected))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Capsule().fill(Color.primary.opacity(0.06)))
+                    smallCapsule(model.languageName(detected))
                 }
             }
             ZStack(alignment: .topLeading) {
@@ -132,66 +183,93 @@ struct PanelView: View {
                     get: { model.sourceText },
                     set: { model.sourceTextEdited($0) }
                 ))
-                .font(.body)
+                .font(.system(size: DSTokens.bodyLargeSize))
+                .lineSpacing(2)
                 .scrollContentBackground(.hidden)
-                .padding(10)
-                .background(cardBackground)
+                .padding(DSTokens.md)
+                .background(panelCardBackground)
 
                 if model.sourceText.isEmpty {
                     Text("Paste text here — it translates automatically. Or select text anywhere and press the shortcut.")
-                        .font(.body)
+                        .font(.system(size: DSTokens.bodySize))
                         .foregroundStyle(.tertiary)
-                        .padding(.horizontal, 15)
-                        .padding(.vertical, 18)
+                        .lineSpacing(2)
+                        .padding(.horizontal, DSTokens.lg)
+                        .padding(.vertical, DSTokens.lg + 2)
                         .allowsHitTesting(false)
                 }
             }
-            .frame(minHeight: 60, maxHeight: 260)
+            .frame(minHeight: 72, maxHeight: 260)
             .fixedSize(horizontal: false, vertical: true)
         }
     }
 
-    // MARK: - Кнопка перевода
+    // MARK: - Кнопка перевода — единственный primary на панель
 
     private var translateButton: some View {
         Button {
             model.translate(text: model.sourceText)
         } label: {
             Label("Translate", systemImage: "arrow.left.arrow.right")
+                .font(.system(size: DSTokens.bodySize, weight: .medium))
                 .frame(maxWidth: .infinity)
         }
-        .glassCompat(prominent: true)
-        .controlSize(.large)
+        .buttonStyle(.borderedProminent)
+        .controlSize(.regular)
+        .hoverLift()
+        .accessibilityLabel(Text("Translate"))
+        .accessibilityHint(Text("Translate original text"))
+        .disabled(model.sourceText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         .keyboardShortcut(.defaultAction)
+        .opacity(model.sourceText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.6 : 1)
     }
 
     // MARK: - Карточка перевода
 
+    private var predictedTargetCode: String? {
+        if let detected = model.detectedLanguage {
+            let candidates = TranslationDirection.targetCandidates(
+                detected: detected,
+                a: model.languageA,
+                b: model.languageB,
+                preferred: Locale.current.language
+            )
+            return candidates.first?.languageCode?.identifier
+        }
+        if !model.sourceText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            // до детекта показываем язык из пары который не совпадает с auto? fallback на B
+            return model.languageCodeB
+        }
+        return nil
+    }
+
     private var resultCard: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
+        VStack(alignment: .leading, spacing: DSTokens.sm) {
+            HStack(spacing: DSTokens.sm) {
                 cardTitle("Translation", systemImage: "character.bubble")
                 if model.isWorking {
                     ProgressView()
                         .controlSize(.small)
+                        .tint(.secondary)
                 }
-                if model.lastUsedCloud, !model.translatedText.isEmpty {
-                    // Честно помечаем, что этот текст уходил в сеть.
-                    Label(model.cloudProviderName, systemImage: "cloud")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Capsule().fill(Color.primary.opacity(0.06)))
+                Spacer(minLength: DSTokens.sm)
+                if let predicted = predictedTargetCode, model.translatedText.isEmpty, !model.isWorking {
+                    smallCapsule("→ " + model.displayName(for: predicted))
+                } else if (model.lastUsedCloud || model.lastUsedLocal), !model.translatedText.isEmpty, let name = model.lastProviderName {
+                    providerCapsule(name: name, isLocal: model.lastUsedLocal)
+                } else if model.lastUsedCloud, !model.translatedText.isEmpty {
+                    providerCapsule(name: model.cloudProviderName, isLocal: false)
+                } else if let predicted = predictedTargetCode {
+                    smallCapsule("→ " + model.displayName(for: predicted))
                 }
             }
 
             ZStack(alignment: .topLeading) {
-                cardBackground
+                panelCardBackground
                 resultContent
-                    .padding(10)
+                    .padding(DSTokens.md)
             }
-            .frame(minHeight: 60, maxHeight: 260)
+            .frame(minHeight: 72, maxHeight: 260)
             .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -200,42 +278,54 @@ struct PanelView: View {
     private var resultContent: some View {
         switch model.status {
         case .failed(let message):
-            Label(message, systemImage: "exclamationmark.triangle")
-                .font(.callout)
-                .foregroundStyle(.orange)
-                .frame(maxWidth: .infinity, alignment: .topLeading)
+            VStack(alignment: .leading, spacing: DSTokens.sm) {
+                Label(message, systemImage: "exclamationmark.triangle.fill")
+                    .font(.system(size: DSTokens.labelSize, weight: .medium))
+                    .foregroundStyle(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+            }
 
-        case .preparing:
-            Label("Downloading the language pack…", systemImage: "arrow.down.circle")
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .topLeading)
-
-        case .workingCloud:
-            Label(
-                String(localized: "Translating via \(model.cloudProviderName)…"),
-                systemImage: "cloud"
-            )
-            .font(.body)
-            .foregroundStyle(.secondary)
+        case .failedNeedsDownload(let message):
+            VStack(alignment: .leading, spacing: DSTokens.sm) {
+                Label(message, systemImage: "exclamationmark.triangle.fill")
+                    .font(.system(size: DSTokens.labelSize, weight: .medium))
+                    .foregroundStyle(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button {
+                    model.showSettings?()
+                } label: {
+                    Label("Open Settings to download model", systemImage: "gearshape")
+                        .font(.system(size: DSTokens.labelSize, weight: .medium))
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
             .frame(maxWidth: .infinity, alignment: .topLeading)
 
+        case .preparing:
+            statusRow(icon: "arrow.down.circle", text: "Downloading the language pack…")
+
+        case .workingLocal:
+            statusRow(icon: "cpu", text: String(localized: "Translating via OPUS (offline)…"))
+
+        case .workingCloud:
+            statusRow(icon: "cloud", text: String(localized: "Translating via \(model.cloudProviderName)…"))
+
         case .working:
-            Text("Translating…")
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .topLeading)
+            statusRow(icon: "ellipsis", text: "Translating…")
 
         case .idle, .done:
             if model.translatedText.isEmpty {
                 Text("The translation will appear here")
-                    .font(.body)
+                    .font(.system(size: DSTokens.bodySize))
                     .foregroundStyle(.tertiary)
                     .frame(maxWidth: .infinity, alignment: .topLeading)
             } else {
                 ScrollView {
                     Text(model.translatedText)
-                        .font(.body)
+                        .font(.system(size: DSTokens.bodySize))
+                        .lineSpacing(2)
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .topLeading)
                 }
@@ -244,10 +334,22 @@ struct PanelView: View {
         }
     }
 
-    // MARK: - Нижние контролы
+    private func statusRow(icon: String, text: String) -> some View {
+        HStack(spacing: DSTokens.sm) {
+            ProgressView()
+                .controlSize(.small)
+                .tint(.secondary)
+            Label(text, systemImage: icon)
+                .font(.system(size: DSTokens.bodySize))
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+    }
+
+    // MARK: - Нижние контролы — secondary zone muted
 
     private var controls: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: DSTokens.sm) {
             controlButton(
                 systemImage: "doc.on.doc",
                 help: "Copy translation",
@@ -267,7 +369,8 @@ struct PanelView: View {
             }
             Spacer()
             Text(verbatim: "AbubTranslate")
-                .font(.caption2)
+                .font(.system(size: 10, weight: .medium))
+                .tracking(0.4)
                 .foregroundStyle(.quaternary)
         }
     }
@@ -280,27 +383,39 @@ struct PanelView: View {
     ) -> some View {
         Button(action: action) {
             Image(systemName: systemImage)
-                .frame(width: 20, height: 20)
+                .font(.system(size: 12, weight: .medium))
+                .frame(width: 22, height: 22)
         }
-        .glassCompat()
+        .buttonStyle(.bordered)
+        .controlSize(.small)
         .disabled(!enabled)
         .help(help)
+        .accessibilityLabel(Text(help))
+        .focusEffectDisabled(false)
     }
 
     // MARK: - Общие элементы
 
-    private var cardBackground: some View {
-        RoundedRectangle(cornerRadius: 14)
+    private var panelCardBackground: some View {
+        RoundedRectangle(cornerRadius: DSTokens.radiusCard)
             .fill(.ultraThinMaterial)
             .overlay(
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
+                RoundedRectangle(cornerRadius: DSTokens.radiusCard)
+                    .stroke(DSTokens.Colors.border, lineWidth: 0.5)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: DSTokens.radiusCard)
+                    .stroke(DSTokens.Colors.highlight, lineWidth: 0.5)
+                    .opacity(0.5)
             )
     }
 
     private func cardTitle(_ title: LocalizedStringKey, systemImage: String) -> some View {
         Label(title, systemImage: systemImage)
-            .font(.caption.weight(.medium))
+            .font(.system(size: DSTokens.labelSize, weight: .medium))
+            .tracking(0.2)
             .foregroundStyle(.secondary)
+            .labelStyle(.titleAndIcon)
+            .accessibilityAddTraits(.isHeader)
     }
 }
