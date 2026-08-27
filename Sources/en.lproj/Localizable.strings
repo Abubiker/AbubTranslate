@@ -162,3 +162,26 @@
 "MyMemory fallback" = "MyMemory fallback";
 "HuggingFace" = "HuggingFace";
 "LibreTranslate" = "LibreTranslate";
+"Active: %@" = "Active: %@";
+"Fallback: %@" = "Fallback: %@";
+
+/* Trim: dry descriptions instead of marketing phrasing */
+"%lld languages available in the current engine." = "%lld languages available in the current engine.";
+"Adds local models, then HuggingFace." = "Adds local models, then HuggingFace.";
+"Adds offline OPUS models below." = "Adds offline OPUS models below.";
+"Anonymous access is blocked. Get one at huggingface.co/settings/tokens" = "Anonymous access is blocked. Get one at huggingface.co/settings/tokens";
+"Any keyboard layout. Uses the current selection, or the clipboard." = "Any keyboard layout. Uses the current selection, or the clipboard.";
+"Apple, then MyMemory for unsupported pairs." = "Apple, then MyMemory for unsupported pairs.";
+"Auto follows the system language." = "Auto follows the system language.";
+"Automatic fallback if HuggingFace has no token or fails." = "Automatic fallback if HuggingFace has no token or fails.";
+"Downloaded one at a time, kept until deleted. Only the active model stays in memory." = "Downloaded one at a time, kept until deleted. Only the active model stays in memory.";
+"Email" = "Email";
+"HuggingFace token" = "HuggingFace token";
+"HuggingFace. Requires a token." = "HuggingFace. Requires a token.";
+"MyMemory — fallback" = "MyMemory — fallback";
+"No key needed. 5k words/day, 50k with email." = "No key needed. 5k words/day, 50k with email.";
+"Offline OPUS models. Download below." = "Offline OPUS models. Download below.";
+"On-device. No network." = "On-device. No network.";
+"Source is detected automatically unless fixed." = "Source is detected automatically unless fixed.";
+"Sources to download for %@" = "Sources to download for %@";
+"hf_…" = "hf_…";

@@ -6,16 +6,12 @@ struct SettingsView: View {
     @AppStorage("appearanceMode") private var appearanceMode = "system"
     @State private var launchAtLogin = false
     @State private var hfToken: String = ""
-    @State private var libreURL: String = ""
-    @State private var libreKey: String = ""
     @State private var engineMode: String = "apple"
     @State private var sourceLanguage: String = "auto"
     @State private var selectedModelSources: Set<String> = []
     @State private var appLocaleRaw: String = "auto"
     @State private var modelDownloaderStateTick = 0
     @State private var hfDebounce: Task<Void, Never>?
-    @State private var libreDebounce: Task<Void, Never>?
-    @State private var libreKeyDebounce: Task<Void, Never>?
 
     var body: some View {
         ScrollView {
@@ -37,20 +33,14 @@ struct SettingsView: View {
             sourceLanguage = model.sourceLanguageCode ?? "auto"
             appLocaleRaw = model.appLocaleRaw
             hfToken = model.huggingFaceToken ?? ""
-            libreURL = model.libreTranslateURL ?? ""
-            libreKey = model.libreTranslateApiKey ?? ""
         }
         .onDisappear {
             hfDebounce?.cancel(); hfDebounce = nil
-            libreDebounce?.cancel(); libreDebounce = nil
-            libreKeyDebounce?.cancel(); libreKeyDebounce = nil
         }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)) { notif in
             guard let win = notif.object as? NSWindow,
                   win.identifier?.rawValue == "AbubTranslateSettings" else { return }
             hfDebounce?.cancel(); hfDebounce = nil
-            libreDebounce?.cancel(); libreDebounce = nil
-            libreKeyDebounce?.cancel(); libreKeyDebounce = nil
         }
         .onChange(of: sourceLanguage) { _, newValue in
             model.setSourceLanguageAndRetranslate(newValue == "auto" ? nil : newValue)
@@ -89,7 +79,11 @@ struct SettingsView: View {
             summaryCard(
                 overline: "Engine",
                 title: LocalizedStringKey(engine.displayName),
-                subtitle: "\(model.targetAvailableCodes.count) languages",
+                // Выбранный режим ≠ то, что реально перевело последний раз:
+                // HuggingFace без токена падает 401, и цепочка
+                // молча уходит в MyMemory. Показываем правду, а не намерение —
+                // иначе непонятно, почему выбран HF, а работает MyMemory.
+                subtitle: engineActivitySubtitle(engine: engine),
                 icon: engineIcon(for: engine)
             )
         }
@@ -137,6 +131,19 @@ struct SettingsView: View {
                 model.applyAppearance()
             }
         }
+    }
+
+    private func engineActivitySubtitle(engine: EngineMode) -> LocalizedStringKey {
+        guard let lastName = model.lastProviderName, model.lastUsedCloud || model.lastUsedLocal else {
+            return "\(model.targetAvailableCodes.count) languages"
+        }
+        let primaryName = engine.primaryProviderName
+        if let primaryName, primaryName == lastName {
+            return "Active: \(lastName)"
+        }
+        // Совпадает с основным именем режима — значит реально сработал он,
+        // иначе это откат на запасной провайдер внутри той же цепочки.
+        return "Fallback: \(lastName)"
     }
 
     private func engineIcon(for mode: EngineMode) -> String {
@@ -232,7 +239,7 @@ struct SettingsView: View {
 
     private var languagesCard: some View {
         VStack(alignment: .leading, spacing: DSTokens.md) {
-            cardHeader(overline: "Languages", title: "Target & source", icon: "globe", description: "Text is translated into the target language. The source is detected automatically unless you fix it.")
+            cardHeader(overline: "Languages", title: "Target & source", icon: "globe", description: "Source is detected automatically unless fixed.")
 
             Grid(alignment: .leading, horizontalSpacing: DSTokens.md, verticalSpacing: DSTokens.sm) {
                 GridRow {
@@ -260,8 +267,7 @@ struct SettingsView: View {
 
             Divider().opacity(0.5)
             let count = model.targetAvailableCodes.count
-            let name = EngineMode(rawValue: engineMode)?.displayName ?? EngineMode.migrated(from: engineMode)?.displayName ?? "this engine"
-            Text("Available for \(name): \(count) languages. Switch engine to see different sets.")
+            Text("\(count) languages available in the current engine.")
                 .footnoteMuted()
         }
         .cardSurface()
@@ -288,25 +294,14 @@ struct SettingsView: View {
                 }
             }
 
+            // mode.description уже даёт одну сухую строку — второй, более
+            // длинный пересказ того же самого был чистым дублированием
+            // (и вдобавок устарел: там всё ещё говорилось, что HuggingFace
+            // работает без ключа).
             if let mode = EngineMode(rawValue: engineMode) ?? EngineMode.migrated(from: engineMode) {
                 Text(mode.description)
                     .footnoteMuted()
             }
-
-            // Single restrained helper per engine
-            Group {
-                if engineMode == EngineMode.hfCloud.rawValue {
-                    Text("HuggingFace works without a key (rate-limited) but a free token raises limits. Get at huggingface.co/settings/tokens")
-                } else if engineMode == EngineMode.appleMyMemory.rawValue {
-                    Text("MyMemory is free without a key. Email raises quota from 5k to 50k words/day.")
-                } else if engineMode == EngineMode.localOnly.rawValue {
-                    Text("Local OPUS is fully offline. No network, no key needed — just download models below.")
-                } else {
-                    Text("Fully offline. No network requests.")
-                }
-            }
-            .footnoteMuted()
-            .padding(.top, DSTokens.xs)
         }
         .cardSurface()
     }
@@ -315,7 +310,7 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: DSTokens.md) {
             cardHeader(overline: "Offline", title: "Local neural models (OPUS)", icon: "internaldrive", description: nil)
 
-            Text("Pick source languages to download for \(model.displayName(for: model.targetLanguageCode))")
+            Text("Sources to download for \(model.displayName(for: model.targetLanguageCode))")
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -363,7 +358,7 @@ struct SettingsView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            Text("Models are downloaded one at a time and kept until you delete them. Only the model currently in use is loaded into memory; it is released after a minute of inactivity.")
+            Text("Downloaded one at a time, kept until deleted. Only the active model stays in memory.")
                 .footnoteMuted()
         }
         .cardSurface()
@@ -372,49 +367,11 @@ struct SettingsView: View {
     private var myMemoryCard: some View {
         VStack(alignment: .leading, spacing: DSTokens.md) {
             cardHeader(overline: "Cloud", title: "MyMemory", icon: "envelope", description: nil)
-            TextField("Email (optional)", text: emailBinding, prompt: Text("optional — raises MyMemory quota to 50k words/day"))
+            TextField("Email", text: emailBinding, prompt: Text("optional"))
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: 13))
-            Text("MyMemory works without a key and without a card, in Russia without VPN. Anonymous 5k words/day, with email 50k. No HuggingFace key needed in this mode.")
+            Text("No key needed. 5k words/day, 50k with email.")
                 .footnoteMuted()
-        }
-        .cardSurface()
-    }
-
-    private var hfCard: some View {
-        VStack(alignment: .leading, spacing: DSTokens.md) {
-            cardHeader(overline: "Cloud", title: "HuggingFace / LibreTranslate", icon: "cloud", description: nil)
-
-            // Два независимых провайдера — колонками, когда есть место; ниже
-            // ~340pt на колонку плейсхолдеры вроде "hf_… — optional, raises
-            // limits" обрежутся, так что узкая раскладка складывает их в
-            // одну колонку. Тот же приём, что уже держит `lanes` на уровне
-            // страницы — не вводим второй способ решать одну задачу.
-            ViewThatFits(in: .horizontal) {
-                HStack(alignment: .top, spacing: DSTokens.lgPlus) {
-                    huggingFaceBlock.frame(maxWidth: .infinity, alignment: .leading)
-                    libreTranslateBlock.frame(maxWidth: .infinity, alignment: .leading)
-                }
-                VStack(alignment: .leading, spacing: DSTokens.lgPlus) {
-                    huggingFaceBlock
-                    libreTranslateBlock
-                }
-            }
-
-            Divider().opacity(0.5)
-
-            // Общий запасной вариант обоих провайдеров — не часть пары,
-            // поэтому не в сетке: смешивать в одной колонке с
-            // HuggingFace/LibreTranslate было бы «unrelated sections in one
-            // grid» ровно по антипаттерну из скилла.
-            VStack(alignment: .leading, spacing: DSTokens.xs) {
-                providerLabel("MyMemory fallback")
-                TextField("MyMemory email (optional, fallback)", text: emailBinding, prompt: Text("optional"))
-                    .textFieldStyle(.roundedBorder)
-                    .font(.system(size: 13))
-                Text("If HuggingFace/Libre fail (quota/network), MyMemory is tried as last resort. Text leaves your Mac only in this engine mode. Order: HuggingFace → LibreTranslate → MyMemory.")
-                    .footnoteMuted()
-            }
         }
         .cardSurface()
     }
@@ -425,10 +382,11 @@ struct SettingsView: View {
             .foregroundStyle(.secondary)
     }
 
-    private var huggingFaceBlock: some View {
-        VStack(alignment: .leading, spacing: DSTokens.xs) {
-            providerLabel("HuggingFace")
-            SecureField("HuggingFace token (optional)", text: $hfToken, prompt: Text("hf_… — optional, raises limits"))
+    private var hfCard: some View {
+        VStack(alignment: .leading, spacing: DSTokens.md) {
+            cardHeader(overline: "Cloud", title: "HuggingFace", icon: "cloud", description: nil)
+
+            SecureField("HuggingFace token", text: $hfToken, prompt: Text("hf_…"))
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: 13))
                 .onChange(of: hfToken) { _, newValue in
@@ -440,41 +398,25 @@ struct SettingsView: View {
                         hfDebounce = nil
                     }
                 }
-            Text("HuggingFace Inference is free, works in Russia, no card. Without token rate-limited; with token limits higher. Get at huggingface.co/settings/tokens")
+            Text("Anonymous access is blocked. Get one at huggingface.co/settings/tokens")
                 .footnoteMuted()
-        }
-    }
 
-    private var libreTranslateBlock: some View {
-        VStack(alignment: .leading, spacing: DSTokens.xs) {
-            providerLabel("LibreTranslate")
-            TextField("LibreTranslate URL (optional)", text: $libreURL, prompt: Text("https://libretranslate.de/translate"))
-                .textFieldStyle(.roundedBorder)
-                .font(.system(size: 13))
-                .onChange(of: libreURL) { _, newValue in
-                    libreDebounce?.cancel()
-                    libreDebounce = Task { @MainActor in
-                        try? await Task.sleep(for: .milliseconds(500))
-                        guard !Task.isCancelled else { return }
-                        model.libreTranslateURL = newValue
-                        libreDebounce = nil
-                    }
-                }
-            SecureField("LibreTranslate API key (if your server needs)", text: $libreKey, prompt: Text("optional"))
-                .textFieldStyle(.roundedBorder)
-                .font(.system(size: 13))
-                .onChange(of: libreKey) { _, newValue in
-                    libreKeyDebounce?.cancel()
-                    libreKeyDebounce = Task { @MainActor in
-                        try? await Task.sleep(for: .milliseconds(500))
-                        guard !Task.isCancelled else { return }
-                        model.libreTranslateApiKey = newValue
-                        libreKeyDebounce = nil
-                    }
-                }
-            Text("LibreTranslate is open-source. Public libretranslate.de works without a key. You can run your own server and enter its URL here.")
-                .footnoteMuted()
+            Divider().opacity(0.5)
+
+            // Автоматический запасной вариант — не часть выбора пользователя,
+            // поэтому оформлен отдельным блоком, а не второй колонкой рядом
+            // с HuggingFace: без LibreTranslate тут больше не пара, а один
+            // провайдер плюс его фолбэк.
+            VStack(alignment: .leading, spacing: DSTokens.xs) {
+                providerLabel("MyMemory — fallback")
+                TextField("Email", text: emailBinding, prompt: Text("optional"))
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: 13))
+                Text("Automatic fallback if HuggingFace has no token or fails.")
+                    .footnoteMuted()
+            }
         }
+        .cardSurface()
     }
 
     private var shortcutsCard: some View {
@@ -490,7 +432,7 @@ struct SettingsView: View {
                 }
             }
 
-            Text("Shortcuts work in any keyboard layout and ignore Caps Lock. Translation uses the current selection, falling back to the clipboard.")
+            Text("Any keyboard layout. Uses the current selection, or the clipboard.")
                 .footnoteMuted()
 
             if model.needsAccessibilityPermission {
@@ -527,7 +469,7 @@ struct SettingsView: View {
                 }
                 Spacer(minLength: 0)
             }
-            Text("Auto follows macOS system language. Interface updates immediately.")
+            Text("Auto follows the system language.")
                 .footnoteMuted()
         }
         .cardSurface()

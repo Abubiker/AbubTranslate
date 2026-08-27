@@ -220,19 +220,6 @@ final class AppModel {
         set { KeychainHelper.huggingFaceToken = newValue }
     }
 
-    var libreTranslateURL: String? {
-        get { KeychainHelper.libreTranslateURL }
-        set { KeychainHelper.libreTranslateURL = newValue }
-    }
-
-    var libreTranslateApiKey: String? {
-        get { KeychainHelper.load(for: "libre_api_key") }
-        set {
-            if let v = newValue, !v.isEmpty { KeychainHelper.save(v, for: "libre_api_key") }
-            else { KeychainHelper.delete(for: "libre_api_key") }
-        }
-    }
-
     var targetLanguage: Locale.Language { Locale.Language(identifier: targetLanguageCode) }
 
     /// Менять местами нечего, пока исходный язык неизвестен.
@@ -563,7 +550,7 @@ final class AppModel {
                 return
 
             case .hfCloud:
-                // Облачные модели HF: HF → Libre → MyMemory, без Apple/local
+                // Облачные модели: HuggingFace (требует токен) → MyMemory, без Apple/local
                 await self.translateViaHFChain(text: text, detected: detected, candidates: candidates)
                 return
 
@@ -690,16 +677,12 @@ final class AppModel {
             my.contactEmail = cloudContactEmail
             return [my]
         case .hfCloud, .appleLocalCloud:
-            // HF приоритет, затем Libre, затем MyMemory
-            var providers: [any TranslationProvider] = []
-            let hf = HuggingFaceProvider()
-            providers.append(hf)
-            let libre = LibreTranslateProvider()
-            providers.append(libre)
+            // HuggingFace приоритет (нужен токен), MyMemory — запасной.
+            // LibreTranslate убран: публичный инстанс переехал и теперь
+            // требует платный ключ — бесплатного пути у него больше нет.
             var my = MyMemoryProvider()
             my.contactEmail = cloudContactEmail
-            providers.append(my)
-            return providers
+            return [HuggingFaceProvider(), my]
         default:
             return []
         }
@@ -742,7 +725,7 @@ final class AppModel {
         }
     }
 
-    /// HF цепочка: HF → Libre → MyMemory
+    /// Цепочка: HuggingFace (если есть токен) → MyMemory
     private func translateViaHFChain(
         text: String,
         detected: Locale.Language,

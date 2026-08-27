@@ -182,3 +182,26 @@
 "MyMemory fallback" = "Запасной вариант — MyMemory";
 "HuggingFace" = "HuggingFace";
 "LibreTranslate" = "LibreTranslate";
+"Active: %@" = "Работает: %@";
+"Fallback: %@" = "Запасной вариант: %@";
+
+/* Трим: сухие описания вместо маркетинговых формулировок */
+"%lld languages available in the current engine." = "Доступно языков в текущем движке: %lld";
+"Adds local models, then HuggingFace." = "Плюс локальные модели, затем HuggingFace.";
+"Adds offline OPUS models below." = "Плюс офлайн-модели OPUS ниже.";
+"Anonymous access is blocked. Get one at huggingface.co/settings/tokens" = "Анонимный доступ закрыт. Получить токен: huggingface.co/settings/tokens";
+"Any keyboard layout. Uses the current selection, or the clipboard." = "Любая раскладка. Берёт выделение, иначе буфер обмена.";
+"Apple, then MyMemory for unsupported pairs." = "Apple, затем MyMemory для неподдерживаемых пар.";
+"Auto follows the system language." = "«Авто» следует языку системы.";
+"Automatic fallback if HuggingFace has no token or fails." = "Автоматический запасной вариант, если у HuggingFace нет токена или он не сработал.";
+"Downloaded one at a time, kept until deleted. Only the active model stays in memory." = "Скачиваются по одной, хранятся до удаления. В памяти — только активная модель.";
+"Email" = "Почта";
+"HuggingFace token" = "Токен HuggingFace";
+"HuggingFace. Requires a token." = "HuggingFace. Нужен токен.";
+"MyMemory — fallback" = "MyMemory — запасной вариант";
+"No key needed. 5k words/day, 50k with email." = "Ключ не нужен. 5 тыс. слов в сутки, 50 тыс. с почтой.";
+"Offline OPUS models. Download below." = "Офлайн-модели OPUS. Скачивание ниже.";
+"On-device. No network." = "На устройстве. Без сети.";
+"Source is detected automatically unless fixed." = "Оригинал определяется автоматически, если не задан вручную.";
+"Sources to download for %@" = "Исходные языки для «%@»";
+"hf_…" = "hf_…";

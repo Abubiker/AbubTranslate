@@ -65,14 +65,6 @@ enum KeychainHelper {
         }
     }
 
-    static var libreTranslateURL: String? {
-        get { load(for: "libre_url") }
-        set {
-            if let v = newValue, !v.isEmpty { save(v, for: "libre_url") }
-            else { delete(for: "libre_url") }
-        }
-    }
-
     /// Миграция старых UserDefaults ключей в Keychain (если были).
     static func migrateIfNeeded() {
         let defaults = UserDefaults.standard
@@ -80,9 +72,11 @@ enum KeychainHelper {
             if load(for: "hf_token") == nil { save(hf, for: "hf_token") }
             defaults.removeObject(forKey: "hfToken")
         }
-        if let url = defaults.string(forKey: "libreTranslateURL"), !url.isEmpty {
-            if load(for: "libre_url") == nil { save(url, for: "libre_url") }
-            defaults.removeObject(forKey: "libreTranslateURL")
-        }
+        defaults.removeObject(forKey: "libreTranslateURL")
+        // LibreTranslate убран из приложения — публичный инстанс переехал
+        // и стал платным. Подчищаем то, что могло остаться в Keychain
+        // от предыдущих версий: без провайдера эти ключи мёртвый груз.
+        delete(for: "libre_url")
+        delete(for: "libre_api_key")
     }
 }

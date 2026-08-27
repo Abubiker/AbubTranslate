@@ -55,6 +55,20 @@ enum EngineMode: String, CaseIterable, Sendable {
         [.appleOnly, .appleMyMemory, .localOnly, .hfCloud]
     }
 
+    /// Имя провайдера, который в этом режиме пробуется первым — сравнивается
+    /// с фактически сработавшим (`AppModel.lastProviderName`), чтобы отличить
+    /// «основной провайдер сработал» от «ушли в запасной внутри цепочки».
+    var primaryProviderName: String? {
+        switch self {
+        case .appleOnly, .appleLocal, .localOnly:
+            return nil
+        case .appleMyMemory:
+            return "MyMemory"
+        case .hfCloud, .appleLocalCloud:
+            return "HuggingFace"
+        }
+    }
+
     var displayName: String {
         switch self {
         case .appleOnly:
@@ -75,17 +89,17 @@ enum EngineMode: String, CaseIterable, Sendable {
     var description: String {
         switch self {
         case .appleOnly:
-            return String(localized: "Only on-device Apple Translation. No network requests.")
+            return String(localized: "On-device. No network.")
         case .appleMyMemory:
-            return String(localized: "Apple first, MyMemory fallback for unsupported pairs. Free, works in Russia. Optional email raises quota.")
+            return String(localized: "Apple, then MyMemory for unsupported pairs.")
         case .localOnly:
-            return String(localized: "Only offline OPUS models. Download models below. No network requests, ~150MB RAM during translation.")
+            return String(localized: "Offline OPUS models. Download below.")
         case .hfCloud:
-            return String(localized: "Cloud HuggingFace (NLLB/OPUS). Works in Russia, free without card. Optional HF token raises limits. Text leaves your Mac.")
+            return String(localized: "HuggingFace. Requires a token.")
         case .appleLocal:
-            return String(localized: "Adds offline OPUS models for unsupported languages. Download models in the section below.")
+            return String(localized: "Adds offline OPUS models below.")
         case .appleLocalCloud:
-            return String(localized: "Adds local models and, if they are missing, cloud providers as last resort. Text may leave your Mac.")
+            return String(localized: "Adds local models, then HuggingFace.")
         }
     }
 

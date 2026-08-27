@@ -10,7 +10,7 @@ struct HuggingFaceProvider: TranslationProvider {
     let name = "HuggingFace"
     /// NLLB токен лимит 512 — берём 500 с запасом для M-series ANE.
     let charLimit = 500
-    let requiresKey = false // работает и без ключа, но с токеном стабильнее
+    let requiresKey = true // анонимный доступ HuggingFace отключил, токен обязателен
 
     var token: String? {
         KeychainHelper.huggingFaceToken
@@ -22,9 +22,10 @@ struct HuggingFaceProvider: TranslationProvider {
     var modelId: String = "facebook/nllb-200-distilled-600M"
 
     func isConfigured() -> Bool {
-        // Работает даже без токена (anon), но показываем как configured всегда,
-        // чтобы chain мог его пробовать последним перед MyMemory.
-        true
+        // HuggingFace отключил анонимный доступ к router-инференсу — без
+        // токена запрос всегда падает 401. Проверено вручную: curl без
+        // заголовка Authorization получает 401 на router.huggingface.co.
+        isTokenConfigured
     }
 
     var isTokenConfigured: Bool {
