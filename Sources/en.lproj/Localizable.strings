@@ -155,3 +155,7 @@
 "Translating into" = "Translating into";
 "Translation not supported for this language pair" = "Translation not supported for this language pair";
 "hf_… — optional, raises limits" = "hf_… — optional, raises limits";
+
+/* Audit: summaryCard is now localized instead of verbatim */
+"Source: %@" = "Source: %@";
+"Waiting in queue…" = "Waiting in queue…";

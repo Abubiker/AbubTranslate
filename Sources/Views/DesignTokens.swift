@@ -151,3 +151,16 @@ extension View {
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
+
+/// `frame(minWidth:idealWidth:maxWidth:)`, только опционально — узкая
+/// раскладка ViewThatFits не должна ограничивать ширину, широкая должна.
+struct OptionalWidthRange: ViewModifier {
+    let range: ClosedRange<CGFloat>?
+    func body(content: Content) -> some View {
+        if let range {
+            content.frame(minWidth: range.lowerBound, idealWidth: (range.lowerBound + range.upperBound) / 2, maxWidth: range.upperBound)
+        } else {
+            content
+        }
+    }
+}

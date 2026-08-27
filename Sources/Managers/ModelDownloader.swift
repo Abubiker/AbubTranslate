@@ -165,7 +165,11 @@ final class ModelDownloader {
         task.resume()
     }
 
+    /// Отменяет и активную закачку, и место в очереди. Без удаления из
+    /// `queue` пара, ещё не начавшая качаться, пережила бы отмену и всё
+    /// равно стартовала бы, когда до неё дойдёт очередь.
     func cancel(pairKey: String) {
+        queue.removeAll { $0 == pairKey }
         activeTasks[pairKey]?.task.cancel()
         activeTasks.removeValue(forKey: pairKey)
         observers.removeValue(forKey: pairKey)

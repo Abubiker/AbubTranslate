@@ -79,16 +79,63 @@ struct SettingsView: View {
         return LazyVGrid(columns: [GridItem(.flexible(), spacing: DSTokens.md), GridItem(.flexible(), spacing: DSTokens.md)], spacing: DSTokens.md) {
             summaryCard(
                 overline: "Translating into",
-                title: model.displayName(for: model.targetLanguageCode),
+                // Динамическое значение (имя языка) — не строковый литерал,
+                // поэтому явно заворачиваем в LocalizedStringKey: без
+                // подходящего ключа в .strings оно просто выводится как есть.
+                title: LocalizedStringKey(model.displayName(for: model.targetLanguageCode)),
                 subtitle: sourceLanguage == "auto" ? "Source: Auto-detect" : "Source: \(model.displayName(for: sourceLanguage))",
                 icon: "arrow.right"
             )
             summaryCard(
                 overline: "Engine",
-                title: engine.displayName,
+                title: LocalizedStringKey(engine.displayName),
                 subtitle: "\(model.targetAvailableCodes.count) languages",
                 icon: engineIcon(for: engine)
             )
+        }
+    }
+
+    /// Одна реализация для двух ширин: ViewThatFits в systemCard раньше
+    /// держал дословную копию блока ради узкого/широкого варианта — правки
+    /// приходилось вносить дважды, легко было забыть одну из копий.
+    private func interfaceLanguagePicker(width: ClosedRange<CGFloat>?) -> some View {
+        VStack(alignment: .leading, spacing: DSTokens.xs) {
+            Text("Interface language").font(.system(size: 12, weight: .medium)).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Picker("Interface language", selection: $appLocaleRaw) {
+                Text("Auto (System)").tag("auto")
+                Text("Русский").tag("ru")
+                Text("English").tag("en")
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .modifier(OptionalWidthRange(range: width))
+            .fixedSize(horizontal: false, vertical: true)
+            .onChange(of: appLocaleRaw) { _, newValue in
+                model.appLocaleRaw = newValue
+                if let win = NSApp.windows.first(where: { $0.identifier?.rawValue == "AbubTranslateSettings" }) {
+                    win.title = model.localizedString("AbubTranslate Settings")
+                }
+            }
+        }
+    }
+
+    private func themePicker(width: ClosedRange<CGFloat>?) -> some View {
+        VStack(alignment: .leading, spacing: DSTokens.xs) {
+            Text("Theme").font(.system(size: 12, weight: .medium)).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Picker("Theme", selection: $appearanceMode) {
+                Text("Automatic").tag("system")
+                Text("Light").tag("light")
+                Text("Dark").tag("dark")
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .modifier(OptionalWidthRange(range: width))
+            .fixedSize(horizontal: false, vertical: true)
+            .onChange(of: appearanceMode) { _, _ in
+                model.applyAppearance()
+            }
         }
     }
 
@@ -100,7 +147,11 @@ struct SettingsView: View {
         }
     }
 
-    private func summaryCard(overline: String, title: String, subtitle: String, icon: String) -> some View {
+    /// LocalizedStringKey, а не String — иначе Text(String) выводится дословно
+    /// мимо локализации. cardHeader ниже уже чинили от этой же ошибки,
+    /// summaryCard тогда пропустили: обе сводные карточки оставались
+    /// англоязычными на русской системе.
+    private func summaryCard(overline: LocalizedStringKey, title: LocalizedStringKey, subtitle: LocalizedStringKey, icon: String) -> some View {
         HStack(alignment: .top, spacing: DSTokens.md) {
             Image(systemName: icon)
                 .font(.system(size: 14, weight: .medium))
@@ -416,73 +467,13 @@ struct SettingsView: View {
 
             ViewThatFits(in: .horizontal) {
                 HStack(alignment: .top, spacing: DSTokens.xl) {
-                    VStack(alignment: .leading, spacing: DSTokens.xs) {
-                        Text("Interface language").font(.system(size: 12, weight: .medium)).foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Picker("Interface language", selection: $appLocaleRaw) {
-                            Text("Auto (System)").tag("auto")
-                            Text("Русский").tag("ru")
-                            Text("English").tag("en")
-                        }
-                        .pickerStyle(.segmented)
-                        .labelsHidden()
-                        .frame(minWidth: 220, idealWidth: 260, maxWidth: 300)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .onChange(of: appLocaleRaw) { _, newValue in
-                            model.appLocaleRaw = newValue
-                            if let win = NSApp.windows.first(where: { $0.identifier?.rawValue == "AbubTranslateSettings" }) {
-                                win.title = model.localizedString("AbubTranslate Settings")
-                            }
-                        }
-                    }
-                    VStack(alignment: .leading, spacing: DSTokens.xs) {
-                        Text("Theme").font(.system(size: 12, weight: .medium)).foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Picker("Theme", selection: $appearanceMode) {
-                            Text("Automatic").tag("system")
-                            Text("Light").tag("light")
-                            Text("Dark").tag("dark")
-                        }
-                        .pickerStyle(.segmented)
-                        .labelsHidden()
-                        .frame(minWidth: 180, idealWidth: 200, maxWidth: 260)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .onChange(of: appearanceMode) { _, _ in
-                            model.applyAppearance()
-                        }
-                    }
+                    interfaceLanguagePicker(width: 220...300)
+                    themePicker(width: 180...260)
                     Spacer(minLength: 0)
                 }
                 VStack(alignment: .leading, spacing: DSTokens.md) {
-                    VStack(alignment: .leading, spacing: DSTokens.xs) {
-                        Text("Interface language").font(.system(size: 12, weight: .medium)).foregroundStyle(.secondary)
-                        Picker("Interface language", selection: $appLocaleRaw) {
-                            Text("Auto (System)").tag("auto")
-                            Text("Русский").tag("ru")
-                            Text("English").tag("en")
-                        }
-                        .pickerStyle(.segmented)
-                        .labelsHidden()
-                        .onChange(of: appLocaleRaw) { _, newValue in
-                            model.appLocaleRaw = newValue
-                            if let win = NSApp.windows.first(where: { $0.identifier?.rawValue == "AbubTranslateSettings" }) {
-                                win.title = model.localizedString("AbubTranslate Settings")
-                            }
-                        }
-                    }
-                    VStack(alignment: .leading, spacing: DSTokens.xs) {
-                        Text("Theme").font(.system(size: 12, weight: .medium)).foregroundStyle(.secondary)
-                        Picker("Theme", selection: $appearanceMode) {
-                            Text("Automatic").tag("system")
-                            Text("Light").tag("light")
-                            Text("Dark").tag("dark")
-                        }
-                        .pickerStyle(.segmented)
-                        .labelsHidden()
-                        .onChange(of: appearanceMode) { _, _ in
-                            model.applyAppearance()
-                        }
-                    }
+                    interfaceLanguagePicker(width: nil)
+                    themePicker(width: nil)
                 }
             }
             HStack(alignment: .top, spacing: DSTokens.xl) {
@@ -551,6 +542,12 @@ struct SettingsView: View {
 
     private func localModelRow(pairKey: String, label: String) -> some View {
         let state = model.modelDownloader.state(for: pairKey)
+        // Пара может ждать в очереди, не будучи ни .downloading, ни .notDownloaded
+        // с точки зрения state() — он про очередь ничего не знает. Без этой
+        // проверки строка показывала обычный «Скачать», и клик по нему
+        // запускал закачку в обход очереди — как раз то, чего очередь
+        // должна была не допускать.
+        let isQueued = model.modelDownloader.isQueued(pairKey: pairKey)
         let _ = modelDownloaderStateTick
 
         return VStack(alignment: .leading, spacing: DSTokens.sm) {
@@ -560,46 +557,61 @@ struct SettingsView: View {
                         .font(.system(size: 13, weight: .semibold))
                         .lineLimit(1)
                         .truncationMode(.middle)
-                    switch state {
-                    case .notDownloaded:
-                        Text("Not downloaded").font(.system(size: 12)).foregroundStyle(.secondary)
-                    case .downloading(let progress):
-                        Text("Downloading \(Int(progress * 100))%…").font(.system(size: 12)).foregroundStyle(.secondary)
-                    case .downloaded(let size):
-                        Text(String(format: "Downloaded (%.1f MB)", size)).font(.system(size: 12)).foregroundStyle(.secondary)
-                    case .failed(let msg):
-                        Text(msg).font(.system(size: 12)).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
+                    if isQueued {
+                        Text("Waiting in queue…").font(.system(size: 12)).foregroundStyle(.secondary)
+                    } else {
+                        switch state {
+                        case .notDownloaded:
+                            Text("Not downloaded").font(.system(size: 12)).foregroundStyle(.secondary)
+                        case .downloading(let progress):
+                            Text("Downloading \(Int(progress * 100))%…").font(.system(size: 12)).foregroundStyle(.secondary)
+                        case .downloaded(let size):
+                            // String(format:) сам по себе .strings не читает —
+                            // без String(localized:) вокруг формата ключ в
+                            // ru.lproj был мёртвым, строка выходила по-английски.
+                            Text(String(format: String(localized: "Downloaded (%.1f MB)"), size)).font(.system(size: 12)).foregroundStyle(.secondary)
+                        case .failed(let msg):
+                            Text(msg).font(.system(size: 12)).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
+                        }
                     }
                 }
                 Spacer(minLength: DSTokens.sm)
                 // Action zone — not tight row, items-start, gap 8
                 HStack(spacing: DSTokens.sm) {
-                    switch state {
-                    case .notDownloaded, .failed:
-                        Button("Download") {
-                            model.modelDownloader.download(pairKey: pairKey)
-                            startTicking()
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.small)
-                    case .downloading:
-                        ProgressView(value: {
-                            if case .downloading(let p) = state { return p } else { return 0 }
-                        }())
-                        .controlSize(.small)
-                        .frame(width: 56)
+                    if isQueued {
                         Button("Cancel") {
                             model.modelDownloader.cancel(pairKey: pairKey)
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
-                    case .downloaded:
-                        Button("Delete") {
-                            model.modelDownloader.delete(pairKey: pairKey)
+                    } else {
+                        switch state {
+                        case .notDownloaded, .failed:
+                            Button("Download") {
+                                model.modelDownloader.download(pairKey: pairKey)
+                                startTicking()
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.small)
+                        case .downloading:
+                            ProgressView(value: {
+                                if case .downloading(let p) = state { return p } else { return 0 }
+                            }())
+                            .controlSize(.small)
+                            .frame(width: 56)
+                            Button("Cancel") {
+                                model.modelDownloader.cancel(pairKey: pairKey)
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                        case .downloaded:
+                            Button("Delete") {
+                                model.modelDownloader.delete(pairKey: pairKey)
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                            .tint(.red)
                         }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                        .tint(.red)
                     }
                 }
             }

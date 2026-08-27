@@ -175,3 +175,7 @@
 "Already downloaded" = "Уже скачано";
 "Select to download" = "Отметьте для скачивания";
 "Models are downloaded one at a time and kept until you delete them. Only the model currently in use is loaded into memory; it is released after a minute of inactivity." = "Модели скачиваются по одной и хранятся, пока вы их не удалите. В память загружается только используемая — она выгружается после минуты простоя.";
+
+/* Аудит: summaryCard теперь локализуется, а не выводится дословно */
+"Source: %@" = "Источник: %@";
+"Waiting in queue…" = "Ждёт своей очереди…";
