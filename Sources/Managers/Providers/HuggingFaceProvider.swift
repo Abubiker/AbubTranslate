@@ -17,7 +17,6 @@ struct HuggingFaceProvider: TranslationProvider {
     let id = "huggingface"
     let name = "HuggingFace"
     let charLimit = 500
-    let requiresKey = true // анонимный доступ HuggingFace отключил, токен обязателен
 
     var token: String? {
         KeychainHelper.huggingFaceToken

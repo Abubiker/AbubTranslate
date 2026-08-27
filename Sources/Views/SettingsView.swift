@@ -13,9 +13,7 @@ struct SettingsView: View {
     @State private var cloudEmail: String = ""
     @State private var engineMode: String = "apple"
     @State private var sourceLanguage: String = "auto"
-    @State private var selectedModelSources: Set<String> = []
     @State private var appLocaleRaw: String = "auto"
-    @State private var modelDownloaderStateTick = 0
 
     var body: some View {
         ScrollView {
@@ -195,7 +193,7 @@ struct SettingsView: View {
     }
 
     private func engineActivitySubtitle(engine: EngineMode) -> LocalizedStringKey {
-        guard let lastName = model.lastProviderName, model.lastUsedCloud || model.lastUsedLocal else {
+        guard let lastName = model.lastProviderName, model.lastUsedCloud else {
             return "\(model.targetAvailableCodes.count) languages"
         }
         let primaryName = engine.primaryProviderName
@@ -209,8 +207,7 @@ struct SettingsView: View {
 
     private func engineIcon(for mode: EngineMode) -> String {
         switch mode {
-        case .appleOnly, .appleMyMemory, .appleLocal, .appleLocalCloud: return "apple.logo"
-        case .localOnly: return "cpu"
+        case .appleOnly, .appleMyMemory: return "apple.logo"
         case .hfCloud: return "cloud"
         }
     }
@@ -279,19 +276,9 @@ struct SettingsView: View {
 
     @ViewBuilder
     private var contextualCard: some View {
-        let isLocalVisible = engineMode == EngineMode.localOnly.rawValue
-            || engineMode == EngineMode.appleLocal.rawValue
-            || engineMode == EngineMode.appleLocalCloud.rawValue
-        let isMyMemory = engineMode == EngineMode.appleMyMemory.rawValue
-        let isHF = engineMode == EngineMode.hfCloud.rawValue
-            || engineMode == EngineMode.appleLocalCloud.rawValue
-
-        if isLocalVisible {
-            localModelsCard
-        }
-        if isMyMemory {
+        if engineMode == EngineMode.appleMyMemory.rawValue {
             myMemoryCard
-        } else if isHF {
+        } else if engineMode == EngineMode.hfCloud.rawValue {
             hfCard
         }
     }
@@ -358,64 +345,6 @@ struct SettingsView: View {
                 Text(mode.description)
                     .footnoteMuted()
             }
-        }
-        .cardSurface()
-    }
-
-    private var localModelsCard: some View {
-        VStack(alignment: .leading, spacing: DSTokens.md) {
-            cardHeader(overline: "Offline", title: "Local neural models (OPUS)", icon: "internaldrive", description: nil)
-
-            Text("Sources to download for \(model.displayName(for: model.targetLanguageCode))")
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            sourceCheckboxGrid
-
-            HStack(spacing: DSTokens.sm) {
-                Button {
-                    let keys = selectedModelSources.map {
-                        model.modelDownloader.pairKey(from: $0, to: model.targetLanguageCode)
-                    }
-                    model.modelDownloader.enqueue(keys)
-                    selectedModelSources.removeAll()
-                    startTicking()
-                } label: {
-                    Text("Download selected")
-                        .font(.system(size: 13, weight: .medium))
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
-                .disabled(selectedModelSources.isEmpty)
-
-                if !model.modelDownloader.queue.isEmpty {
-                    Text("In queue: \(model.modelDownloader.queue.count)")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-                }
-                Spacer(minLength: 0)
-            }
-
-            let downloaded = model.modelDownloader.allDownloadedPairs()
-            let active = model.modelDownloader.queue + downloaded
-            if !active.isEmpty {
-                Divider().opacity(0.5)
-                ForEach(active, id: \.self) { pairKey in
-                    localModelRow(pairKey: pairKey, label: pairLabel(pairKey))
-                }
-            }
-
-            if !downloaded.isEmpty {
-                Text("On disk: \(downloaded.count) models, \(Int(model.modelDownloader.totalSizeMB())) MB")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-
-            Text("Downloaded one at a time, kept until deleted. Only the active model stays in memory.")
-                .footnoteMuted()
         }
         .cardSurface()
     }
@@ -568,105 +497,6 @@ struct SettingsView: View {
         return codes.sorted { model.displayName(for: $0) < model.displayName(for: $1) }
     }
 
-    private func localModelRow(pairKey: String, label: String) -> some View {
-        let state = model.modelDownloader.state(for: pairKey)
-        // Пара может ждать в очереди, не будучи ни .downloading, ни .notDownloaded
-        // с точки зрения state() — он про очередь ничего не знает. Без этой
-        // проверки строка показывала обычный «Скачать», и клик по нему
-        // запускал закачку в обход очереди — как раз то, чего очередь
-        // должна была не допускать.
-        let isQueued = model.modelDownloader.isQueued(pairKey: pairKey)
-        let _ = modelDownloaderStateTick
-
-        return VStack(alignment: .leading, spacing: DSTokens.sm) {
-            HStack(alignment: .top, spacing: DSTokens.md) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(label)
-                        .font(.system(size: 13, weight: .semibold))
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                    if isQueued {
-                        Text("Waiting in queue…").font(.system(size: 12)).foregroundStyle(.secondary)
-                    } else {
-                        switch state {
-                        case .notDownloaded:
-                            Text("Not downloaded").font(.system(size: 12)).foregroundStyle(.secondary)
-                        case .downloading(let progress):
-                            Text("Downloading \(Int(progress * 100))%…").font(.system(size: 12)).foregroundStyle(.secondary)
-                        case .downloaded(let size):
-                            // String(format:) сам по себе .strings не читает —
-                            // без String(localized:) вокруг формата ключ в
-                            // ru.lproj был мёртвым, строка выходила по-английски.
-                            Text(String(format: String(localized: "Downloaded (%.1f MB)"), size)).font(.system(size: 12)).foregroundStyle(.secondary)
-                        case .failed(let msg):
-                            Text(msg).font(.system(size: 12)).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
-                }
-                Spacer(minLength: DSTokens.sm)
-                // Action zone — not tight row, items-start, gap 8
-                HStack(spacing: DSTokens.sm) {
-                    if isQueued {
-                        Button("Cancel") {
-                            model.modelDownloader.cancel(pairKey: pairKey)
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                    } else {
-                        switch state {
-                        case .notDownloaded, .failed:
-                            Button("Download") {
-                                model.modelDownloader.download(pairKey: pairKey)
-                                startTicking()
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .controlSize(.small)
-                        case .downloading:
-                            ProgressView(value: {
-                                if case .downloading(let p) = state { return p } else { return 0 }
-                            }())
-                            .controlSize(.small)
-                            .frame(width: 56)
-                            Button("Cancel") {
-                                model.modelDownloader.cancel(pairKey: pairKey)
-                            }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
-                        case .downloaded:
-                            Button("Delete") {
-                                model.modelDownloader.delete(pairKey: pairKey)
-                            }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
-                            .tint(.red)
-                        }
-                    }
-                }
-            }
-            if case .downloading(let p) = state {
-                ProgressView(value: p)
-                    .progressViewStyle(.linear)
-                    .tint(.secondary)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private func startTicking() {
-        Task { @MainActor in
-            for _ in 0..<200 {
-                try? await Task.sleep(for: .milliseconds(500))
-                modelDownloaderStateTick += 1
-                let downloading = model.modelDownloader.queue.isEmpty == false
-                    || model.modelDownloader.allDownloadedPairs().contains {
-                        if case .downloading = model.modelDownloader.state(for: $0) { return true } else { return false }
-                    }
-                    || model.modelDownloader.hasActiveDownload
-                if !downloading { break }
-            }
-        }
-    }
-
     private var accessibilityNotice: some View {
         VStack(alignment: .leading, spacing: DSTokens.sm) {
             Label(
@@ -696,43 +526,6 @@ struct SettingsView: View {
                 .stroke(Color.orange.opacity(0.18), lineWidth: 0.5)
         )
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    /// Сетка чекбоксов исходных языков. Grid, а не список: пар много,
-    /// вертикальный список на 22 строки утопил бы карточку.
-    private var sourceCheckboxGrid: some View {
-        let codes = model.targetAvailableCodes.filter { $0 != model.targetLanguageCode }
-        return LazyVGrid(
-            columns: Array(repeating: GridItem(.flexible(), alignment: .leading), count: 3),
-            alignment: .leading,
-            spacing: DSTokens.xs
-        ) {
-            ForEach(codes, id: \.self) { code in
-                let key = model.modelDownloader.pairKey(from: code, to: model.targetLanguageCode)
-                let already = model.modelDownloader.isDownloaded(pairKey: key)
-                Toggle(isOn: Binding(
-                    get: { selectedModelSources.contains(code) },
-                    set: { on in
-                        if on { selectedModelSources.insert(code) } else { selectedModelSources.remove(code) }
-                    }
-                )) {
-                    Text(model.displayName(for: code))
-                        .font(.system(size: 12))
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                }
-                .toggleStyle(.checkbox)
-                .disabled(already)
-                .opacity(already ? 0.45 : 1)
-                .help(already ? Text("Already downloaded") : Text("Select to download"))
-            }
-        }
-    }
-
-    private func pairLabel(_ pairKey: String) -> String {
-        let parts = pairKey.split(separator: "-", maxSplits: 1).map(String.init)
-        guard parts.count == 2 else { return pairKey }
-        return "\(model.displayName(for: parts[0])) → \(model.displayName(for: parts[1]))"
     }
 
     private var targetBinding: Binding<String> {

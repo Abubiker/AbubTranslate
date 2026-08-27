@@ -137,8 +137,8 @@ struct PanelView: View {
         pill(text, size: DSTokens.metaSize)
     }
 
-    private func providerCapsule(name: String, isLocal: Bool) -> some View {
-        pill(name, systemImage: isLocal ? "cpu" : "cloud", size: 11)
+    private func providerCapsule(name: String) -> some View {
+        pill(name, systemImage: "cloud", size: 11)
     }
 
     // MARK: - Карточка оригинала
@@ -232,11 +232,8 @@ struct PanelView: View {
                         .tint(.secondary)
                 }
                 Spacer(minLength: DSTokens.sm)
-                if (model.lastUsedCloud || model.lastUsedLocal), !model.translatedText.isEmpty {
-                    providerCapsule(
-                        name: model.lastProviderName ?? model.cloudProviderName,
-                        isLocal: model.lastUsedLocal
-                    )
+                if model.lastUsedCloud, !model.translatedText.isEmpty {
+                    providerCapsule(name: model.lastProviderName ?? model.cloudProviderName)
                 }
                 targetLanguageMenu
             }
@@ -286,28 +283,8 @@ struct PanelView: View {
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
 
-        case .failedNeedsDownload(let message):
-            VStack(alignment: .leading, spacing: DSTokens.sm) {
-                Label(message, systemImage: "exclamationmark.triangle.fill")
-                    .font(.system(size: DSTokens.labelSize, weight: .medium))
-                    .foregroundStyle(.orange)
-                    .fixedSize(horizontal: false, vertical: true)
-                Button {
-                    model.showSettings?()
-                } label: {
-                    Label("Open Settings to download model", systemImage: "gearshape")
-                        .font(.system(size: DSTokens.labelSize, weight: .medium))
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-            }
-            .frame(maxWidth: .infinity, alignment: .topLeading)
-
         case .preparing:
             statusRow(icon: "arrow.down.circle", text: "Downloading the language pack…")
-
-        case .workingLocal:
-            statusRow(icon: "cpu", text: String(localized: "Translating via OPUS (offline)…"))
 
         case .workingCloud:
             statusRow(icon: "cloud", text: String(localized: "Translating via \(model.cloudProviderName)…"))

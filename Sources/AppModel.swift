@@ -11,14 +11,10 @@ final class AppModel {
         case working
         /// Языковой пакет ещё не скачан — система тянет его в фоне.
         case preparing
-        /// Локальная нейронка OPUS.
-        case workingLocal
         /// Системный движок не умеет пару — ушли в облачный запасной.
         case workingCloud
         case done
         case failed(String)
-        /// Локальная модель не скачана — в панели покажем кнопку в настройки.
-        case failedNeedsDownload(String)
         /// Оригинал уже на целевом языке. `suggestion` — что предложить кнопкой.
         case sameLanguage(detected: Locale.Language, suggestion: Locale.Language?)
     }
@@ -48,16 +44,13 @@ final class AppModel {
     private let clipboard = ClipboardManager()
     private let selection = SelectionReader()
     let hotKeys = HotKeyManager()
-    private let localTranslator = LocalNeuralTranslator()
-    let modelDownloader = ModelDownloader.shared
 
     var isWorking: Bool {
-        status == .working || status == .preparing || status == .workingLocal || status == .workingCloud
+        status == .working || status == .preparing || status == .workingCloud
     }
 
     /// Последний перевод пришёл из облака, а не с устройства.
     var lastUsedCloud = false
-    var lastUsedLocal = false
     var lastProviderName: String?
     var isSpeaking: Bool { speech.isSpeaking }
     var canSpeak: Bool { !translatedText.isEmpty || speech.lastSpokenText != nil }
@@ -488,7 +481,6 @@ final class AppModel {
         lastTranslatedSource = text
         translatedText = ""
         lastUsedCloud = false
-        lastUsedLocal = false
         lastProviderName = nil
         speech.stop()
 
@@ -530,56 +522,16 @@ final class AppModel {
                 if await self.tryAppleTranslation(detected: detected, candidates: candidates) { return }
                 guard !Task.isCancelled else { return }
                 self.status = .failed(self.unsupportedMessage(for: detected))
-                return
 
             case .appleMyMemory:
                 // Apple → MyMemory
                 if await self.tryAppleTranslation(detected: detected, candidates: candidates) { return }
                 guard !Task.isCancelled else { return }
                 await self.translateViaMyMemoryOnly(text: text, detected: detected, candidates: candidates)
-                return
-
-            case .localOnly:
-                // Только локальная OPUS (оффлайн, без Apple)
-                let done = await self.tryLocalTranslation(text: text, detected: detected, candidates: candidates)
-                if done { return }
-                guard !Task.isCancelled else { return }
-                if case .failedNeedsDownload = self.status { return }
-                // Если локаль не умеет — пробуем? Нет, т.к. только локальная
-                self.status = .failed(self.unsupportedMessage(for: detected))
-                return
 
             case .hfCloud:
-                // Облачные модели: HuggingFace (требует токен) → MyMemory, без Apple/local
+                // Облачные модели: HuggingFace (требует токен) → MyMemory, без Apple
                 await self.translateViaHFChain(text: text, detected: detected, candidates: candidates)
-                return
-
-            case .appleLocal:
-                // Legacy: Apple → Local
-                if await self.tryAppleTranslation(detected: detected, candidates: candidates) { return }
-                guard !Task.isCancelled else { return }
-                let done = await self.tryLocalTranslation(text: text, detected: detected, candidates: candidates)
-                if done { return }
-                guard !Task.isCancelled else { return }
-                if case .failedNeedsDownload = self.status { return }
-                self.status = .failed(self.unsupportedMessage(for: detected))
-                return
-
-            case .appleLocalCloud:
-                // Legacy: Apple → Local → HF chain
-                if await self.tryAppleTranslation(detected: detected, candidates: candidates) { return }
-                guard !Task.isCancelled else { return }
-                let done = await self.tryLocalTranslation(text: text, detected: detected, candidates: candidates)
-                if done { return }
-                // failedNeedsDownload уже выставлен, но пробуем cloud как fallback
-                if case .failedNeedsDownload = self.status {
-                    // не return — пробуем cloud
-                } else if done {
-                    return
-                }
-                guard !Task.isCancelled else { return }
-                await self.translateViaHFChain(text: text, detected: detected, candidates: candidates)
-                return
             }
         }
     }
@@ -615,60 +567,6 @@ final class AppModel {
         return false
     }
 
-    private func tryLocalTranslation(
-        text: String,
-        detected: Locale.Language,
-        candidates: [Locale.Language]
-    ) async -> Bool {
-        guard let target = candidates.first,
-              let sourceCode = detected.languageCode?.identifier,
-              let targetCode = target.languageCode?.identifier
-        else { return false }
-
-        let pairKey = modelDownloader.pairKey(from: sourceCode, to: targetCode)
-        if !modelDownloader.isDownloaded(pairKey: pairKey) {
-            status = .failedNeedsDownload(
-                String(localized: "Local model for \(pairKey) is not downloaded. Open Settings to download it.")
-            )
-            return false
-        }
-
-        status = .workingLocal
-        do {
-            let result = try await localTranslator.translate(text, from: sourceCode, to: targetCode)
-            guard !Task.isCancelled else { return true }
-            currentTargetCode = targetCode
-            lastUsedLocal = true
-            lastProviderName = localTranslator.providerName
-            finishTranslation(result)
-            return true
-        } catch is CancellationError {
-            resetStatus()
-            return true
-        } catch let err as LocalNeuralTranslator.LocalError {
-            switch err {
-            case .notDownloaded(let pair):
-                status = .failedNeedsDownload(
-                    String(localized: "Local model for \(pair) is not downloaded. Open Settings to download it.")
-                )
-                return false
-            default:
-                // Даём шанс cloud если текущий режим его подразумевает
-                if engineMode == .hfCloud || engineMode == .appleLocalCloud {
-                    return false
-                }
-                status = .failed(err.localizedDescription)
-                return true
-            }
-        } catch {
-            if engineMode == .hfCloud || engineMode == .appleLocalCloud {
-                return false
-            }
-            status = .failed(error.localizedDescription)
-            return true
-        }
-    }
-
     private func activeCloudProviders(for mode: EngineMode? = nil) -> [any TranslationProvider] {
         let m = mode ?? engineMode
         switch m {
@@ -676,7 +574,7 @@ final class AppModel {
             var my = MyMemoryProvider()
             my.contactEmail = cloudContactEmail
             return [my]
-        case .hfCloud, .appleLocalCloud:
+        case .hfCloud:
             // HuggingFace приоритет (нужен токен), MyMemory — запасной.
             // LibreTranslate убран: публичный инстанс переехал и теперь
             // требует платный ключ — бесплатного пути у него больше нет.

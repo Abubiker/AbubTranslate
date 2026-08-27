@@ -6,7 +6,6 @@ struct MyMemoryProvider: TranslationProvider {
     let id = "mymemory"
     let name = "MyMemory"
     let charLimit = 480
-    let requiresKey = false
 
     /// Почта для повышения лимита с 5k до 50k слов/сутки.
     var contactEmail: String?
