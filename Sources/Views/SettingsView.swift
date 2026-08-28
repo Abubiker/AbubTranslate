@@ -5,30 +5,32 @@ struct SettingsView: View {
     @Environment(AppModel.self) private var model
     @AppStorage("appearanceMode") private var appearanceMode = "system"
     @State private var launchAtLogin = false
-    // Движок, токен HuggingFace и почта MyMemory — единственные поля в этом
-    // экране, которые НЕ применяются на лету: смена движка посреди набора
-    // токена гоняла бы перевод по недописанному ключу. Черновик живёт здесь
+    // Движок и ключи облачных движков — единственные поля в этом экране,
+    // которые НЕ применяются на лету: смена движка посреди набора ключа
+    // гоняла бы перевод по недописанным данным. Черновик живёт здесь
     // и уходит в модель только по нажатию «Сохранить».
-    @State private var hfToken: String = ""
     @State private var cloudEmail: String = ""
     @State private var azureKey: String = ""
     @State private var azureRegion: String = ""
     @State private var googleKey: String = ""
+    @State private var yandexKey: String = ""
+    @State private var yandexFolderId: String = ""
     @State private var engineMode: String = "apple"
     // Снимок последнего сохранённого состояния — сравнение hasCloudDraftChanges
     // идёт против ЭТИХ @State, не против model.*. model.engineMode/
-    // huggingFaceToken/cloudContactEmail — вычисляемые свойства поверх
+    // cloudContactEmail и т.п. — вычисляемые свойства поверх
     // UserDefaults/Keychain, @Observable их не отслеживает: запись в них не
     // помечает вьюху грязной. Если единственное реальное изменение — почта,
     // а движок остался тем же (String присвоение самому себе SwiftUI не
     // считает изменением), вьюха не перерисовывалась вообще — и полоса
     // «Сохранить» висела вечно, хотя запись в UserDefaults уже прошла.
     @State private var savedEngineMode: String = "apple"
-    @State private var savedHFToken: String = ""
     @State private var savedCloudEmail: String = ""
     @State private var savedAzureKey: String = ""
     @State private var savedAzureRegion: String = ""
     @State private var savedGoogleKey: String = ""
+    @State private var savedYandexKey: String = ""
+    @State private var savedYandexFolderId: String = ""
     @State private var sourceLanguage: String = "auto"
     @State private var appLocaleRaw: String = "auto"
 
@@ -65,26 +67,29 @@ struct SettingsView: View {
     /// не коммитим за пользователя молча.
     private func resetCloudDraft() {
         engineMode = model.engineMode.rawValue
-        hfToken = model.huggingFaceToken ?? ""
         cloudEmail = model.cloudContactEmail
         azureKey = model.azureKey ?? ""
         azureRegion = model.azureRegion ?? ""
         googleKey = model.googleKey ?? ""
+        yandexKey = model.yandexKey ?? ""
+        yandexFolderId = model.yandexFolderId ?? ""
         savedEngineMode = engineMode
-        savedHFToken = hfToken
         savedCloudEmail = cloudEmail
         savedAzureKey = azureKey
         savedAzureRegion = azureRegion
         savedGoogleKey = googleKey
+        savedYandexKey = yandexKey
+        savedYandexFolderId = yandexFolderId
     }
 
     private var hasCloudDraftChanges: Bool {
         engineMode != savedEngineMode
-            || hfToken != savedHFToken
             || cloudEmail != savedCloudEmail
             || azureKey != savedAzureKey
             || azureRegion != savedAzureRegion
             || googleKey != savedGoogleKey
+            || yandexKey != savedYandexKey
+            || yandexFolderId != savedYandexFolderId
     }
 
     private func saveCloudDraft() {
@@ -92,17 +97,19 @@ struct SettingsView: View {
             model.engineMode = mode
             engineMode = mode.rawValue
         }
-        model.huggingFaceToken = hfToken
         model.cloudContactEmail = cloudEmail
         model.azureKey = azureKey
         model.azureRegion = azureRegion
         model.googleKey = googleKey
+        model.yandexKey = yandexKey
+        model.yandexFolderId = yandexFolderId
         savedEngineMode = engineMode
-        savedHFToken = hfToken
         savedCloudEmail = cloudEmail
         savedAzureKey = azureKey
         savedAzureRegion = azureRegion
         savedGoogleKey = googleKey
+        savedYandexKey = yandexKey
+        savedYandexFolderId = yandexFolderId
     }
 
     // MARK: - Page header — отвечает "what is active"
@@ -177,9 +184,9 @@ struct SettingsView: View {
                 overline: "Engine",
                 title: LocalizedStringKey(engine.displayName),
                 // Выбранный режим ≠ то, что реально перевело последний раз:
-                // HuggingFace без токена падает 401, и цепочка
+                // облачный движок без ключа падает, и цепочка
                 // молча уходит в MyMemory. Показываем правду, а не намерение —
-                // иначе непонятно, почему выбран HF, а работает MyMemory.
+                // иначе непонятно, почему выбран один движок, а работает другой.
                 subtitle: engineActivitySubtitle(engine: engine),
                 icon: engineIcon(for: engine)
             )
@@ -246,7 +253,7 @@ struct SettingsView: View {
     private func engineIcon(for mode: EngineMode) -> String {
         switch mode {
         case .appleOnly, .appleMyMemory: return "apple.logo"
-        case .hfCloud, .azureCloud, .googleCloud: return "cloud"
+        case .azureCloud, .googleCloud, .yandexCloud: return "cloud"
         }
     }
 
@@ -316,12 +323,12 @@ struct SettingsView: View {
     private var contextualCard: some View {
         if engineMode == EngineMode.appleMyMemory.rawValue {
             myMemoryCard
-        } else if engineMode == EngineMode.hfCloud.rawValue {
-            hfCard
         } else if engineMode == EngineMode.azureCloud.rawValue {
             azureCard
         } else if engineMode == EngineMode.googleCloud.rawValue {
             googleCard
+        } else if engineMode == EngineMode.yandexCloud.rawValue {
+            yandexCard
         }
     }
 
@@ -409,34 +416,6 @@ struct SettingsView: View {
             .foregroundStyle(.secondary)
     }
 
-    private var hfCard: some View {
-        VStack(alignment: .leading, spacing: DSTokens.md) {
-            cardHeader(overline: "Cloud", title: "HuggingFace", icon: "cloud", description: nil)
-
-            SecureField("HuggingFace token", text: $hfToken, prompt: Text("hf_…"))
-                .textFieldStyle(.roundedBorder)
-                .font(.system(size: 13))
-            Text("Anonymous access is blocked. Get one at huggingface.co/settings/tokens")
-                .footnoteMuted()
-
-            Divider().opacity(0.5)
-
-            // Автоматический запасной вариант — не часть выбора пользователя,
-            // поэтому оформлен отдельным блоком, а не второй колонкой рядом
-            // с HuggingFace: без LibreTranslate тут больше не пара, а один
-            // провайдер плюс его фолбэк.
-            VStack(alignment: .leading, spacing: DSTokens.xs) {
-                providerLabel("MyMemory — fallback")
-                TextField("Email", text: $cloudEmail, prompt: Text("optional"))
-                    .textFieldStyle(.roundedBorder)
-                    .font(.system(size: 13))
-                Text("Automatic fallback if HuggingFace has no token or fails.")
-                    .footnoteMuted()
-            }
-        }
-        .cardSurface()
-    }
-
     private var azureCard: some View {
         VStack(alignment: .leading, spacing: DSTokens.md) {
             cardHeader(overline: "Cloud", title: "Azure Translator", icon: "cloud", description: nil)
@@ -482,6 +461,33 @@ struct SettingsView: View {
                     .textFieldStyle(.roundedBorder)
                     .font(.system(size: 13))
                 Text("Automatic fallback if Google has no key or fails.")
+                    .footnoteMuted()
+            }
+        }
+        .cardSurface()
+    }
+
+    private var yandexCard: some View {
+        VStack(alignment: .leading, spacing: DSTokens.md) {
+            cardHeader(overline: "Cloud", title: "Yandex Translate", icon: "cloud", description: nil)
+
+            SecureField("Yandex key", text: $yandexKey, prompt: Text("API key"))
+                .textFieldStyle(.roundedBorder)
+                .font(.system(size: 13))
+            TextField("Folder ID", text: $yandexFolderId, prompt: Text("required"))
+                .textFieldStyle(.roundedBorder)
+                .font(.system(size: 13))
+            Text("Both key and Folder ID are required. Get them at console.cloud.yandex.com.")
+                .footnoteMuted()
+
+            Divider().opacity(0.5)
+
+            VStack(alignment: .leading, spacing: DSTokens.xs) {
+                providerLabel("MyMemory — fallback")
+                TextField("Email", text: $cloudEmail, prompt: Text("optional"))
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: 13))
+                Text("Automatic fallback if Yandex has no key or fails.")
                     .footnoteMuted()
             }
         }

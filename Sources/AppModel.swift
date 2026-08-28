@@ -180,7 +180,7 @@ final class AppModel {
         // Старого ключа нет — миграция cloudFallback или дефолт
         if UserDefaults.standard.object(forKey: "cloudFallback") != nil {
             let oldCloud = UserDefaults.standard.object(forKey: "cloudFallback") as? Bool ?? true
-            let migrated: EngineMode = oldCloud ? .hfCloud : .appleOnly
+            let migrated: EngineMode = oldCloud ? .appleMyMemory : .appleOnly
             UserDefaults.standard.set(migrated.rawValue, forKey: "translationEngine")
         } else {
             UserDefaults.standard.set(EngineMode.appleOnly.rawValue, forKey: "translationEngine")
@@ -208,11 +208,6 @@ final class AppModel {
     }
 
     // Провайдеры облака для RU-friendly цепочки
-    var huggingFaceToken: String? {
-        get { KeychainHelper.huggingFaceToken }
-        set { KeychainHelper.huggingFaceToken = newValue }
-    }
-
     var azureKey: String? {
         get { KeychainHelper.azureKey }
         set { KeychainHelper.azureKey = newValue }
@@ -227,6 +222,17 @@ final class AppModel {
     var googleKey: String? {
         get { KeychainHelper.googleKey }
         set { KeychainHelper.googleKey = newValue }
+    }
+
+    var yandexKey: String? {
+        get { KeychainHelper.yandexKey }
+        set { KeychainHelper.yandexKey = newValue }
+    }
+
+    /// Не секрет — не в Keychain по необходимости, а для единообразия с ключом.
+    var yandexFolderId: String? {
+        get { KeychainHelper.yandexFolderId }
+        set { KeychainHelper.yandexFolderId = newValue }
     }
 
     var targetLanguage: Locale.Language { Locale.Language(identifier: targetLanguageCode) }
@@ -545,10 +551,6 @@ final class AppModel {
                 guard !Task.isCancelled else { return }
                 await self.translateViaMyMemoryOnly(text: text, detected: detected, candidates: candidates)
 
-            case .hfCloud:
-                // Облачные модели: HuggingFace (требует токен) → MyMemory, без Apple
-                await self.translateViaCloudChain(mode: .hfCloud, text: text, detected: detected, candidates: candidates)
-
             case .azureCloud:
                 // Облачные модели: Azure Translator (требует ключ) → MyMemory, без Apple
                 await self.translateViaCloudChain(mode: .azureCloud, text: text, detected: detected, candidates: candidates)
@@ -556,6 +558,10 @@ final class AppModel {
             case .googleCloud:
                 // Облачные модели: Google Translate (требует ключ) → MyMemory, без Apple
                 await self.translateViaCloudChain(mode: .googleCloud, text: text, detected: detected, candidates: candidates)
+
+            case .yandexCloud:
+                // Облачные модели: Yandex Translate (требует ключ и folderId) → MyMemory, без Apple
+                await self.translateViaCloudChain(mode: .yandexCloud, text: text, detected: detected, candidates: candidates)
             }
         }
     }
@@ -598,13 +604,6 @@ final class AppModel {
             var my = MyMemoryProvider()
             my.contactEmail = cloudContactEmail
             return [my]
-        case .hfCloud:
-            // HuggingFace приоритет (нужен токен), MyMemory — запасной.
-            // LibreTranslate убран: публичный инстанс переехал и теперь
-            // требует платный ключ — бесплатного пути у него больше нет.
-            var my = MyMemoryProvider()
-            my.contactEmail = cloudContactEmail
-            return [HuggingFaceProvider(), my]
         case .azureCloud:
             var my = MyMemoryProvider()
             my.contactEmail = cloudContactEmail
@@ -613,6 +612,10 @@ final class AppModel {
             var my = MyMemoryProvider()
             my.contactEmail = cloudContactEmail
             return [GoogleTranslateProvider(), my]
+        case .yandexCloud:
+            var my = MyMemoryProvider()
+            my.contactEmail = cloudContactEmail
+            return [YandexTranslateProvider(), my]
         default:
             return []
         }

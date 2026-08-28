@@ -68,10 +68,8 @@
 "Adds local models and, if they are missing, cloud providers as last resort. Text may leave your Mac." = "Добавляет локальные модели и, если их нет, облачные провайдеры как последний шанс. Текст может покинуть Mac.";
 "Apple + MyMemory" = "Apple + MyMemory";
 "Local neural only (OPUS)" = "Только локальная нейронка (OPUS)";
-"Cloud models (HuggingFace)" = "Облачные модели (HuggingFace)";
 "Apple first, MyMemory fallback for unsupported pairs. Free, works in Russia. Optional email raises quota." = "Apple сначала, MyMemory как запасной для неподдерживаемых пар. Бесплатно, работает в России. Почта опционально повышает лимит.";
 "Only offline OPUS models. Download models below. No network requests, ~150MB RAM during translation." = "Только офлайн-модели OPUS. Скачайте модели ниже. Без сети, ~150MB RAM во время перевода.";
-"Cloud HuggingFace (NLLB/OPUS). Works in Russia, free without card. Optional HF token raises limits. Text leaves your Mac." = "Облако HuggingFace (NLLB/OPUS). Работает в России, бесплатно без карты. Токен HF опционально повышает лимиты. Текст покидает Mac.";
 "Local model for %@ is not downloaded. Open Settings to download it." = "Локальная модель для %@ не скачана. Откройте Настройки чтобы скачать.";
 "Failed to load local model: %@" = "Не удалось загрузить локальную модель: %@";
 "Local translation failed: %@" = "Локальный перевод не удался: %@";
@@ -82,7 +80,6 @@
 "Engine:" = "Движок:";
 "Cloud fallback (when local model missing)" = "Облачный запасной (когда локальной модели нет)";
 "Email for MyMemory (optional):" = "Почта для MyMemory (необязательно):";
-"HuggingFace token (optional):" = "Токен HuggingFace (необязательно):";
 "LibreTranslate URL (optional):" = "URL LibreTranslate (необязательно):";
 "LibreTranslate API key (if your server needs):" = "Ключ LibreTranslate (если сервер требует):";
 "Local neural models (OPUS) — offline" = "Локальные нейронки (OPUS) — офлайн";
@@ -91,7 +88,6 @@
 "Download" = "Скачать";
 "Cancel" = "Отмена";
 "Delete" = "Удалить";
-"hf_... — optional, raises limits" = "hf_... — необязательно, повышает лимиты";
 "https://libretranslate.de/translate" = "https://libretranslate.de/translate";
 "Downloaded (%.1f MB)" = "Скачана (%.1f MB)";
 "Downloading %d%%…" = "Скачивается %d%%…";
@@ -100,7 +96,6 @@
 "Auto-detect" = "Авто-определение";
 "Available for %@:" = "Доступно для %@:";
 "MyMemory (Apple + MyMemory)" = "MyMemory (Apple + MyMemory)";
-"Cloud: HuggingFace / LibreTranslate" = "Облако: HuggingFace / LibreTranslate";
 "Email (optional):" = "Почта (необязательно):";
 
 /* New UI — auto locale */
@@ -120,25 +115,20 @@
 "Interface & system" = "Интерфейс и система";
 "Auto (System)" = "Авто (система)";
 "Auto follows macOS system language. Interface updates immediately." = "Авто — язык macOS. Интерфейс обновляется сразу.";
-"HuggingFace works without a key (rate-limited) but a free token raises limits. Get at huggingface.co/settings/tokens" = "HuggingFace работает без ключа (лимитирован), токен повышает лимиты. Получить: huggingface.co/settings/tokens";
 "Local OPUS is fully offline. No network, no key needed — just download models below." = "Локальный OPUS полностью офлайн. Без сети, без ключа — просто скачайте модели ниже.";
 "Fully offline. No network requests." = "Полностью офлайн. Без сетевых запросов.";
-"HuggingFace Inference is free, works in Russia, no card. Without token rate-limited; with token limits higher. Get at huggingface.co/settings/tokens" = "HuggingFace Inference бесплатно, работает в России без карты. Без токена лимитирован, с токеном лимиты выше. Получить: huggingface.co/settings/tokens";
 "LibreTranslate is open-source. Public libretranslate.de works without a key. You can run your own server and enter its URL here." = "LibreTranslate — open-source. Публичный libretranslate.de без ключа. Можете запустить свой сервер и указать URL.";
 "Theme" = "Тема";
 "Startup" = "Автозапуск";
 "Appearance & startup" = "Внешний вид и запуск";
 "Local OPUS models work offline and use ~150 MB RAM only during translation (Neural Engine). Downloaded only when you press Download. Keep 3 most recent (LRU)." = "Локальные OPUS-модели офлайн, ~150 МБ RAM только во время перевода (Neural Engine). Скачиваются по нажатию. Хранятся 3 последние (LRU).";
 "Downloaded: %@" = "Скачано: %@";
-"HuggingFace token (optional)" = "Токен HuggingFace (необязательно)";
 "LibreTranslate URL (optional)" = "URL LibreTranslate (необязательно)";
 "LibreTranslate API key (if your server needs)" = "Ключ LibreTranslate (если сервер требует)";
 "MyMemory email (optional, fallback)" = "Почта MyMemory (необязательно, запасной)";
-"If HuggingFace/Libre fail (quota/network), MyMemory is tried as last resort. Text leaves your Mac only in this engine mode. Order: HuggingFace → LibreTranslate → MyMemory." = "Если HuggingFace/Libre не сработали (лимит/сеть), пробуется MyMemory как крайний случай. Текст покидает Mac только в этом режиме. Порядок: HuggingFace → LibreTranslate → MyMemory.";
 
 /* Шапки карточек настроек */
 "Local neural models (OPUS)" = "Локальные нейромодели (OPUS)";
-"HuggingFace / LibreTranslate" = "HuggingFace / LibreTranslate";
 
 /* Строки, оставшиеся без перевода */
 "Email (optional)" = "Почта (необязательно)";
@@ -149,7 +139,6 @@
 "%@ is not configured" = "%@ не настроен";
 "Download failed (HTTP %@)" = "Не удалось скачать (HTTP %@)";
 "Available for %@: %@ languages. Switch engine to see different sets." = "Доступно для %@: языков — %@. Смените движок, чтобы увидеть другой набор.";
-"hf_… — optional, raises limits" = "hf_… — необязательно, повышает лимиты";
 "Downloading %lld%…" = "Скачивается %lld%…";
 
 /* Редизайн панели: явная цель вместо пары */
@@ -177,31 +166,24 @@
 "Source: %@" = "Источник: %@";
 "Waiting in queue…" = "Ждёт своей очереди…";
 "MyMemory fallback" = "Запасной вариант — MyMemory";
-"HuggingFace" = "HuggingFace";
 "LibreTranslate" = "LibreTranslate";
 "Active: %@" = "Работает: %@";
 "Fallback: %@" = "Запасной вариант: %@";
 
 /* Трим: сухие описания вместо маркетинговых формулировок */
 "%lld languages available in the current engine." = "Доступно языков в текущем движке: %lld";
-"Adds local models, then HuggingFace." = "Плюс локальные модели, затем HuggingFace.";
 "Adds offline OPUS models below." = "Плюс офлайн-модели OPUS ниже.";
-"Anonymous access is blocked. Get one at huggingface.co/settings/tokens" = "Анонимный доступ закрыт. Получить токен: huggingface.co/settings/tokens";
 "Any keyboard layout. Uses the current selection, or the clipboard." = "Любая раскладка. Берёт выделение, иначе буфер обмена.";
 "Apple, then MyMemory for unsupported pairs." = "Apple, затем MyMemory для неподдерживаемых пар.";
 "Auto follows the system language." = "«Авто» следует языку системы.";
-"Automatic fallback if HuggingFace has no token or fails." = "Автоматический запасной вариант, если у HuggingFace нет токена или он не сработал.";
 "Downloaded one at a time, kept until deleted. Only the active model stays in memory." = "Скачиваются по одной, хранятся до удаления. В памяти — только активная модель.";
 "Email" = "Почта";
-"HuggingFace token" = "Токен HuggingFace";
-"HuggingFace. Requires a token." = "HuggingFace. Нужен токен.";
 "MyMemory — fallback" = "MyMemory — запасной вариант";
 "No key needed. 5k characters/day, 50k with any email — no signup." = "Ключ не нужен. 5 тыс. символов в сутки, 50 тыс. с любой почтой — без проверки и регистрации.";
 "Offline OPUS models. Download below." = "Офлайн-модели OPUS. Скачивание ниже.";
 "On-device. No network." = "На устройстве. Без сети.";
 "Source is detected automatically unless fixed." = "Оригинал определяется автоматически, если не задан вручную.";
 "Sources to download for %@" = "Исходные языки для «%@»";
-"hf_…" = "hf_…";
 
 /* Кнопка сохранения для движка/токена/почты */
 "Unsaved changes" = "Есть несохранённые изменения";
@@ -228,3 +210,13 @@
 "API key" = "API-ключ";
 "Billed past the free tier — no hard cap like Azure's F0. Get a key at console.cloud.google.com, watching your own quota is on you." = "Платно сверх бесплатного лимита — жёсткого барьера как у Azure F0 здесь нет. Ключ — на console.cloud.google.com, следить за своей квотой — на вас.";
 "Automatic fallback if Google has no key or fails." = "Автоматический запасной вариант, если у Google нет ключа или он не сработал.";
+
+/* Yandex Translate — новый движок */
+"Cloud models (Yandex)" = "Облачные модели (Yandex)";
+"Yandex Translate. Requires a key and a folder ID." = "Yandex Translate. Нужен ключ и Folder ID.";
+"Yandex Translate" = "Yandex Translate";
+"Yandex key" = "Ключ Yandex";
+"Folder ID" = "Folder ID";
+"required" = "обязательно";
+"Both key and Folder ID are required. Get them at console.cloud.yandex.com." = "Обязательны и ключ, и Folder ID. Получить на console.cloud.yandex.com.";
+"Automatic fallback if Yandex has no key or fails." = "Автоматический запасной вариант, если у Yandex нет ключа или он не сработал.";

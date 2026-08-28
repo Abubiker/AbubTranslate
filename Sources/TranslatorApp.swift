@@ -85,17 +85,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
             openSettingsFromMenu()
         }
 
-        // Диагностика HuggingFace/Azure: реальный запрос от лица уже
+        // Диагностика облачных движков: реальный запрос от лица уже
         // доверенного процесса, без нового бинарника — тот получал бы
         // диалог доступа к Keychain, а этот его уже давно прошёл.
-        if ProcessInfo.processInfo.arguments.contains("--hf-selftest") {
-            Task { await runHuggingFaceSelfTest() }
-        }
         if ProcessInfo.processInfo.arguments.contains("--azure-selftest") {
             Task { await runAzureSelfTest() }
         }
         if ProcessInfo.processInfo.arguments.contains("--google-selftest") {
             Task { await runGoogleSelfTest() }
+        }
+        if ProcessInfo.processInfo.arguments.contains("--yandex-selftest") {
+            Task { await runYandexSelfTest() }
         }
     }
 
@@ -109,60 +109,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
         } else {
             try? data.write(to: logURL)
         }
-    }
-
-    private func runHuggingFaceSelfTest() async {
-        let log = selfTestLog
-        let provider = HuggingFaceProvider()
-        let token = provider.token
-        log("=== HF selftest ===")
-        log("token найден: \(token != nil), длина: \(token?.count ?? 0)")
-        log("isConfigured(): \(provider.isConfigured())")
-
-        // Несколько живых пар напрямую через провайдер — не только en-ru.
-        let pairs: [(String, String, String)] = [
-            ("en", "ru", "Hello, how are you?"),
-            ("ru", "en", "Привет, как дела?"),
-            ("en", "de", "Good morning"),
-            ("en", "fr", "Thank you very much"),
-        ]
-        for (src, tgt, text) in pairs {
-            do {
-                let result = try await provider.translate(text, from: src, to: tgt)
-                log("\(src)->\(tgt): УСПЕХ: \(result)")
-            } catch {
-                log("\(src)->\(tgt): ОШИБКА: \(error.localizedDescription)")
-            }
-        }
-
-        // Пара, для которой нет opus-mt модели — должна честно упасть
-        // notSupported, а не зависнуть и не крашнуть.
-        do {
-            let result = try await provider.translate("Hello", from: "en", to: "ja")
-            log("en->ja (ожидаем отказ): неожиданно УСПЕХ: \(result)")
-        } catch {
-            log("en->ja (ожидаем отказ): \(error.localizedDescription)")
-        }
-
-        // Полная цепочка через AppModel, как в реальном использовании:
-        // движок hfCloud, пара без HF-модели — должна докатиться до MyMemory,
-        // а не просто зависнуть в ошибке.
-        let model = AppModel.shared
-        let previousEngine = model.engineMode
-        let previousTarget = model.targetLanguageCode
-        model.engineMode = .hfCloud
-        model.targetLanguageCode = "ja"
-        model.translate(text: "Hello, this is a fallback chain test")
-        for _ in 0..<40 {
-            try? await Task.sleep(for: .milliseconds(500))
-            if case .done = model.status { break }
-            if case .failed = model.status { break }
-        }
-        log("цепочка hfCloud, en->ja: status=\(model.status), lastProvider=\(model.lastProviderName ?? "nil"), lastUsedCloud=\(model.lastUsedCloud), text=\(model.translatedText)")
-        model.engineMode = previousEngine
-        model.targetLanguageCode = previousTarget
-
-        log("=== конец HF selftest ===")
     }
 
     /// Контракт собран строго по официальной документации Microsoft, живым
@@ -262,6 +208,57 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
         model.targetLanguageCode = previousTarget
 
         log("=== конец Google selftest ===")
+    }
+
+    /// Контракт восстановлен по открытому SDK и поисковым сниппетам, НЕ
+    /// официальной документацией напрямую (yandex.cloud/aistudio.yandex.ru
+    /// блокируют автоматические запросы CAPTCHA) и не проверен живым
+    /// запросом — тот же случай, что у Azure/Google. Прогнать можно тем же
+    /// приёмом: `--args --yandex-selftest`, как только в настройках
+    /// сохранены реальные ключ и Folder ID.
+    private func runYandexSelfTest() async {
+        let log = selfTestLog
+        let provider = YandexTranslateProvider()
+        log("=== Yandex selftest ===")
+        log("key найден: \(provider.key != nil), длина: \(provider.key?.count ?? 0)")
+        log("folderId найден: \(provider.folderId != nil), длина: \(provider.folderId?.count ?? 0)")
+        log("isConfigured(): \(provider.isConfigured())")
+
+        guard provider.isConfigured() else {
+            log("нет ключа/folderId — сохраните их в настройках и повторите")
+            return
+        }
+
+        let pairs: [(String, String, String)] = [
+            ("en", "ru", "Hello, how are you?"),
+            ("ru", "en", "Привет, как дела?"),
+            ("en", "de", "Good morning"),
+        ]
+        for (src, tgt, text) in pairs {
+            do {
+                let result = try await provider.translate(text, from: src, to: tgt)
+                log("\(src)->\(tgt): УСПЕХ: \(result)")
+            } catch {
+                log("\(src)->\(tgt): ОШИБКА: \(error.localizedDescription)")
+            }
+        }
+
+        let model = AppModel.shared
+        let previousEngine = model.engineMode
+        let previousTarget = model.targetLanguageCode
+        model.engineMode = .yandexCloud
+        model.targetLanguageCode = "ru"
+        model.translate(text: "Hello, this is a Yandex chain test")
+        for _ in 0..<40 {
+            try? await Task.sleep(for: .milliseconds(500))
+            if case .done = model.status { break }
+            if case .failed = model.status { break }
+        }
+        log("цепочка yandexCloud: status=\(model.status), lastProvider=\(model.lastProviderName ?? "nil"), lastUsedCloud=\(model.lastUsedCloud), text=\(model.translatedText)")
+        model.engineMode = previousEngine
+        model.targetLanguageCode = previousTarget
+
+        log("=== конец Yandex selftest ===")
     }
 
     @objc private func statusItemClicked() {

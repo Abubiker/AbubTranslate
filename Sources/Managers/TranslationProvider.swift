@@ -43,15 +43,20 @@ enum TranslationProviderError: LocalizedError {
 /// перевода никогда не существовало — проверено через API HuggingFace,
 /// `coreml-community` содержит только конвертации Stable Diffusion, ноль
 /// репозиториев перевода. Любая пара падала бы 404 при первом же скачивании.
+///
+/// HuggingFace как движок тоже убран (не из-за него самого — работал
+/// нормально после смены модели на Helsinki-NLP opus-mt) — по прямому
+/// запросу пользователя, финальный набор: Apple / Apple+MyMemory / Azure /
+/// Google / Yandex.
 enum EngineMode: String, CaseIterable, Sendable {
     case appleOnly = "apple"
     case appleMyMemory = "apple_mymemory"
-    case hfCloud = "hf_cloud"
     case azureCloud = "azure_cloud"
     case googleCloud = "google_cloud"
+    case yandexCloud = "yandex_cloud"
 
     static var pickerCases: [EngineMode] {
-        [.appleOnly, .appleMyMemory, .hfCloud, .azureCloud, .googleCloud]
+        [.appleOnly, .appleMyMemory, .azureCloud, .googleCloud, .yandexCloud]
     }
 
     /// Имя провайдера, который в этом режиме пробуется первым — сравнивается
@@ -63,12 +68,12 @@ enum EngineMode: String, CaseIterable, Sendable {
             return nil
         case .appleMyMemory:
             return "MyMemory"
-        case .hfCloud:
-            return "HuggingFace"
         case .azureCloud:
             return "Azure Translator"
         case .googleCloud:
             return "Google Translate"
+        case .yandexCloud:
+            return "Yandex Translate"
         }
     }
 
@@ -78,12 +83,12 @@ enum EngineMode: String, CaseIterable, Sendable {
             return String(localized: "Apple Translation only")
         case .appleMyMemory:
             return String(localized: "Apple + MyMemory")
-        case .hfCloud:
-            return String(localized: "Cloud models (HuggingFace)")
         case .azureCloud:
             return String(localized: "Cloud models (Azure)")
         case .googleCloud:
             return String(localized: "Cloud models (Google)")
+        case .yandexCloud:
+            return String(localized: "Cloud models (Yandex)")
         }
     }
 
@@ -93,12 +98,12 @@ enum EngineMode: String, CaseIterable, Sendable {
             return String(localized: "On-device. No network.")
         case .appleMyMemory:
             return String(localized: "Apple, then MyMemory for unsupported pairs.")
-        case .hfCloud:
-            return String(localized: "HuggingFace. Requires a token.")
         case .azureCloud:
             return String(localized: "Azure Translator. Requires a key.")
         case .googleCloud:
             return String(localized: "Google Translate. Requires a key, billed past free tier.")
+        case .yandexCloud:
+            return String(localized: "Yandex Translate. Requires a key and a folder ID.")
         }
     }
 
@@ -110,8 +115,10 @@ enum EngineMode: String, CaseIterable, Sendable {
         switch raw {
         case "local_only", "apple_local":
             return .appleOnly
-        case "apple_local_cloud":
-            return .hfCloud
+        case "apple_local_cloud", "hf_cloud":
+            // HuggingFace убран из приложения — кто был на нём, откатывается
+            // на бесплатный движок без ключа, а не на первый попавшийся.
+            return .appleMyMemory
         default:
             return EngineMode(rawValue: raw)
         }
@@ -119,7 +126,9 @@ enum EngineMode: String, CaseIterable, Sendable {
 }
 
 /// Языки для каждого движка — используются для динамических меню.
-/// Источник: Apple Translation 22 языка, MyMemory ~100, HF — по паре Helsinki-NLP opus-mt.
+/// Источник: Apple Translation 22 языка, MyMemory ~100, Azure/Google —
+/// официальные списки целиком, Yandex — приближение (см. комментарий у
+/// yandexCodes).
 enum EngineLanguageSupport {
     /// Apple Translation на этом Mac (динамический, но fallback для UI до загрузки).
     /// Дублирует AppModel.fallbackLanguageCodes чтобы не тянуть @MainActor зависимость.
@@ -134,19 +143,6 @@ enum EngineLanguageSupport {
         "fi","sv","da","nb","el","he","fa","ur","hi","bn","ta","te","th","vi","id","ms",
         "sw","am","eu","ca","gl","ro","hu","bg","hr","sr","sk","sl","et","lv","lt","be",
         "kk","ky","uz","az","ka","hy","sq","bs","mk","is","ga","cy","af","zu","mt","si",
-    ]
-
-    /// HuggingFace / Helsinki-NLP opus-mt — по паре языков, не все направления
-    /// существуют (например en→ja, en→tr — проверено, живых моделей нет).
-    /// Список для UI, реальную доступность решает ответ сервера (404 →
-    /// TranslationProviderError.notSupported, цепочка уходит в MyMemory).
-    static let hfCodes = [
-        "en","ru","de","fr","es","it","pt","zh","ja","ko","ar","tr","pl","nl","cs","uk",
-        "sv","da","nb","fi","el","he","fa","ur","hi","bn","ta","te","th","vi","id","ms",
-        "sw","am","eu","ca","gl","ro","hu","bg","hr","sr","sk","sl","et","lv","lt","be",
-        "kk","ky","uz","az","ka","hy","sq","bs","mk","is","ga","cy","af","zu","mt","si",
-        "ml","gu","kn","pa","sd","ne","si","lo","my","km","mn","bo","ug","ps","ku","tk",
-        "tg","tt","ba","cv","ce","yi","jv","su","tl","haw","mi","sm","to","fj",
     ]
 
     /// Полный список Azure Translator (text translation), простые коды без
@@ -186,6 +182,15 @@ enum EngineLanguageSupport {
         "uk","ur","ug","uz","vi","cy","xh","yi","yo","yua","zu",
     ]
 
+    /// Yandex Translate — официальный список языков недоступен: страницы
+    /// yandex.cloud/aistudio.yandex.ru блокируют автоматические запросы
+    /// CAPTCHA, а подтверждено только «114 языков, ISO 639-1» без полного
+    /// перечня. Не выдумываем список — переиспользуем уже проверенный
+    /// широкий набор myMemoryCodes как приближение для UI. Как и с opus-mt
+    /// в HuggingFace раньше: реальную поддержку пары решает ответ сервера,
+    /// неподдержанная пара честно падает notSupported и уходит в MyMemory.
+    static var yandexCodes: [String] { myMemoryCodes }
+
     static func codes(for mode: EngineMode, appleAvailable: [String]) -> [String] {
         switch mode {
         case .appleOnly:
@@ -195,12 +200,12 @@ enum EngineLanguageSupport {
             var set = Set(appleAvailable.isEmpty ? appleFallback : appleAvailable)
             set.formUnion(myMemoryCodes)
             return Array(set)
-        case .hfCloud:
-            return hfCodes
         case .azureCloud:
             return azureCodes
         case .googleCloud:
             return googleCodes
+        case .yandexCloud:
+            return yandexCodes
         }
     }
 }
