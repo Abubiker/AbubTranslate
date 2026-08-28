@@ -1,45 +1,14 @@
 import AppKit
 
-// Генератор иконок AbubTranslate: app icon (фиолет→синий, буквы А/A + стрелка)
-// и template-иконка для статус-бара.
+// Генератор иконок AbubTranslate: F⇄ф deep navy #0F1B2E premium minimal
 // Запуск: swift Tools/GenerateIcons.swift
 
 let root = "Sources/Assets.xcassets"
 let appIconDir = "\(root)/AppIcon.appiconset"
 let statusIconDir = "\(root)/StatusIcon.imageset"
 
-func drawDoubleArrow(in rect: NSRect, lineWidth: CGFloat) {
-    let ctx = NSGraphicsContext.current!.cgContext
-    ctx.saveGState()
-    ctx.setStrokeColor(NSColor.white.withAlphaComponent(0.95).cgColor)
-    ctx.setFillColor(NSColor.white.withAlphaComponent(0.95).cgColor)
-    ctx.setLineWidth(lineWidth)
-    ctx.setLineCap(.round)
-
-    let from = NSPoint(x: rect.minX, y: rect.minY)
-    let to = NSPoint(x: rect.maxX, y: rect.maxY)
-    ctx.move(to: from)
-    ctx.addLine(to: to)
-    ctx.strokePath()
-
-    let head = lineWidth * 3.2
-    let dx = to.x - from.x
-    let dy = to.y - from.y
-    let angle = atan2(dy, dx)
-
-    func arrowhead(at p: NSPoint, direction: CGFloat) {
-        let a1 = direction + .pi * 0.82
-        let a2 = direction - .pi * 0.82
-        ctx.move(to: p)
-        ctx.addLine(to: NSPoint(x: p.x + cos(a1) * head, y: p.y + sin(a1) * head))
-        ctx.move(to: p)
-        ctx.addLine(to: NSPoint(x: p.x + cos(a2) * head, y: p.y + sin(a2) * head))
-        ctx.strokePath()
-    }
-    arrowhead(at: to, direction: angle)
-    arrowhead(at: from, direction: angle + .pi)
-    ctx.restoreGState()
-}
+// deep navy #0F1B2E
+let deepNavy = NSColor(srgbRed: 0x0F/255.0, green: 0x1B/255.0, blue: 0x2E/255.0, alpha: 1)
 
 func drawAppIcon(_ s: CGFloat) -> NSImage {
     let image = NSImage(size: NSSize(width: s, height: s))
@@ -51,50 +20,46 @@ func drawAppIcon(_ s: CGFloat) -> NSImage {
         xRadius: s * 0.23,
         yRadius: s * 0.23
     )
+    // Flat deep navy, NO gradient, NO shadow — premium minimal
+    deepNavy.setFill()
+    body.fill()
 
-    // Градиент фиолет → синий по диагонали.
-    let gradient = NSGradient(colors: [
-        NSColor(srgbRed: 0.482, green: 0.361, blue: 1.000, alpha: 1),
-        NSColor(srgbRed: 0.231, green: 0.510, blue: 0.965, alpha: 1),
-    ])!
-    gradient.draw(in: body, angle: -55)
+    // Символ F⇄ф белый, flat, no shadow, high contrast
+    // Три глифа: F, ⇄, ф — centered, optical balance
+    let fSize = s * 0.34
+    let arrowSize = s * 0.30
+    let efSize = s * 0.34
 
-    // Мягкая подсветка сверху.
-    let highlight = NSGradient(colors: [
-        NSColor.white.withAlphaComponent(0.18),
-        NSColor.white.withAlphaComponent(0.0),
-    ])!
-    highlight.draw(in: body, angle: 90)
-
-    // Буквы A (латиница) и Я (кириллица) с тенью.
-    let shadow = NSShadow()
-    shadow.shadowColor = NSColor.black.withAlphaComponent(0.25)
-    shadow.shadowOffset = NSSize(width: 0, height: -s * 0.012)
-    shadow.shadowBlurRadius = s * 0.02
-
-    let letterAttrs: [NSAttributedString.Key: Any] = [
-        .font: NSFont.systemFont(ofSize: s * 0.38, weight: .heavy),
+    let fAttrs: [NSAttributedString.Key: Any] = [
+        .font: NSFont.systemFont(ofSize: fSize, weight: .bold),
         .foregroundColor: NSColor.white,
-        .shadow: shadow,
+        .kern: s * -0.01
     ]
-    NSAttributedString(string: "A", attributes: letterAttrs)
-        .draw(at: NSPoint(x: s * 0.135, y: s * 0.475))
-    NSAttributedString(string: "Я", attributes: letterAttrs)
-        .draw(at: NSPoint(x: s * 0.545, y: s * 0.085))
-
-    // Стрелка ⇄ между буквами, повёрнутая по диагонали.
-    let ctx = NSGraphicsContext.current!.cgContext
-    ctx.saveGState()
-    ctx.translateBy(x: s * 0.5, y: s * 0.5)
-    ctx.rotate(by: -.pi / 4)
     let arrowAttrs: [NSAttributedString.Key: Any] = [
-        .font: NSFont.systemFont(ofSize: s * 0.34, weight: .bold),
-        .foregroundColor: NSColor.white.withAlphaComponent(0.95),
-        .shadow: shadow,
+        .font: NSFont.systemFont(ofSize: arrowSize, weight: .medium),
+        .foregroundColor: NSColor.white.withAlphaComponent(0.92),
     ]
-    let arrow = NSAttributedString(string: "⇄", attributes: arrowAttrs)
-    arrow.draw(at: NSPoint(x: -arrow.size().width / 2, y: -arrow.size().height * 0.55))
-    ctx.restoreGState()
+    let efAttrs: [NSAttributedString.Key: Any] = [
+        .font: NSFont.systemFont(ofSize: efSize, weight: .bold),
+        .foregroundColor: NSColor.white,
+    ]
+
+    let fStr = NSAttributedString(string: "F", attributes: fAttrs)
+    let arrowStr = NSAttributedString(string: "⇄", attributes: arrowAttrs)
+    let efStr = NSAttributedString(string: "ф", attributes: efAttrs)
+
+    // Центрировать группу: общая ширина
+    let totalW = fStr.size().width + arrowStr.size().width + efStr.size().width + s * 0.06
+    var x = (s - totalW) / 2
+    let yF = (s - fStr.size().height) / 2 + s * 0.02
+    let yArrow = (s - arrowStr.size().height) / 2 + s * 0.01
+    let yEf = (s - efStr.size().height) / 2 + s * 0.02
+
+    fStr.draw(at: NSPoint(x: x, y: yF))
+    x += fStr.size().width + s * 0.03
+    arrowStr.draw(at: NSPoint(x: x, y: yArrow))
+    x += arrowStr.size().width + s * 0.03
+    efStr.draw(at: NSPoint(x: x, y: yEf))
 
     image.unlockFocus()
     return image
@@ -104,30 +69,40 @@ func drawStatusIcon(_ s: CGFloat) -> NSImage {
     let image = NSImage(size: NSSize(width: s, height: s))
     image.lockFocus()
 
+    // Template: monochrome black on transparent, isTemplate=true
+    // Slightly rounded, 1.5px optical, premium minimal
     let color = NSColor.black
-    let letterAttrs: [NSAttributedString.Key: Any] = [
-        .font: NSFont.systemFont(ofSize: s * 0.48, weight: .heavy),
+    let fAttrs: [NSAttributedString.Key: Any] = [
+        .font: NSFont.systemFont(ofSize: s * 0.42, weight: .semibold),
         .foregroundColor: color,
     ]
     let arrowAttrs: [NSAttributedString.Key: Any] = [
-        .font: NSFont.systemFont(ofSize: s * 0.34, weight: .bold),
+        .font: NSFont.systemFont(ofSize: s * 0.32, weight: .regular),
+        .foregroundColor: color,
+    ]
+    let efAttrs: [NSAttributedString.Key: Any] = [
+        .font: NSFont.systemFont(ofSize: s * 0.42, weight: .semibold),
         .foregroundColor: color,
     ]
 
-    let left = NSAttributedString(string: "A", attributes: letterAttrs)
-    let mid = NSAttributedString(string: "⇄", attributes: arrowAttrs)
-    let right = NSAttributedString(string: "Я", attributes: letterAttrs)
+    let fStr = NSAttributedString(string: "F", attributes: fAttrs)
+    let arrowStr = NSAttributedString(string: "⇄", attributes: arrowAttrs)
+    let efStr = NSAttributedString(string: "ф", attributes: efAttrs)
 
-    let total = left.size().width + mid.size().width * 0.9 + right.size().width
+    let total = fStr.size().width + arrowStr.size().width + efStr.size().width
     var x = (s - total) / 2
-    let baseY = s * 0.16
-    left.draw(at: NSPoint(x: x, y: baseY))
-    x += left.size().width - s * 0.02
-    mid.draw(at: NSPoint(x: x, y: baseY + s * 0.10))
-    x += mid.size().width * 0.9 - s * 0.03
-    right.draw(at: NSPoint(x: x, y: baseY))
+    // оптический центр чуть выше
+    let y = (s - fStr.size().height) / 2 + s * 0.04
+    let yArrow = y + s * 0.02
+
+    fStr.draw(at: NSPoint(x: x, y: y))
+    x += fStr.size().width - s * 0.02
+    arrowStr.draw(at: NSPoint(x: x, y: yArrow))
+    x += arrowStr.size().width - s * 0.02
+    efStr.draw(at: NSPoint(x: x, y: y))
 
     image.unlockFocus()
+    image.isTemplate = true
     return image
 }
 
@@ -163,4 +138,4 @@ for pixels in [16, 32, 64, 128, 256, 512, 1024] {
 savePNG(drawStatusIcon(36), "\(statusIconDir)/status_1x.png")
 savePNG(drawStatusIcon(72), "\(statusIconDir)/status_2x.png")
 
-print("icons generated")
+print("icons generated F⇄ф deep navy #0F1B2E")

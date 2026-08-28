@@ -52,7 +52,7 @@ struct SettingsView: View {
             // Зазор между карточками и внешние поля уменьшены — почти
             // слитный блок вместо просторных воздушных промежутков, но
             // разделение всё ещё читается (не 0).
-            VStack(alignment: .leading, spacing: DSTokens.md) {
+            VStack(alignment: .leading, spacing: DSTokens.sm) {
                 pageHeader
                 if hasCloudDraftChanges {
                     unsavedCloudBar
@@ -63,10 +63,10 @@ struct SettingsView: View {
                 shortcutsCard
                 systemCard
             }
-            .padding(DSTokens.lg)
+            .padding(DSTokens.md)
             .frame(maxWidth: .infinity, alignment: .topLeading)
         }
-        .frame(minWidth: 520, idealWidth: 600, maxWidth: 680, minHeight: 640, idealHeight: 780, maxHeight: 900)
+        .frame(minWidth: 500, idealWidth: 560, maxWidth: 640, minHeight: 600, idealHeight: 740, maxHeight: 860)
         .background {
             if #available(macOS 26.0, *) {
                 SettingsBackground()
@@ -251,10 +251,10 @@ struct SettingsView: View {
     // MARK: - Cards
 
     private var languagesCard: some View {
-        VStack(alignment: .leading, spacing: DSTokens.md) {
+        VStack(alignment: .leading, spacing: DSTokens.sm) {
             cardHeader(overline: "Languages", title: nil, icon: "globe", description: "Source is detected automatically unless fixed.")
 
-            Grid(alignment: .leading, horizontalSpacing: DSTokens.md, verticalSpacing: DSTokens.sm) {
+            Grid(alignment: .leading, horizontalSpacing: DSTokens.md, verticalSpacing: DSTokens.xs) {
                 GridRow {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Source language").font(.system(size: 12, weight: .medium)).foregroundStyle(.secondary)
@@ -283,11 +283,11 @@ struct SettingsView: View {
             Text("\(count) languages available in the current engine.")
                 .footnoteMuted()
         }
-        .cardSurface()
+        .settingsCardSurface()
     }
 
     private var engineCard: some View {
-        VStack(alignment: .leading, spacing: DSTokens.md) {
+        VStack(alignment: .leading, spacing: DSTokens.sm) {
             cardHeader(overline: "Engine", title: nil, icon: "cpu", description: nil)
 
             // Черновик: contextualCard ниже следует за ним сразу (чтобы можно
@@ -319,11 +319,11 @@ struct SettingsView: View {
                 .font(.system(size: DSTokens.metaSize, weight: .medium))
                 .foregroundStyle(.tertiary)
         }
-        .cardSurface()
+        .settingsCardSurface()
     }
 
     private var myMemoryCard: some View {
-        VStack(alignment: .leading, spacing: DSTokens.md) {
+        VStack(alignment: .leading, spacing: DSTokens.sm) {
             cardHeader(overline: "Cloud", title: "MyMemory", icon: "envelope", description: nil)
             TextField("Email", text: $cloudEmail, prompt: Text("optional"))
                 .textFieldStyle(.roundedBorder)
@@ -331,7 +331,7 @@ struct SettingsView: View {
             Text("No key needed. 5k characters/day, 50k with any email — no signup.")
                 .footnoteMuted()
         }
-        .cardSurface()
+        .settingsCardSurface()
     }
 
     private func providerLabel(_ title: LocalizedStringKey) -> some View {
@@ -341,7 +341,7 @@ struct SettingsView: View {
     }
 
     private var azureCard: some View {
-        VStack(alignment: .leading, spacing: DSTokens.md) {
+        VStack(alignment: .leading, spacing: DSTokens.sm) {
             cardHeader(overline: "Cloud", title: "Azure Translator", icon: "cloud", description: nil)
 
             SecureField("Azure key", text: $azureKey, prompt: Text("subscription key"))
@@ -362,11 +362,11 @@ struct SettingsView: View {
                     .footnoteMuted()
             }
         }
-        .cardSurface()
+        .settingsCardSurface()
     }
 
     private var googleCard: some View {
-        VStack(alignment: .leading, spacing: DSTokens.md) {
+        VStack(alignment: .leading, spacing: DSTokens.sm) {
             cardHeader(overline: "Cloud", title: "Google Translate", icon: "cloud", description: nil)
 
             SecureField("Google key", text: $googleKey, prompt: Text("API key"))
@@ -384,11 +384,11 @@ struct SettingsView: View {
                     .footnoteMuted()
             }
         }
-        .cardSurface()
+        .settingsCardSurface()
     }
 
     private var deepLCard: some View {
-        VStack(alignment: .leading, spacing: DSTokens.md) {
+        VStack(alignment: .leading, spacing: DSTokens.sm) {
             cardHeader(overline: "Cloud", title: "DeepL", icon: "cloud", description: nil)
 
             SecureField("DeepL key", text: $deepLKey, prompt: Text("API key"))
@@ -429,11 +429,11 @@ struct SettingsView: View {
                     .footnoteMuted()
             }
         }
-        .cardSurface()
+        .settingsCardSurface()
     }
 
     private var openAICard: some View {
-        VStack(alignment: .leading, spacing: DSTokens.md) {
+        VStack(alignment: .leading, spacing: DSTokens.sm) {
             cardHeader(overline: "Cloud", title: "OpenAI-compatible", icon: "cloud", description: nil)
 
             TextField("Base URL", text: $openAIBaseURL, prompt: Text("https://api.openai.com/v1"))
@@ -491,14 +491,14 @@ struct SettingsView: View {
                     .footnoteMuted()
             }
         }
-        .cardSurface()
+        .settingsCardSurface()
     }
 
     private var shortcutsCard: some View {
-        VStack(alignment: .leading, spacing: DSTokens.md) {
+        VStack(alignment: .leading, spacing: DSTokens.sm) {
             cardHeader(overline: "Shortcuts", title: nil, icon: "keyboard", description: nil)
 
-            VStack(alignment: .leading, spacing: DSTokens.sm) {
+            VStack(alignment: .leading, spacing: DSTokens.xs) {
                 HotkeyRecorder(title: "Translate:", slot: .translate) { _ in
                     model.applyHotKey(.translate)
                 }
@@ -511,14 +511,14 @@ struct SettingsView: View {
                 accessibilityNotice
             }
         }
-        .cardSurface()
+        .settingsCardSurface()
     }
 
     /// Строчный список в стиле System Settings.app: подпись слева, control
     /// справа, тонкий разделитель между пунктами — вместо прежней плотной
     /// карточки с сегментированными контролами вперемешку.
     private var systemCard: some View {
-        VStack(alignment: .leading, spacing: DSTokens.md) {
+        VStack(alignment: .leading, spacing: DSTokens.sm) {
             cardHeader(overline: "System", title: nil, icon: "paintbrush", description: nil)
 
             VStack(spacing: 0) {
@@ -563,7 +563,7 @@ struct SettingsView: View {
                 }
             }
         }
-        .cardSurface()
+        .settingsCardSurface()
     }
 
     /// Один пункт строчного списка: подпись слева, control справа выровнен

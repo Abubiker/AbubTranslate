@@ -32,10 +32,14 @@ enum DSTokens {
     // Semantic colors — neutral-first OKLCH approximated
     enum Colors {
         static let border = Color.primary.opacity(0.09)
+        // Settings: чуть более видимая рамка без декоративного стекла
+        static let borderSettings = Color.primary.opacity(0.18)
         static let borderStrong = Color.primary.opacity(0.14)
         static let highlight = Color.white.opacity(0.06)
         static let bgCard = Color(NSColor.controlBackgroundColor)
         static let bgCardElevated = Color(NSColor.controlBackgroundColor).opacity(0.95)
+        // для Settings — плоский фон, привязанный к appearanceMode
+        static let bgSettings = Color(NSColor.windowBackgroundColor)
         static let shadow = Color.black.opacity(0.18)
         static let shadowSoft = Color.black.opacity(0.10)
         // status only
@@ -97,33 +101,61 @@ struct CardSurface: ViewModifier {
     }
 }
 
-/// Декоративный фон под settings-окном на macOS 26+ — референс от Stitch:
-/// тёмный градиент с мягкой диагональной световой полосой (светлая тема —
-/// пастельно-голубой вариант). Без этого стеклу карточек нечего
-/// преломлять — на плоском системном фоне .glassEffect() почти не виден.
+struct SettingsCardSurface: ViewModifier {
+    var padding: CGFloat = DSTokens.lg
+    func body(content: Content) -> some View {
+        if #available(macOS 26.0, *) {
+            content
+                .padding(padding)
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DSTokens.radiusCard))
+        } else {
+            content
+                .padding(padding)
+                .background(
+                    RoundedRectangle(cornerRadius: DSTokens.radiusCardSmall)
+                        .fill(DSTokens.Colors.bgSettings)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: DSTokens.radiusCardSmall)
+                        .stroke(DSTokens.Colors.borderSettings, lineWidth: 1)
+                )
+        }
+    }
+}
+
+/// Liquid Glass фон для Settings на macOS 26+.
+/// Стеклу карточек нужен цветной фон — без него .glassEffect() почти не виден.
 @available(macOS 26.0, *)
 struct SettingsBackground: View {
     @Environment(\.colorScheme) private var colorScheme
-
     var body: some View {
         ZStack {
-            LinearGradient(
-                colors: colorScheme == .dark
-                    ? [Color(red: 0.04, green: 0.06, blue: 0.13), Color(red: 0.11, green: 0.14, blue: 0.30)]
-                    : [Color(red: 0.96, green: 0.97, blue: 1.0), Color(red: 0.86, green: 0.91, blue: 0.99)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
+            colorScheme == .dark
+                ? Color(red: 0.08, green: 0.08, blue: 0.13)
+                : Color(red: 0.92, green: 0.94, blue: 0.98)
+            RadialGradient(
+                colors: [
+                    colorScheme == .dark
+                        ? Color(red: 0.22, green: 0.32, blue: 0.72).opacity(0.38)
+                        : Color(red: 0.45, green: 0.55, blue: 0.95).opacity(0.22),
+                    .clear
+                ],
+                center: .topLeading,
+                startRadius: 20,
+                endRadius: 480
             )
-            LinearGradient(
-                colors: colorScheme == .dark
-                    ? [.clear, Color.blue.opacity(0.22), Color.purple.opacity(0.14), .clear]
-                    : [.clear, Color.blue.opacity(0.16), .clear],
-                startPoint: .topTrailing,
-                endPoint: .bottomLeading
+            RadialGradient(
+                colors: [
+                    colorScheme == .dark
+                        ? Color(red: 0.46, green: 0.20, blue: 0.62).opacity(0.24)
+                        : Color(red: 0.76, green: 0.50, blue: 0.92).opacity(0.18),
+                    .clear
+                ],
+                center: .bottomTrailing,
+                startRadius: 20,
+                endRadius: 400
             )
-            .blur(radius: 60)
         }
-        .ignoresSafeArea()
     }
 }
 
@@ -164,6 +196,11 @@ struct HoverLift: ViewModifier {
 extension View {
     func cardSurface(padding: CGFloat = DSTokens.lgPlus) -> some View {
         modifier(CardSurface(padding: padding))
+    }
+    /// Минимальный flat-фон для Settings: тонкая рамка + цвет окна, без glass/shadow.
+    /// Радиус 12 (radiusCardSmall) для компактного вида.
+    func settingsCardSurface(padding: CGFloat = DSTokens.lg) -> some View {
+        modifier(SettingsCardSurface(padding: padding))
     }
     func panelCardSurface() -> some View {
         modifier(PanelCardSurface())
