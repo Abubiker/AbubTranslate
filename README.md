@@ -146,24 +146,20 @@ macOS 15+, Xcode 16+, [xcodegen](https://github.com/yonaskolb/XcodeGen).
 
 ```bash
 brew install xcodegen
-xcodegen generate
-xcodebuild -project AbubTranslate.xcodeproj -scheme AbubTranslate \
-    -configuration Release -derivedDataPath .build build CODE_SIGN_IDENTITY="-"
+security find-identity -v -p codesigning   # найти свою identity
+export ABUBTRANSLATE_SIGN_IDENTITY="Apple Development: ваш@email (TEAMID)"
+./Scripts/build.sh
 ```
 
-Результат: `.build/Build/Products/Release/AbubTranslate.app`.
-
-Подпись обязательна — без неё arm64-бинарь не запускается. Подписывать
-сертификатом разработчика, не ad-hoc:
-
-```bash
-codesign --force --deep --options runtime \
-    -s "Apple Development: ваш@email (TEAMID)" \
-    .build/Build/Products/Release/AbubTranslate.app
-```
-
-Причина: macOS запоминает при выдаче «Универсального доступа» designated
-requirement подписи.
+Результат: `/Applications/AbubTranslate.app` (скрипт сам ставит).
+`Scripts/build.sh` — единственный правильный способ собрать проект, **даже
+если собирает не эта сессия, а другой инструмент/агент**: голый
+`xcodebuild` без ручной пересборки подписи подписывает ad-hoc, а это ломает
+не только выданный Accessibility-грант, но и Keychain-доступ к уже
+сохранённым API-ключам (Azure/Google/DeepL/OpenAI) — designated requirement
+у ad-hoc это хеш бинарника (cdhash), он меняется на каждой пересборке,
+macOS видит «другое приложение» и не даёт добраться до старых секретов.
+Подробности — в комментарии в начале скрипта.
 
 ```
 ad-hoc:      designated => cdhash H"3b95b95e…"
@@ -172,9 +168,9 @@ ad-hoc:      designated => cdhash H"3b95b95e…"
                            and certificate leaf[subject.CN] = "Apple Development: …"
 ```
 
-У ad-hoc требование прибито к хешу бинарника — любая пересборка ломает
-выданное разрешение. У сертификата требование привязано к нему самому и
-переживает пересборки.
+У ad-hoc требование прибито к хешу бинарника — любая пересборка ломает и
+выданное разрешение, и доступ к Keychain. У сертификата требование
+привязано к нему самому и переживает пересборки.
 
 Тесты чистой логики (выбор направления перевода, нарезка текста под лимит
 запроса):

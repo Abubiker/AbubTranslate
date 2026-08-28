@@ -41,7 +41,6 @@ final class SelectionReader {
 
         let pasteboard = NSPasteboard.general
         let saved = snapshot(of: pasteboard)
-        let savedChangeCount = pasteboard.changeCount
         let before = pasteboard.changeCount
 
         guard postCommandC() else { return nil }
@@ -51,18 +50,14 @@ final class SelectionReader {
             try? await Task.sleep(for: pollStep)
             waited += pollStep
             guard pasteboard.changeCount != before else { continue }
-            // Проверяем что буфер изменился именно нашим ⌘C, а не чужим приложением между снимком и чтением:
-            // если changeCount уже снова ушёл дальше — кто-то другой писал, не восстанавливаем вслепую
             let text = pasteboard.string(forType: .string)
-            // Только если буфер всё ещё тот что мы получили — восстанавливаем
-            restore(saved, to: pasteboard, expectedChangeCount: pasteboard.changeCount, beforeCount: before, savedCount: savedChangeCount)
-            // Если это была картинка (text == nil) — всё равно вернули буфер и вернём nil (нет выделения)
+            restore(saved, to: pasteboard)
             return text
         }
 
         // Таймаут: если буфер всё же изменился на не-строку (картинка) — восстановить
         if pasteboard.changeCount != before {
-            restore(saved, to: pasteboard, expectedChangeCount: pasteboard.changeCount, beforeCount: before, savedCount: savedChangeCount)
+            restore(saved, to: pasteboard)
         }
         return nil
     }
@@ -83,11 +78,16 @@ final class SelectionReader {
         }
     }
 
-    private func restore(_ items: [NSPasteboardItem], to pasteboard: NSPasteboard, expectedChangeCount: Int, beforeCount: Int, savedCount: Int) {
-        // Только ровно +1 — это наш ⌘C. +2 и дальше значит кто-то ещё писал после нас — не затираем чужое.
-        // savedCount не используется отдельно: before уже равен savedCount на момент снимка.
-        _ = savedCount
-        guard expectedChangeCount == beforeCount + 1 else { return }
+    /// Восстанавливает безусловно (не только при "ровно +1" changeCount).
+    /// Прежняя версия сверяла changeCount на +1 ровно и пропускала restore
+    /// при любом отклонении — на деле это ломало restore почти всегда,
+    /// когда рядом крутится менеджер буфера обмена (Mole, iBar Pro и т.п.):
+    /// такие инструменты сами трогают pasteboard при каждом изменении,
+    /// changeCount уходит на +2/+3 даже для нашего же ⌘C, и обещанное
+    /// «буфер всегда возвращается как был» (см. README) переставало
+    /// работать в самом обычном случае ради защиты от редкого — конкурентной
+    /// записи от другого приложения ровно в то же окно в 300мс.
+    private func restore(_ items: [NSPasteboardItem], to pasteboard: NSPasteboard) {
         pasteboard.clearContents()
         guard !items.isEmpty else { return }
         pasteboard.writeObjects(items)
