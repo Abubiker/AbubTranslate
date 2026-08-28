@@ -197,4 +197,7 @@
 "DeepL" = "DeepL";
 "DeepL key" = "DeepL key";
 "Blocks Russian IPs at the network level. Get one at developers.deepl.com, free tier is a one-time 1M character credit." = "Blocks Russian IPs at the network level. Get one at developers.deepl.com, free tier is a one-time 1M character credit.";
+"Check usage" = "Check usage";
+"Save a key first to check usage." = "Save a key first to check usage.";
+"Used %lld of %lld characters." = "Used %lld of %lld characters.";
 "Automatic fallback if DeepL has no key or fails." = "Automatic fallback if DeepL has no key or fails.";

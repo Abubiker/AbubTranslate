@@ -43,15 +43,50 @@ struct DeepLProvider: TranslationProvider {
         }
     }
 
+    /// Free-ключ отличается суффиксом ":fx" — у него отдельный хост,
+    /// платный на api.deepl.com получит 403 на api-free и наоборот.
+    private func host(for key: String) -> String {
+        key.hasSuffix(":fx") ? "api-free.deepl.com" : "api.deepl.com"
+    }
+
+    /// GET /v2/usage — сколько символов уже потрачено и какой лимит у
+    /// текущего ключа. Для free-ключа лимит разовый (см. описание в
+    /// EngineMode), не месячный — это решает сам DeepL на своей стороне,
+    /// приложение просто показывает то, что вернул сервер, без своих
+    /// предположений о тарифе.
+    func checkUsage() async throws -> (count: Int, limit: Int) {
+        guard let k = key?.trimmingCharacters(in: .whitespacesAndNewlines), !k.isEmpty else {
+            throw TranslationProviderError.notConfigured(name)
+        }
+
+        var request = URLRequest(url: URL(string: "https://\(host(for: k))/v2/usage")!)
+        request.timeoutInterval = 20
+        request.setValue("DeepL-Auth-Key \(k)", forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw TranslationProviderError.badResponse
+        }
+        guard (200...299).contains(http.statusCode) else {
+            throw mapError(status: http.statusCode, data: data)
+        }
+        guard let decoded = try? JSONDecoder().decode(UsageResponse.self, from: data) else {
+            throw TranslationProviderError.badResponse
+        }
+        return (decoded.character_count, decoded.character_limit)
+    }
+
+    private struct UsageResponse: Decodable {
+        let character_count: Int
+        let character_limit: Int
+    }
+
     private func translateChunk(_ chunk: String, from source: String, to target: String) async throws -> String {
         guard let k = key?.trimmingCharacters(in: .whitespacesAndNewlines), !k.isEmpty else {
             throw TranslationProviderError.notConfigured(name)
         }
 
-        // Free-ключ отличается суффиксом ":fx" — у него отдельный хост,
-        // платный на api.deepl.com получит 403 на api-free и наоборот.
-        let host = k.hasSuffix(":fx") ? "api-free.deepl.com" : "api.deepl.com"
-        var request = URLRequest(url: URL(string: "https://\(host)/v2/translate")!)
+        var request = URLRequest(url: URL(string: "https://\(host(for: k))/v2/translate")!)
         request.httpMethod = "POST"
         request.timeoutInterval = 20
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")

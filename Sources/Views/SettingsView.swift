@@ -31,6 +31,8 @@ struct SettingsView: View {
     @State private var savedDeepLKey: String = ""
     @State private var sourceLanguage: String = "auto"
     @State private var appLocaleRaw: String = "auto"
+    @State private var deepLUsageText: String?
+    @State private var deepLUsageLoading = false
 
     var body: some View {
         ScrollView {
@@ -103,6 +105,17 @@ struct SettingsView: View {
         savedAzureRegion = azureRegion
         savedGoogleKey = googleKey
         savedDeepLKey = deepLKey
+    }
+
+    private func checkDeepLUsage() async {
+        deepLUsageLoading = true
+        defer { deepLUsageLoading = false }
+        do {
+            let (count, limit) = try await DeepLProvider().checkUsage()
+            deepLUsageText = String(localized: "Used \(count) of \(limit) characters.")
+        } catch {
+            deepLUsageText = error.localizedDescription
+        }
     }
 
     // MARK: - Page header — отвечает "what is active"
@@ -469,6 +482,29 @@ struct SettingsView: View {
                 .font(.system(size: 13))
             Text("Blocks Russian IPs at the network level. Get one at developers.deepl.com, free tier is a one-time 1M character credit.")
                 .footnoteMuted()
+
+            HStack(spacing: DSTokens.sm) {
+                Button {
+                    Task { await checkDeepLUsage() }
+                } label: {
+                    if deepLUsageLoading {
+                        ProgressView().controlSize(.small)
+                    } else {
+                        Text("Check usage")
+                    }
+                }
+                .disabled(deepLUsageLoading || savedDeepLKey.isEmpty)
+                if let deepLUsageText {
+                    Text(deepLUsageText).footnoteMuted()
+                }
+            }
+            // Проверяет СОХРАНЁННЫЙ ключ (Keychain через DeepLProvider), не
+            // черновик в поле выше — как и перевод, использует только то,
+            // что реально прошло через «Сохранить».
+            if savedDeepLKey.isEmpty {
+                Text("Save a key first to check usage.")
+                    .footnoteMuted()
+            }
 
             Divider().opacity(0.5)
 
