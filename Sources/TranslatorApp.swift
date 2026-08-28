@@ -94,8 +94,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
         if ProcessInfo.processInfo.arguments.contains("--google-selftest") {
             Task { await runGoogleSelfTest() }
         }
-        if ProcessInfo.processInfo.arguments.contains("--yandex-selftest") {
-            Task { await runYandexSelfTest() }
+        if ProcessInfo.processInfo.arguments.contains("--deepl-selftest") {
+            Task { await runDeepLSelfTest() }
         }
     }
 
@@ -210,22 +210,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
         log("=== конец Google selftest ===")
     }
 
-    /// Контракт восстановлен по открытому SDK и поисковым сниппетам, НЕ
-    /// официальной документацией напрямую (yandex.cloud/aistudio.yandex.ru
-    /// блокируют автоматические запросы CAPTCHA) и не проверен живым
-    /// запросом — тот же случай, что у Azure/Google. Прогнать можно тем же
-    /// приёмом: `--args --yandex-selftest`, как только в настройках
-    /// сохранены реальные ключ и Folder ID.
-    private func runYandexSelfTest() async {
+    /// Контракт подтверждён живым запросом к developers.deepl.com/docs (не
+    /// за CAPTCHA, в отличие от бывшего Yandex), но не живым запросом к
+    /// самому API — завести DeepL-аккаунт с ключом приложение не может
+    /// сделать за пользователя. DeepL сам блокирует запросы с российских
+    /// IP на уровне сети — без VPN этот self-test не пройдёт вообще, даже
+    /// с валидным ключом. Прогнать можно тем же приёмом: `--args
+    /// --deepl-selftest`, как только в настройках сохранён реальный ключ
+    /// (и поднят VPN, если запуск из России).
+    private func runDeepLSelfTest() async {
         let log = selfTestLog
-        let provider = YandexTranslateProvider()
-        log("=== Yandex selftest ===")
+        let provider = DeepLProvider()
+        log("=== DeepL selftest ===")
         log("key найден: \(provider.key != nil), длина: \(provider.key?.count ?? 0)")
-        log("folderId найден: \(provider.folderId != nil), длина: \(provider.folderId?.count ?? 0)")
         log("isConfigured(): \(provider.isConfigured())")
 
         guard provider.isConfigured() else {
-            log("нет ключа/folderId — сохраните их в настройках и повторите")
+            log("нет ключа — сохраните его в настройках и повторите")
             return
         }
 
@@ -246,19 +247,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
         let model = AppModel.shared
         let previousEngine = model.engineMode
         let previousTarget = model.targetLanguageCode
-        model.engineMode = .yandexCloud
+        model.engineMode = .deepLCloud
         model.targetLanguageCode = "ru"
-        model.translate(text: "Hello, this is a Yandex chain test")
+        model.translate(text: "Hello, this is a DeepL chain test")
         for _ in 0..<40 {
             try? await Task.sleep(for: .milliseconds(500))
             if case .done = model.status { break }
             if case .failed = model.status { break }
         }
-        log("цепочка yandexCloud: status=\(model.status), lastProvider=\(model.lastProviderName ?? "nil"), lastUsedCloud=\(model.lastUsedCloud), text=\(model.translatedText)")
+        log("цепочка deepLCloud: status=\(model.status), lastProvider=\(model.lastProviderName ?? "nil"), lastUsedCloud=\(model.lastUsedCloud), text=\(model.translatedText)")
         model.engineMode = previousEngine
         model.targetLanguageCode = previousTarget
 
-        log("=== конец Yandex selftest ===")
+        log("=== конец DeepL selftest ===")
     }
 
     @objc private func statusItemClicked() {
@@ -372,10 +373,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
             // анкерим поповер к невидимой панели под меню-баром активного экрана.
             showPopoverViaFallbackAnchor()
         }
+        installOutsideClickMonitor()
     }
 
     private var fallbackAnchorPanel: NSPanel?
     private var lastKnownIconCenterX: CGFloat?
+    private var outsideClickMonitor: Any?
+
+    /// .transient должен сам закрывать поповер по клику вне, но на практике
+    /// не закрывает — вероятно из-за NSApp.activate() перед каждым показом
+    /// в сочетании с .accessory-политикой приложения. Дублируем закрытие
+    /// явным глобальным монитором: он видит клики только в ДРУГИХ
+    /// приложениях, свою иконку это не задевает — там уже работает toggle.
+    private func installOutsideClickMonitor() {
+        guard outsideClickMonitor == nil else { return }
+        outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+            self?.popover.performClose(nil)
+        }
+    }
 
     private func showPopoverViaFallbackAnchor() {
         // Экран под курсором — тот меню-бар, на который смотрит пользователь.
@@ -426,6 +441,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
 
     func popoverDidClose(_ notification: Notification) {
         fallbackAnchorPanel?.orderOut(nil)
+        if let monitor = outsideClickMonitor {
+            NSEvent.removeMonitor(monitor)
+            outsideClickMonitor = nil
+        }
     }
 
 }

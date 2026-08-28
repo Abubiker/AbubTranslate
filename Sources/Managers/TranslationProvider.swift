@@ -46,17 +46,19 @@ enum TranslationProviderError: LocalizedError {
 ///
 /// HuggingFace как движок тоже убран (не из-за него самого — работал
 /// нормально после смены модели на Helsinki-NLP opus-mt) — по прямому
-/// запросу пользователя, финальный набор: Apple / Apple+MyMemory / Azure /
-/// Google / Yandex.
+/// запросу пользователя. Yandex тоже убран следом — нет постоянного
+/// бесплатного тира (тарификация посимвольно с первого символа), решили не
+/// держать ради формальности. Финальный набор: Apple / Apple+MyMemory /
+/// Azure / Google / DeepL.
 enum EngineMode: String, CaseIterable, Sendable {
     case appleOnly = "apple"
     case appleMyMemory = "apple_mymemory"
     case azureCloud = "azure_cloud"
     case googleCloud = "google_cloud"
-    case yandexCloud = "yandex_cloud"
+    case deepLCloud = "deepl_cloud"
 
     static var pickerCases: [EngineMode] {
-        [.appleOnly, .appleMyMemory, .azureCloud, .googleCloud, .yandexCloud]
+        [.appleOnly, .appleMyMemory, .azureCloud, .googleCloud, .deepLCloud]
     }
 
     /// Имя провайдера, который в этом режиме пробуется первым — сравнивается
@@ -72,8 +74,8 @@ enum EngineMode: String, CaseIterable, Sendable {
             return "Azure Translator"
         case .googleCloud:
             return "Google Translate"
-        case .yandexCloud:
-            return "Yandex Translate"
+        case .deepLCloud:
+            return "DeepL"
         }
     }
 
@@ -87,11 +89,14 @@ enum EngineMode: String, CaseIterable, Sendable {
             return String(localized: "Cloud models (Azure)")
         case .googleCloud:
             return String(localized: "Cloud models (Google)")
-        case .yandexCloud:
-            return String(localized: "Cloud models (Yandex)")
+        case .deepLCloud:
+            return String(localized: "Cloud models (DeepL)")
         }
     }
 
+    /// DeepL — единственный движок с явным предупреждением в тексте: сам
+    /// блокирует запросы с российских IP на уровне сети, ключ не поможет
+    /// без VPN. Пользователь в курсе, решил добавить всё равно.
     var description: String {
         switch self {
         case .appleOnly:
@@ -102,21 +107,21 @@ enum EngineMode: String, CaseIterable, Sendable {
             return String(localized: "Azure Translator. Requires a key.")
         case .googleCloud:
             return String(localized: "Google Translate. Requires a key, billed past free tier.")
-        case .yandexCloud:
-            return String(localized: "Yandex Translate. Requires a key and a folder ID.")
+        case .deepLCloud:
+            return String(localized: "DeepL. Requires a key. Blocks Russian IPs — needs a VPN there.")
         }
     }
 
-    /// Legacy-значения из версий с Local OPUS и с парой A/B. `local_only` и
-    /// `apple_local` теряют офлайн-часть и откатываются на Apple;
-    /// `apple_local_cloud` — на HuggingFace, у него всё равно был этот же
-    /// провайдер вторым шагом.
+    /// Legacy-значения из версий с Local OPUS, парой A/B, HuggingFace и
+    /// Yandex. `local_only`/`apple_local` теряют офлайн-часть и
+    /// откатываются на Apple; остальные — на MyMemory, у которого нет ни
+    /// ключа, ни гео-блокировок.
     static func migrated(from raw: String) -> EngineMode? {
         switch raw {
         case "local_only", "apple_local":
             return .appleOnly
-        case "apple_local_cloud", "hf_cloud":
-            // HuggingFace убран из приложения — кто был на нём, откатывается
+        case "apple_local_cloud", "hf_cloud", "yandex_cloud":
+            // Убранные из приложения движки — кто был на них, откатывается
             // на бесплатный движок без ключа, а не на первый попавшийся.
             return .appleMyMemory
         default:
@@ -127,8 +132,8 @@ enum EngineMode: String, CaseIterable, Sendable {
 
 /// Языки для каждого движка — используются для динамических меню.
 /// Источник: Apple Translation 22 языка, MyMemory ~100, Azure/Google —
-/// официальные списки целиком, Yandex — приближение (см. комментарий у
-/// yandexCodes).
+/// официальные списки целиком, DeepL — стабильное ядро (см. комментарий у
+/// deepLCodes).
 enum EngineLanguageSupport {
     /// Apple Translation на этом Mac (динамический, но fallback для UI до загрузки).
     /// Дублирует AppModel.fallbackLanguageCodes чтобы не тянуть @MainActor зависимость.
@@ -182,14 +187,21 @@ enum EngineLanguageSupport {
         "uk","ur","ug","uz","vi","cy","xh","yi","yo","yua","zu",
     ]
 
-    /// Yandex Translate — официальный список языков недоступен: страницы
-    /// yandex.cloud/aistudio.yandex.ru блокируют автоматические запросы
-    /// CAPTCHA, а подтверждено только «114 языков, ISO 639-1» без полного
-    /// перечня. Не выдумываем список — переиспользуем уже проверенный
-    /// широкий набор myMemoryCodes как приближение для UI. Как и с opus-mt
-    /// в HuggingFace раньше: реальную поддержку пары решает ответ сервера,
+    /// DeepL — WebFetch к developers.deepl.com/docs дал два противоречивых
+    /// результата на один и тот же список языков (один раз «70+
+    /// дополнительных» без перечисления, другой раз ~130 кодов с
+    /// диалектными вариантами) — похоже на потери в суммаризаторе, а не на
+    /// достоверный источник, транскрибировать 1-в-1 как официальный список
+    /// (как сделано для Azure/Google) нельзя. Взято хорошо
+    /// задокументированное стабильное ядро, которое DeepL поддерживал
+    /// годами до расширения 2025+. Как и с Yandex раньше: не выдумываем
+    /// полный список, реальную поддержку пары решает ответ сервера —
     /// неподдержанная пара честно падает notSupported и уходит в MyMemory.
-    static var yandexCodes: [String] { myMemoryCodes }
+    static let deepLCodes = [
+        "ar","bg","cs","da","de","el","en","es","et","fi","fr","he","hu",
+        "id","it","ja","ko","lt","lv","nb","nl","pl","pt","ro","ru","sk",
+        "sl","sv","ta","tr","uk","vi","zh",
+    ]
 
     static func codes(for mode: EngineMode, appleAvailable: [String]) -> [String] {
         switch mode {
@@ -204,8 +216,8 @@ enum EngineLanguageSupport {
             return azureCodes
         case .googleCloud:
             return googleCodes
-        case .yandexCloud:
-            return yandexCodes
+        case .deepLCloud:
+            return deepLCodes
         }
     }
 }

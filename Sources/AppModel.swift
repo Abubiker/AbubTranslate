@@ -224,15 +224,9 @@ final class AppModel {
         set { KeychainHelper.googleKey = newValue }
     }
 
-    var yandexKey: String? {
-        get { KeychainHelper.yandexKey }
-        set { KeychainHelper.yandexKey = newValue }
-    }
-
-    /// Не секрет — не в Keychain по необходимости, а для единообразия с ключом.
-    var yandexFolderId: String? {
-        get { KeychainHelper.yandexFolderId }
-        set { KeychainHelper.yandexFolderId = newValue }
+    var deepLKey: String? {
+        get { KeychainHelper.deepLKey }
+        set { KeychainHelper.deepLKey = newValue }
     }
 
     var targetLanguage: Locale.Language { Locale.Language(identifier: targetLanguageCode) }
@@ -559,9 +553,9 @@ final class AppModel {
                 // Облачные модели: Google Translate (требует ключ) → MyMemory, без Apple
                 await self.translateViaCloudChain(mode: .googleCloud, text: text, detected: detected, candidates: candidates)
 
-            case .yandexCloud:
-                // Облачные модели: Yandex Translate (требует ключ и folderId) → MyMemory, без Apple
-                await self.translateViaCloudChain(mode: .yandexCloud, text: text, detected: detected, candidates: candidates)
+            case .deepLCloud:
+                // Облачные модели: DeepL (требует ключ) → MyMemory, без Apple
+                await self.translateViaCloudChain(mode: .deepLCloud, text: text, detected: detected, candidates: candidates)
             }
         }
     }
@@ -612,10 +606,10 @@ final class AppModel {
             var my = MyMemoryProvider()
             my.contactEmail = cloudContactEmail
             return [GoogleTranslateProvider(), my]
-        case .yandexCloud:
+        case .deepLCloud:
             var my = MyMemoryProvider()
             my.contactEmail = cloudContactEmail
-            return [YandexTranslateProvider(), my]
+            return [DeepLProvider(), my]
         default:
             return []
         }

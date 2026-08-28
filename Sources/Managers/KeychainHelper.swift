@@ -79,21 +79,11 @@ enum KeychainHelper {
         }
     }
 
-    static var yandexKey: String? {
-        get { load(for: "yandex_key") }
+    static var deepLKey: String? {
+        get { load(for: "deepl_key") }
         set {
-            if let v = newValue, !v.isEmpty { save(v, for: "yandex_key") }
-            else { delete(for: "yandex_key") }
-        }
-    }
-
-    /// Не секрет, но хранится тут же для единообразия — тот же паттерн,
-    /// что уже был у azureRegion.
-    static var yandexFolderId: String? {
-        get { load(for: "yandex_folder_id") }
-        set {
-            if let v = newValue, !v.isEmpty { save(v, for: "yandex_folder_id") }
-            else { delete(for: "yandex_folder_id") }
+            if let v = newValue, !v.isEmpty { save(v, for: "deepl_key") }
+            else { delete(for: "deepl_key") }
         }
     }
 
@@ -111,5 +101,10 @@ enum KeychainHelper {
         // от предыдущих версий: без провайдера эти ключи мёртвый груз.
         delete(for: "libre_url")
         delete(for: "libre_api_key")
+        // Yandex убран из приложения — нет постоянного бесплатного тира,
+        // решили не держать ради формальности. Та же чистка осиротевших
+        // значений.
+        delete(for: "yandex_key")
+        delete(for: "yandex_folder_id")
     }
 }

@@ -13,8 +13,7 @@ struct SettingsView: View {
     @State private var azureKey: String = ""
     @State private var azureRegion: String = ""
     @State private var googleKey: String = ""
-    @State private var yandexKey: String = ""
-    @State private var yandexFolderId: String = ""
+    @State private var deepLKey: String = ""
     @State private var engineMode: String = "apple"
     // Снимок последнего сохранённого состояния — сравнение hasCloudDraftChanges
     // идёт против ЭТИХ @State, не против model.*. model.engineMode/
@@ -29,8 +28,7 @@ struct SettingsView: View {
     @State private var savedAzureKey: String = ""
     @State private var savedAzureRegion: String = ""
     @State private var savedGoogleKey: String = ""
-    @State private var savedYandexKey: String = ""
-    @State private var savedYandexFolderId: String = ""
+    @State private var savedDeepLKey: String = ""
     @State private var sourceLanguage: String = "auto"
     @State private var appLocaleRaw: String = "auto"
 
@@ -71,15 +69,13 @@ struct SettingsView: View {
         azureKey = model.azureKey ?? ""
         azureRegion = model.azureRegion ?? ""
         googleKey = model.googleKey ?? ""
-        yandexKey = model.yandexKey ?? ""
-        yandexFolderId = model.yandexFolderId ?? ""
+        deepLKey = model.deepLKey ?? ""
         savedEngineMode = engineMode
         savedCloudEmail = cloudEmail
         savedAzureKey = azureKey
         savedAzureRegion = azureRegion
         savedGoogleKey = googleKey
-        savedYandexKey = yandexKey
-        savedYandexFolderId = yandexFolderId
+        savedDeepLKey = deepLKey
     }
 
     private var hasCloudDraftChanges: Bool {
@@ -88,8 +84,7 @@ struct SettingsView: View {
             || azureKey != savedAzureKey
             || azureRegion != savedAzureRegion
             || googleKey != savedGoogleKey
-            || yandexKey != savedYandexKey
-            || yandexFolderId != savedYandexFolderId
+            || deepLKey != savedDeepLKey
     }
 
     private func saveCloudDraft() {
@@ -101,15 +96,13 @@ struct SettingsView: View {
         model.azureKey = azureKey
         model.azureRegion = azureRegion
         model.googleKey = googleKey
-        model.yandexKey = yandexKey
-        model.yandexFolderId = yandexFolderId
+        model.deepLKey = deepLKey
         savedEngineMode = engineMode
         savedCloudEmail = cloudEmail
         savedAzureKey = azureKey
         savedAzureRegion = azureRegion
         savedGoogleKey = googleKey
-        savedYandexKey = yandexKey
-        savedYandexFolderId = yandexFolderId
+        savedDeepLKey = deepLKey
     }
 
     // MARK: - Page header — отвечает "what is active"
@@ -253,7 +246,7 @@ struct SettingsView: View {
     private func engineIcon(for mode: EngineMode) -> String {
         switch mode {
         case .appleOnly, .appleMyMemory: return "apple.logo"
-        case .azureCloud, .googleCloud, .yandexCloud: return "cloud"
+        case .azureCloud, .googleCloud, .deepLCloud: return "cloud"
         }
     }
 
@@ -327,8 +320,8 @@ struct SettingsView: View {
             azureCard
         } else if engineMode == EngineMode.googleCloud.rawValue {
             googleCard
-        } else if engineMode == EngineMode.yandexCloud.rawValue {
-            yandexCard
+        } else if engineMode == EngineMode.deepLCloud.rawValue {
+            deepLCard
         }
     }
 
@@ -467,17 +460,14 @@ struct SettingsView: View {
         .cardSurface()
     }
 
-    private var yandexCard: some View {
+    private var deepLCard: some View {
         VStack(alignment: .leading, spacing: DSTokens.md) {
-            cardHeader(overline: "Cloud", title: "Yandex Translate", icon: "cloud", description: nil)
+            cardHeader(overline: "Cloud", title: "DeepL", icon: "cloud", description: nil)
 
-            SecureField("Yandex key", text: $yandexKey, prompt: Text("API key"))
+            SecureField("DeepL key", text: $deepLKey, prompt: Text("API key"))
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: 13))
-            TextField("Folder ID", text: $yandexFolderId, prompt: Text("required"))
-                .textFieldStyle(.roundedBorder)
-                .font(.system(size: 13))
-            Text("Both key and Folder ID are required. Get them at console.cloud.yandex.com.")
+            Text("Blocks Russian IPs at the network level — a key won't help without a VPN. Get one at developers.deepl.com, free tier is 500k characters/month.")
                 .footnoteMuted()
 
             Divider().opacity(0.5)
@@ -487,7 +477,7 @@ struct SettingsView: View {
                 TextField("Email", text: $cloudEmail, prompt: Text("optional"))
                     .textFieldStyle(.roundedBorder)
                     .font(.system(size: 13))
-                Text("Automatic fallback if Yandex has no key or fails.")
+                Text("Automatic fallback if DeepL has no key or fails.")
                     .footnoteMuted()
             }
         }

@@ -211,12 +211,10 @@
 "Billed past the free tier — no hard cap like Azure's F0. Get a key at console.cloud.google.com, watching your own quota is on you." = "Платно сверх бесплатного лимита — жёсткого барьера как у Azure F0 здесь нет. Ключ — на console.cloud.google.com, следить за своей квотой — на вас.";
 "Automatic fallback if Google has no key or fails." = "Автоматический запасной вариант, если у Google нет ключа или он не сработал.";
 
-/* Yandex Translate — новый движок */
-"Cloud models (Yandex)" = "Облачные модели (Yandex)";
-"Yandex Translate. Requires a key and a folder ID." = "Yandex Translate. Нужен ключ и Folder ID.";
-"Yandex Translate" = "Yandex Translate";
-"Yandex key" = "Ключ Yandex";
-"Folder ID" = "Folder ID";
-"required" = "обязательно";
-"Both key and Folder ID are required. Get them at console.cloud.yandex.com." = "Обязательны и ключ, и Folder ID. Получить на console.cloud.yandex.com.";
-"Automatic fallback if Yandex has no key or fails." = "Автоматический запасной вариант, если у Yandex нет ключа или он не сработал.";
+/* DeepL — новый движок */
+"Cloud models (DeepL)" = "Облачные модели (DeepL)";
+"DeepL. Requires a key. Blocks Russian IPs — needs a VPN there." = "DeepL. Нужен ключ. Блокирует IP из России — без VPN не заработает.";
+"DeepL" = "DeepL";
+"DeepL key" = "Ключ DeepL";
+"Blocks Russian IPs at the network level — a key won't help without a VPN. Get one at developers.deepl.com, free tier is 500k characters/month." = "Блокирует IP из России на уровне сети — ключ без VPN не поможет. Получить на developers.deepl.com, бесплатный тир — 500 тыс. символов/месяц.";
+"Automatic fallback if DeepL has no key or fails." = "Автоматический запасной вариант, если у DeepL нет ключа или он не сработал.";
