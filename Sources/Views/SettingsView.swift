@@ -467,7 +467,7 @@ struct SettingsView: View {
             SecureField("DeepL key", text: $deepLKey, prompt: Text("API key"))
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: 13))
-            Text("Blocks Russian IPs at the network level — a key won't help without a VPN. Get one at developers.deepl.com, free tier is 500k characters/month.")
+            Text("Blocks Russian IPs at the network level. Get one at developers.deepl.com, free tier is a one-time 1M character credit.")
                 .footnoteMuted()
 
             Divider().opacity(0.5)

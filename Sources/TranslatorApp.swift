@@ -214,10 +214,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
     /// за CAPTCHA, в отличие от бывшего Yandex), но не живым запросом к
     /// самому API — завести DeepL-аккаунт с ключом приложение не может
     /// сделать за пользователя. DeepL сам блокирует запросы с российских
-    /// IP на уровне сети — без VPN этот self-test не пройдёт вообще, даже
+    /// IP на уровне сети — этот self-test может не пройти из России, даже
     /// с валидным ключом. Прогнать можно тем же приёмом: `--args
-    /// --deepl-selftest`, как только в настройках сохранён реальный ключ
-    /// (и поднят VPN, если запуск из России).
+    /// --deepl-selftest`, как только в настройках сохранён реальный ключ.
     private func runDeepLSelfTest() async {
         let log = selfTestLog
         let provider = DeepLProvider()

@@ -95,8 +95,8 @@ enum EngineMode: String, CaseIterable, Sendable {
     }
 
     /// DeepL — единственный движок с явным предупреждением в тексте: сам
-    /// блокирует запросы с российских IP на уровне сети, ключ не поможет
-    /// без VPN. Пользователь в курсе, решил добавить всё равно.
+    /// блокирует запросы с российских IP на уровне сети. Пользователь в
+    /// курсе, решил добавить всё равно.
     var description: String {
         switch self {
         case .appleOnly:
@@ -108,7 +108,7 @@ enum EngineMode: String, CaseIterable, Sendable {
         case .googleCloud:
             return String(localized: "Google Translate. Requires a key, billed past free tier.")
         case .deepLCloud:
-            return String(localized: "DeepL. Requires a key. Blocks Russian IPs — needs a VPN there.")
+            return String(localized: "DeepL. Requires a key. Blocks Russian IPs.")
         }
     }
 
