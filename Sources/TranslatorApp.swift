@@ -362,6 +362,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
         }
         NSApp.activate()
         if let window = button.window, window.screen != nil {
+            // Кэшируем позицию иконки на каждый показ — статус-бар мог перестроиться
+            // (другие иконки добавились/пропали), фолбэку нужна свежая точка, а не протухшая.
+            lastKnownIconCenterX = window.convertToScreen(button.convert(button.bounds, to: nil)).midX
             // Обычный путь: поповер из иконки в статус-баре.
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         } else {
@@ -372,6 +375,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
     }
 
     private var fallbackAnchorPanel: NSPanel?
+    private var lastKnownIconCenterX: CGFloat?
 
     private func showPopoverViaFallbackAnchor() {
         // Экран под курсором — тот меню-бар, на который смотрит пользователь.
@@ -401,8 +405,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
         // contentSize до первого показа нулевой, поэтому берём ширину панели.
         let halfWidth = max(popover.contentSize.width, PanelView.width) / 2
         let margin: CGFloat = 12
+        // Иконка спрятана — якорим по её последней видимой позиции, а не по курсору,
+        // иначе поповер прыгает по экрану вслед за мышью. Курсор — запасной вариант
+        // только пока иконка ни разу не была видна в эту сессию (маловероятно —
+        // она появляется сразу при запуске).
+        let anchorX = lastKnownIconCenterX ?? mouse.x
         let x = min(
-            max(screen.visibleFrame.minX + halfWidth + margin, mouse.x),
+            max(screen.visibleFrame.minX + halfWidth + margin, anchorX),
             screen.frame.maxX - halfWidth - margin
         )
         let y = screen.frame.maxY - menuBarHeight - 4
