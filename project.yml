@@ -8,6 +8,14 @@ options:
 knownRegions:
   - en
   - ru
+  - es
+  - fr
+  - de
+  - pt
+  - zh
+  - ja
+  - ar
+  - hi
   - Base
 
 targets:

@@ -42,22 +42,22 @@ final class SpeechManager: NSObject, AVSpeechSynthesizerDelegate {
     }
 
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
-        Task { @MainActor in self.isSpeaking = true }
+        Task { @MainActor [weak self] in self?.isSpeaking = true }
     }
 
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-        Task { @MainActor in self.isSpeaking = false }
+        Task { @MainActor [weak self] in self?.isSpeaking = false }
     }
 
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
-        Task { @MainActor in self.isSpeaking = false }
+        Task { @MainActor [weak self] in self?.isSpeaking = false }
     }
 
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didPause utterance: AVSpeechUtterance) {
-        Task { @MainActor in self.isSpeaking = false }
+        Task { @MainActor [weak self] in self?.isSpeaking = false }
     }
 
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didContinue utterance: AVSpeechUtterance) {
-        Task { @MainActor in self.isSpeaking = true }
+        Task { @MainActor [weak self] in self?.isSpeaking = true }
     }
 }

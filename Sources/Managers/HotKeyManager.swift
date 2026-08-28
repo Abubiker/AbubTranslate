@@ -14,16 +14,29 @@ final class HotKeyManager: @unchecked Sendable {
 
     private var hotKeyRefs: [Slot: EventHotKeyRef] = [:]
     private var eventHandler: EventHandlerRef?
+    private let lock = NSLock()
 
     init() {}
+
+    deinit {
+        // Снять все хоткеи и хендлер — иначе останется passUnretained указатель на мёртвый объект
+        for (_, ref) in hotKeyRefs {
+            UnregisterEventHotKey(ref)
+        }
+        hotKeyRefs.removeAll()
+        if let handler = eventHandler {
+            RemoveEventHandler(handler)
+        }
+    }
 
     /// `false` — комбинация занята другим приложением либо системой.
     /// Возвращать статус обязательно: молчаливый провал регистрации выглядит
     /// как «хоткей просто не работает» и не поддаётся диагностике.
     @discardableResult
     func register(slot: Slot, keyCode: UInt32, modifiers: UInt32) -> Bool {
+        lock.lock(); defer { lock.unlock() }
         installEventHandlerIfNeeded()
-        unregister(slot: slot)
+        unregisterLocked(slot: slot)
         var ref: EventHotKeyRef?
         let status = RegisterEventHotKey(
             keyCode,
@@ -39,6 +52,11 @@ final class HotKeyManager: @unchecked Sendable {
     }
 
     func unregister(slot: Slot) {
+        lock.lock(); defer { lock.unlock() }
+        unregisterLocked(slot: slot)
+    }
+
+    private func unregisterLocked(slot: Slot) {
         if let ref = hotKeyRefs[slot] {
             UnregisterEventHotKey(ref)
             hotKeyRefs[slot] = nil
@@ -51,7 +69,8 @@ final class HotKeyManager: @unchecked Sendable {
             eventClass: OSType(kEventClassKeyboard),
             eventKind: UInt32(kEventHotKeyPressed)
         )
-        let context = Unmanaged.passRetained(self).toOpaque()
+        // passUnretained — не ретайнит self, deinit снимет хендлер
+        let context = Unmanaged.passUnretained(self).toOpaque()
         InstallEventHandler(
             GetApplicationEventTarget(),
             { _, event, userData in

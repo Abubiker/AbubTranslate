@@ -15,13 +15,15 @@ struct CloudTranslator {
         case badResponse
 
         var errorDescription: String? {
+            // appLocalizedString(_:), не String(localized:) —
+            // вне тела View игнорирует .environment(\.locale:).
             switch self {
             case .quotaExceeded:
-                String(localized: "Daily cloud translation quota is used up")
+                appLocalizedString("Daily cloud translation quota is used up")
             case .service(let message):
                 message
             case .badResponse:
-                String(localized: "Cloud translator returned an unexpected response")
+                appLocalizedString("Cloud translator returned an unexpected response")
             }
         }
     }

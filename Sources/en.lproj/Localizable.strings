@@ -56,7 +56,6 @@
 "Adds local models and, if they are missing, cloud providers as last resort. Text may leave your Mac." = "Adds local models and, if they are missing, cloud providers as last resort. Text may leave your Mac.";
 "Apple + MyMemory" = "Apple + MyMemory";
 "Local neural only (OPUS)" = "Local neural only (OPUS)";
-"Apple first, MyMemory fallback for unsupported pairs. Free, works in Russia. Optional email raises quota." = "Apple first, MyMemory fallback for unsupported pairs. Free, works in Russia. Optional email raises quota.";
 "Only offline OPUS models. Download models below. No network requests, ~150MB RAM during translation." = "Only offline OPUS models. Download models below. No network requests, ~150MB RAM during translation.";
 "Local model for %@ is not downloaded. Open Settings to download it." = "Local model for %@ is not downloaded. Open Settings to download it.";
 "Failed to load local model: %@" = "Failed to load local model: %@";
@@ -153,9 +152,7 @@
 /* Trim: dry descriptions instead of marketing phrasing */
 "%lld languages available in the current engine." = "%lld languages available in the current engine.";
 "Adds offline OPUS models below." = "Adds offline OPUS models below.";
-"Any keyboard layout. Uses the current selection, or the clipboard." = "Any keyboard layout. Uses the current selection, or the clipboard.";
 "Apple, then MyMemory for unsupported pairs." = "Apple, then MyMemory for unsupported pairs.";
-"Auto follows the system language." = "Auto follows the system language.";
 "Downloaded one at a time, kept until deleted. Only the active model stays in memory." = "Downloaded one at a time, kept until deleted. Only the active model stays in memory.";
 "Email" = "Email";
 "MyMemory — fallback" = "MyMemory — fallback";
@@ -169,7 +166,6 @@
 "Unsaved changes" = "Unsaved changes";
 "Discard" = "Discard";
 "Save" = "Save";
-"Most changes apply immediately. Engine and credentials need Save." = "Most changes apply immediately. Engine and credentials need Save.";
 
 /* Azure Translator — new engine */
 "Cloud models (Azure)" = "Cloud models (Azure)";
@@ -179,7 +175,6 @@
 "subscription key" = "subscription key";
 "Azure region" = "Azure region";
 "e.g. westeurope — optional for global resources" = "e.g. westeurope — optional for global resources";
-"Region is only required for regional Azure resources; leave empty for a global single-service resource. Get a key at portal.azure.com — free F0 tier: 2M characters/month, cannot bill past it." = "Region is only required for regional Azure resources; leave empty for a global single-service resource. Get a key at portal.azure.com — free F0 tier: 2M characters/month, cannot bill past it.";
 "Automatic fallback if Azure has no key or fails." = "Automatic fallback if Azure has no key or fails.";
 
 /* Google Translate — new engine */
@@ -188,16 +183,26 @@
 "Google Translate" = "Google Translate";
 "Google key" = "Google key";
 "API key" = "API key";
-"Billed past the free tier — no hard cap like Azure's F0. Get a key at console.cloud.google.com, watching your own quota is on you." = "Billed past the free tier — no hard cap like Azure's F0. Get a key at console.cloud.google.com, watching your own quota is on you.";
 "Automatic fallback if Google has no key or fails." = "Automatic fallback if Google has no key or fails.";
 
 /* DeepL — new engine */
 "Cloud models (DeepL)" = "Cloud models (DeepL)";
-"DeepL. Requires a key. Blocks Russian IPs." = "DeepL. Requires a key. Blocks Russian IPs.";
+"DeepL. Requires a key." = "DeepL. Requires a key.";
 "DeepL" = "DeepL";
 "DeepL key" = "DeepL key";
-"Blocks Russian IPs at the network level. Get one at developers.deepl.com, free tier is a one-time 1M character credit." = "Blocks Russian IPs at the network level. Get one at developers.deepl.com, free tier is a one-time 1M character credit.";
 "Check usage" = "Check usage";
 "Save a key first to check usage." = "Save a key first to check usage.";
 "Used %lld of %lld characters." = "Used %lld of %lld characters.";
 "Automatic fallback if DeepL has no key or fails." = "Automatic fallback if DeepL has no key or fails.";
+
+/* OpenAI compatible */
+"Cloud models (OpenAI)" = "Cloud models (OpenAI)";
+"OpenAI-compatible API. Requires base URL, key and model." = "OpenAI-compatible API. Requires base URL, key and model.";
+"OpenAI-compatible" = "OpenAI-compatible";
+"Base URL" = "Base URL";
+"API key" = "API key";
+"Model" = "Model";
+"Check" = "Check";
+"Save base URL, key and model first to check connection." = "Save base URL, key and model first to check connection.";
+"Test sends Hello en→ru with fixed prompt. Success is 200." = "Test sends Hello en→ru with fixed prompt. Success is 200.";
+"Automatic fallback if OpenAI has no key or fails." = "Automatic fallback if OpenAI has no key or fails.";

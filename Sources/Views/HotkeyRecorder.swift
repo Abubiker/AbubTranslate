@@ -83,7 +83,10 @@ struct HotkeyBinding: Equatable, Codable {
 }
 
 struct HotkeyRecorder: View {
-    let title: String
+    // LocalizedStringKey, а не String: Text(String) выводится дословно и
+    // мимо локализации — "Translate:"/"Speak translation:" оставались
+    // английскими на русской системе несмотря на переведённые ключи.
+    let title: LocalizedStringKey
     let slot: HotKeyManager.Slot
     /// `false` — комбинация занята, запись откатывается на прежнюю.
     var onChange: (HotkeyBinding) -> Bool
@@ -104,7 +107,7 @@ struct HotkeyRecorder: View {
                 Button {
                     isRecording ? cancelRecording() : startRecording()
                 } label: {
-                    Text(isRecording ? String(localized: "Press keys…") : binding.displayString)
+                    Text(isRecording ? AppModel.shared.localizedString("Press keys…") : binding.displayString)
                         .font(.system(size: DSTokens.labelSize, weight: .medium))
                         .frame(minWidth: 96)
                 }
@@ -114,7 +117,7 @@ struct HotkeyRecorder: View {
 
                 if hasConflict {
                     Label(
-                        String(localized: "That shortcut is taken by another app"),
+                        AppModel.shared.localizedString("That shortcut is taken by another app"),
                         systemImage: "exclamationmark.triangle.fill"
                     )
                     .font(.system(size: 11, weight: .medium))

@@ -21,17 +21,20 @@ enum TranslationProviderError: LocalizedError {
     case notSupported
 
     var errorDescription: String? {
+        // appLocalizedString(_:), не String(localized:) — оно
+        // вне тела View не видит .environment(\.locale:), берёт системный
+        // язык вместо выбранного в приложении.
         switch self {
         case .notConfigured(let name):
-            return String(localized: "\(name) is not configured")
+            return appLocalizedString("%@ is not configured", name)
         case .quotaExceeded:
-            return String(localized: "Daily cloud translation quota is used up")
+            return appLocalizedString("Daily cloud translation quota is used up")
         case .service(let msg):
             return msg
         case .badResponse:
-            return String(localized: "Cloud translator returned an unexpected response")
+            return appLocalizedString("Cloud translator returned an unexpected response")
         case .notSupported:
-            return String(localized: "Translation not supported for this language pair")
+            return appLocalizedString("Translation not supported for this language pair")
         }
     }
 }
@@ -56,9 +59,10 @@ enum EngineMode: String, CaseIterable, Sendable {
     case azureCloud = "azure_cloud"
     case googleCloud = "google_cloud"
     case deepLCloud = "deepl_cloud"
+    case openAICompatible = "openai_compat"
 
     static var pickerCases: [EngineMode] {
-        [.appleOnly, .appleMyMemory, .azureCloud, .googleCloud, .deepLCloud]
+        [.appleOnly, .appleMyMemory, .azureCloud, .googleCloud, .deepLCloud, .openAICompatible]
     }
 
     /// Имя провайдера, который в этом режиме пробуется первым — сравнивается
@@ -76,39 +80,67 @@ enum EngineMode: String, CaseIterable, Sendable {
             return "Google Translate"
         case .deepLCloud:
             return "DeepL"
+        case .openAICompatible:
+            return "OpenAI"
         }
     }
 
+    // Ключи для наблюдаемой локализации: view читает model.localizedString(key)
+    // вместо прямого appLocalizedString, иначе Picker не инвалидируется при смене appLocale
+    var displayNameKey: String {
+        switch self {
+        case .appleOnly: return "Apple Translation only"
+        case .appleMyMemory: return "Apple + MyMemory"
+        case .azureCloud: return "Cloud models (Azure)"
+        case .googleCloud: return "Cloud models (Google)"
+        case .deepLCloud: return "Cloud models (DeepL)"
+        case .openAICompatible: return "Cloud models (OpenAI)"
+        }
+    }
+
+    var descriptionKey: String {
+        switch self {
+        case .appleOnly: return "On-device. No network."
+        case .appleMyMemory: return "Apple, then MyMemory for unsupported pairs."
+        case .azureCloud: return "Azure Translator. Requires a key."
+        case .googleCloud: return "Google Translate. Requires a key, billed past free tier."
+        case .deepLCloud: return "DeepL. Requires a key."
+        case .openAICompatible: return "OpenAI-compatible API. Requires base URL, key and model."
+        }
+    }
+
+    // Legacy non-observed — оставить для ошибок провайдеров вне View
     var displayName: String {
         switch self {
         case .appleOnly:
-            return String(localized: "Apple Translation only")
+            return appLocalizedString("Apple Translation only")
         case .appleMyMemory:
-            return String(localized: "Apple + MyMemory")
+            return appLocalizedString("Apple + MyMemory")
         case .azureCloud:
-            return String(localized: "Cloud models (Azure)")
+            return appLocalizedString("Cloud models (Azure)")
         case .googleCloud:
-            return String(localized: "Cloud models (Google)")
+            return appLocalizedString("Cloud models (Google)")
         case .deepLCloud:
-            return String(localized: "Cloud models (DeepL)")
+            return appLocalizedString("Cloud models (DeepL)")
+        case .openAICompatible:
+            return appLocalizedString("Cloud models (OpenAI)")
         }
     }
 
-    /// DeepL — единственный движок с явным предупреждением в тексте: сам
-    /// блокирует запросы с российских IP на уровне сети. Пользователь в
-    /// курсе, решил добавить всё равно.
     var description: String {
         switch self {
         case .appleOnly:
-            return String(localized: "On-device. No network.")
+            return appLocalizedString("On-device. No network.")
         case .appleMyMemory:
-            return String(localized: "Apple, then MyMemory for unsupported pairs.")
+            return appLocalizedString("Apple, then MyMemory for unsupported pairs.")
         case .azureCloud:
-            return String(localized: "Azure Translator. Requires a key.")
+            return appLocalizedString("Azure Translator. Requires a key.")
         case .googleCloud:
-            return String(localized: "Google Translate. Requires a key, billed past free tier.")
+            return appLocalizedString("Google Translate. Requires a key, billed past free tier.")
         case .deepLCloud:
-            return String(localized: "DeepL. Requires a key. Blocks Russian IPs.")
+            return appLocalizedString("DeepL. Requires a key.")
+        case .openAICompatible:
+            return appLocalizedString("OpenAI-compatible API. Requires base URL, key and model.")
         }
     }
 
@@ -218,6 +250,9 @@ enum EngineLanguageSupport {
             return googleCodes
         case .deepLCloud:
             return deepLCodes
+        case .openAICompatible:
+            // LLM — любые пары, отдаём самый широкий набор как у Google
+            return googleCodes
         }
     }
 }

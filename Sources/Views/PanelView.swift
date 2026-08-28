@@ -69,7 +69,14 @@ struct PanelView: View {
         let all = codes.contains(code) ? codes : ([code] + codes)
         return Menu {
             ForEach(all, id: \.self) { option in
-                Button(model.displayName(for: option)) { model.retarget(to: Locale.Language(identifier: option)) }
+                Button {
+                    model.retarget(to: Locale.Language(identifier: option))
+                } label: {
+                    HStack {
+                        Text(model.displayName(for: option))
+                        if code == option { Image(systemName: "checkmark") }
+                    }
+                }
             }
         } label: {
             languagePill(title: model.displayName(for: code))
@@ -87,18 +94,42 @@ struct PanelView: View {
             }
             return list
         }()
+        let selected = model.sourceLanguageCode ?? "auto"
         return Menu {
-            Button("Auto-detect") { model.sourceLanguageCode = nil }
+            Button {
+                model.sourceLanguageCode = nil
+            } label: {
+                HStack {
+                    Text(model.localizedString("Auto-detect"))
+                    if selected == "auto" { Image(systemName: "checkmark") }
+                }
+            }
             Divider()
             ForEach(all, id: \.self) { option in
-                Button(model.displayName(for: option)) { model.sourceLanguageCode = option }
+                Button {
+                    model.sourceLanguageCode = option
+                } label: {
+                    HStack {
+                        Text(model.displayName(for: option))
+                        if selected == option { Image(systemName: "checkmark") }
+                    }
+                }
             }
         } label: {
-            let title = model.sourceLanguageCode.map { model.displayName(for: $0) } ?? String(localized: "Auto-detect")
-            languagePill(title: title, isAuto: model.sourceLanguageCode == nil)
+            languagePill(title: sourcePillTitle, isAuto: model.sourceLanguageCode == nil)
         }
         .menuStyle(.borderlessButton)
         .fixedSize()
+    }
+
+    private var sourcePillTitle: String {
+        if let code = model.sourceLanguageCode {
+            return model.displayName(for: code)
+        }
+        if let det = model.detectedLanguage, let c = det.languageCode?.identifier {
+            return "\(model.localizedString("Auto-detect")) (\(model.displayName(for: c)))"
+        }
+        return model.localizedString("Auto-detect")
     }
 
     // Три пилюли ниже отличались только размером/цветом текста и наличием
@@ -150,7 +181,9 @@ struct PanelView: View {
                 Spacer(minLength: DSTokens.sm)
                 sourceLanguageMenu
                     .help(Text("Source language — Auto-detect or fixed", comment: "Panel source menu help"))
-                if let detected = model.detectedLanguage {
+                if let detected = model.detectedLanguage,
+                   let src = model.sourceLanguage,
+                   src.languageCode?.identifier != detected.languageCode?.identifier {
                     smallCapsule(model.languageName(detected))
                 }
             }
@@ -263,7 +296,7 @@ struct PanelView: View {
         case .sameLanguage(let detected, let suggestion):
             VStack(alignment: .leading, spacing: DSTokens.sm) {
                 Label(
-                    String(localized: "Text is already in \(model.languageName(detected))"),
+                    model.localizedString("Text is already in %@", model.languageName(detected)),
                     systemImage: "text.badge.checkmark"
                 )
                 .font(.system(size: DSTokens.labelSize, weight: .medium))
@@ -284,13 +317,13 @@ struct PanelView: View {
             .frame(maxWidth: .infinity, alignment: .topLeading)
 
         case .preparing:
-            statusRow(icon: "arrow.down.circle", text: "Downloading the language pack…")
+            statusRow(icon: "arrow.down.circle", text: model.localizedString("Downloading the language pack…"))
 
         case .workingCloud:
-            statusRow(icon: "cloud", text: String(localized: "Translating via \(model.cloudProviderName)…"))
+            statusRow(icon: "cloud", text: model.localizedString("Translating via %@…", model.cloudProviderName))
 
         case .working:
-            statusRow(icon: "ellipsis", text: "Translating…")
+            statusRow(icon: "ellipsis", text: model.localizedString("Translating…"))
 
         case .idle, .done:
             if model.translatedText.isEmpty {

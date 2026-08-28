@@ -41,6 +41,7 @@ final class SelectionReader {
 
         let pasteboard = NSPasteboard.general
         let saved = snapshot(of: pasteboard)
+        let savedChangeCount = pasteboard.changeCount
         let before = pasteboard.changeCount
 
         guard postCommandC() else { return nil }
@@ -50,14 +51,18 @@ final class SelectionReader {
             try? await Task.sleep(for: pollStep)
             waited += pollStep
             guard pasteboard.changeCount != before else { continue }
+            // Проверяем что буфер изменился именно нашим ⌘C, а не чужим приложением между снимком и чтением:
+            // если changeCount уже снова ушёл дальше — кто-то другой писал, не восстанавливаем вслепую
             let text = pasteboard.string(forType: .string)
-            restore(saved, to: pasteboard)
+            // Только если буфер всё ещё тот что мы получили — восстанавливаем
+            restore(saved, to: pasteboard, expectedChangeCount: pasteboard.changeCount, beforeCount: before, savedCount: savedChangeCount)
+            // Если это была картинка (text == nil) — всё равно вернули буфер и вернём nil (нет выделения)
             return text
         }
 
-        // Таймаут: если буфер всё же изменился на не-строку (картинка) — восстановить.
+        // Таймаут: если буфер всё же изменился на не-строку (картинка) — восстановить
         if pasteboard.changeCount != before {
-            restore(saved, to: pasteboard)
+            restore(saved, to: pasteboard, expectedChangeCount: pasteboard.changeCount, beforeCount: before, savedCount: savedChangeCount)
         }
         return nil
     }
@@ -65,7 +70,9 @@ final class SelectionReader {
     // MARK: - Буфер обмена
 
     private func snapshot(of pasteboard: NSPasteboard) -> [NSPasteboardItem] {
-        pasteboard.pasteboardItems?.map { item in
+        // pasteboardItems может быть nil если буфер пустой — сохраняем пустой массив, при restore не очищаем зря
+        guard let items = pasteboard.pasteboardItems, !items.isEmpty else { return [] }
+        return items.map { item in
             let copy = NSPasteboardItem()
             for type in item.types {
                 if let data = item.data(forType: type) {
@@ -73,10 +80,14 @@ final class SelectionReader {
                 }
             }
             return copy
-        } ?? []
+        }
     }
 
-    private func restore(_ items: [NSPasteboardItem], to pasteboard: NSPasteboard) {
+    private func restore(_ items: [NSPasteboardItem], to pasteboard: NSPasteboard, expectedChangeCount: Int, beforeCount: Int, savedCount: Int) {
+        // Только ровно +1 — это наш ⌘C. +2 и дальше значит кто-то ещё писал после нас — не затираем чужое.
+        // savedCount не используется отдельно: before уже равен savedCount на момент снимка.
+        _ = savedCount
+        guard expectedChangeCount == beforeCount + 1 else { return }
         pasteboard.clearContents()
         guard !items.isEmpty else { return }
         pasteboard.writeObjects(items)

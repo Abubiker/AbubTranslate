@@ -131,20 +131,31 @@ final class AppModel {
     private var cachedTargetCodes: [String]?
     private var cachedTargetEngine: EngineMode?
     private var cachedTargetAppleCodes: [String]?
+    private var cachedTargetLocaleId: String?
+
+    func englishDisplayName(for code: String) -> String {
+        Locale(identifier: "en").localizedString(forLanguageCode: code)?.capitalized ?? code
+    }
 
     var targetAvailableCodes: [String] {
+        let localeId = effectiveLocale.identifier
         if let cached = cachedTargetCodes,
            cachedTargetEngine == engineMode,
-           cachedTargetAppleCodes == availableLanguageCodes
+           cachedTargetAppleCodes == availableLanguageCodes,
+           cachedTargetLocaleId == localeId
         {
             return cached
         }
-        let codes = EngineLanguageSupport.codes(for: engineMode, appleAvailable: availableLanguageCodes)
+        let rawCodes = EngineLanguageSupport.codes(for: engineMode, appleAvailable: availableLanguageCodes)
+        // скрыть редкие коды без английского имени (alz, bbc и т.д.) — они дают сырой код в списке
+        let codes = rawCodes.filter { hasDisplayName($0) }
         var seen = Set<String>()
-        let sorted = codes.filter { seen.insert($0).inserted }.sorted { displayName(for: $0) < displayName(for: $1) }
+        // сортировка всегда по en для стабильности, отображение — на языке интерфейса
+        let sorted = codes.filter { seen.insert($0).inserted }.sorted { englishDisplayName(for: $0) < englishDisplayName(for: $1) }
         cachedTargetCodes = sorted
         cachedTargetEngine = engineMode
         cachedTargetAppleCodes = availableLanguageCodes
+        cachedTargetLocaleId = localeId
         return sorted
     }
 
@@ -229,6 +240,21 @@ final class AppModel {
         set { KeychainHelper.deepLKey = newValue }
     }
 
+    var openAIBaseURL: String? {
+        get { UserDefaults.standard.string(forKey: "openai_base_url") }
+        set { UserDefaults.standard.set(newValue, forKey: "openai_base_url") }
+    }
+
+    var openAIModel: String? {
+        get { UserDefaults.standard.string(forKey: "openai_model") }
+        set { UserDefaults.standard.set(newValue, forKey: "openai_model") }
+    }
+
+    var openAIKey: String? {
+        get { KeychainHelper.openAIKey }
+        set { KeychainHelper.openAIKey = newValue }
+    }
+
     var targetLanguage: Locale.Language { Locale.Language(identifier: targetLanguageCode) }
 
     /// Менять местами нечего, пока исходный язык неизвестен.
@@ -237,14 +263,29 @@ final class AppModel {
     }
 
     /// Источник ⇄ цель: прежний источник фиксируется как цель, прежняя цель
-    /// становится заданным вручную источником.
+    /// становится заданным вручную источником. При en↔en (дубль) — берём
+    /// подсказку как в sameLanguage, чтобы не оставить en↔en.
     func swapLanguages() {
         guard let current = sourceLanguage ?? detectedLanguage,
               let currentCode = current.languageCode?.identifier
         else { return }
         let previousTarget = targetLanguageCode
-        targetLanguageCode = currentCode
-        sourceLanguageCode = previousTarget
+        let prevLang = Locale.Language(identifier: previousTarget)
+        if TranslationDirection.sameLanguage(current, prevLang) {
+            if let alt = TranslationDirection.suggestedAlternative(
+                detected: current,
+                preferred: effectiveLocale.language,
+                supported: targetAvailableCodes
+            ), let altCode = alt.languageCode?.identifier {
+                targetLanguageCode = altCode
+                sourceLanguageCode = previousTarget
+            } else {
+                return
+            }
+        } else {
+            targetLanguageCode = currentCode
+            sourceLanguageCode = previousTarget
+        }
         lastTranslatedSource = ""
         if !sourceText.isEmpty {
             translate(text: sourceText)
@@ -267,7 +308,7 @@ final class AppModel {
         let codes = languages
             .compactMap { $0.languageCode?.identifier }
             .filter { seen.insert($0).inserted }
-            .sorted { displayName(for: $0) < displayName(for: $1) }
+            .sorted { englishDisplayName(for: $0) < englishDisplayName(for: $1) }
         guard !codes.isEmpty else { return }
         availableLanguageCodes = codes
         // Инвалидируем кэш targetAvailableCodes чтобы меню сразу увидело новые языки
@@ -287,56 +328,95 @@ final class AppModel {
     }
 
     func displayName(for code: String) -> String {
-        effectiveLocale.localizedString(forLanguageCode: code)?.capitalized ?? code
+        if let v = effectiveLocale.localizedString(forLanguageCode: code)?.capitalized, !v.isEmpty { return v }
+        if let v = Locale(identifier: "en").localizedString(forLanguageCode: code)?.capitalized, !v.isEmpty { return v }
+        return code
+    }
+
+    private func hasDisplayName(_ code: String) -> Bool {
+        Locale(identifier: "en").localizedString(forLanguageCode: code) != nil
     }
 
     // MARK: - Локаль интерфейса (отдельно от пары перевода)
 
-    enum AppLocale: String, CaseIterable {
-        case auto = "auto"
-        case ru = "ru"
-        case en = "en"
+    /// Open-source на все страны — без «Авто» как отдельного режима: при
+    /// первом запуске резолвится в конкретный язык один раз
+    /// (resolveInitialLanguage), дальше это обычный явный выбор.
+    enum InterfaceLanguage: String, CaseIterable {
+        case en, ru, es, fr, de, pt, zh, ja, ar, hi
 
-        var locale: Locale? {
-            switch self {
-            case .auto: return nil
-            case .ru: return Locale(identifier: "ru")
-            case .en: return Locale(identifier: "en")
-            }
-        }
-
+        /// Имя языка на нём самом — не через String(localized:), это имя
+        /// собственное, показывается одинаково независимо от текущего
+        /// интерфейсного языка (тот же принцип, что уже был у "Русский"/"English").
         var displayName: String {
             switch self {
-            case .auto: return String(localized: "Auto (System)")
-            case .ru: return "Русский"
             case .en: return "English"
+            case .ru: return "Русский"
+            case .es: return "Español"
+            case .fr: return "Français"
+            case .de: return "Deutsch"
+            case .pt: return "Português"
+            case .zh: return "中文"
+            case .ja: return "日本語"
+            case .ar: return "العربية"
+            case .hi: return "हिन्दी"
             }
         }
     }
 
-    var appLocaleRaw: String {
-        get { UserDefaults.standard.string(forKey: "appLocale") ?? "auto" }
-        set { UserDefaults.standard.set(newValue, forKey: "appLocale") }
+    /// Языки без собственного перевода в приложении, для которых система
+    /// на постсоветском пространстве — откат на русский вместо английского,
+    /// ближе этой аудитории. Не ограничение функциональности: весь список
+    /// из 10 языков доступен вручную сразу же, это только дефолт первого
+    /// запуска.
+    private static let cisFallbackCodes: Set<String> = [
+        "uk", "be", "kk", "uz", "ky", "tg", "tk", "hy", "az", "ka",
+    ]
+
+    private static func resolveInitialLanguage() -> String {
+        let preferred = Locale.preferredLanguages
+            .compactMap { Locale(identifier: $0).language.languageCode?.identifier }
+        if let match = preferred.first(where: { InterfaceLanguage(rawValue: $0) != nil }) {
+            return match
+        }
+        if let first = preferred.first, cisFallbackCodes.contains(first) { return "ru" }
+        return "en"
     }
 
-    var appLocale: AppLocale {
-        AppLocale(rawValue: appLocaleRaw) ?? .auto
+    /// Хранимое, а не вычисляемое: @Observable отслеживает только чтение
+    /// хранимых свойств. Раньше это был computed поверх UserDefaults — смена
+    /// языка в Settings писала UserDefaults, но SettingsView/PanelView
+    /// (оба через .environment(\.locale, model.effectiveLocale), а
+    /// effectiveLocale тоже computed сверху appLocaleRaw) не
+    /// перерисовывались вообще: интерфейс молча оставался на старом языке,
+    /// быстрое переключение туда-сюда выглядело как "не успевает". Тот же
+    /// класс бага, что уже чинили для hasAccessibility.
+    var appLocaleRaw: String = UserDefaults.standard.string(forKey: "appLocale")
+        ?? AppModel.resolveInitialLanguage()
+    {
+        didSet {
+            guard oldValue != appLocaleRaw else { return }
+            UserDefaults.standard.set(appLocaleRaw, forKey: "appLocale")
+        }
     }
 
     var effectiveLocale: Locale {
-        appLocale.locale ?? Locale.current
+        Locale(identifier: appLocaleRaw)
     }
 
-    /// Для NSMenu вне SwiftUI — форсированная локализация по effectiveLocale
-    func localizedString(_ key: String) -> String {
-        if let loc = appLocale.locale,
-           let path = Bundle.main.path(forResource: loc.identifier, ofType: "lproj"),
-           let bundle = Bundle(path: path)
-        {
-            let v = bundle.localizedString(forKey: key, value: nil, table: nil)
-            if v != key { return v }
-        }
-        return String(localized: String.LocalizationValue(key))
+    /// Форсированная локализация по appLocaleRaw — нужна для ЛЮБОГО текста
+    /// вне тела SwiftUI View (NSMenu, сообщения об ошибках AppModel):
+    /// String(localized:) там не видит .environment(\.locale:), берёт
+    /// системный язык напрямую, игнорируя выбор пользователя в приложении.
+    /// appLocaleRaw всегда конкретный код (нет больше "auto"), поэтому без
+    /// опциональной развёртки, в отличие от прежней версии.
+    ///
+    /// Тонкая обёртка над appLocalizedString(_:_:) (см. ниже, вне класса) —
+    /// та же логика, просто с готовым appLocaleRaw вместо чтения
+    /// UserDefaults заново. Обе части экрана (эта и enum'ы в
+    /// TranslationProvider/CloudTranslator) должны резолвиться одинаково.
+    func localizedString(_ key: String, _ args: CVarArg...) -> String {
+        localizedStringCore(forLanguageCode: appLocaleRaw, key: key, args: args)
     }
 
     func languageName(_ language: Locale.Language, locale: Locale? = nil) -> String {
@@ -490,7 +570,7 @@ final class AppModel {
         guard !text.isEmpty else {
             sourceText = ""
             translatedText = ""
-            status = .failed(String(localized: "Nothing to translate"))
+            status = .failed(localizedString("Nothing to translate"))
             return
         }
         if sourceText != text { sourceText = text }
@@ -507,7 +587,7 @@ final class AppModel {
         } else if let auto = LanguageDetector.detect(text) {
             detected = auto
         } else {
-            status = .failed(String(localized: "Could not detect the source language"))
+            status = .failed(localizedString("Could not detect the source language"))
             return
         }
         detectedLanguage = detected
@@ -517,7 +597,7 @@ final class AppModel {
         if TranslationDirection.sameLanguage(detected, targetLanguage) {
             let suggestion = TranslationDirection.suggestedAlternative(
                 detected: detected,
-                preferred: Locale.current.language,
+                preferred: effectiveLocale.language,
                 supported: targetAvailableCodes
             )
             status = .sameLanguage(detected: detected, suggestion: suggestion)
@@ -556,6 +636,10 @@ final class AppModel {
             case .deepLCloud:
                 // Облачные модели: DeepL (требует ключ) → MyMemory, без Apple
                 await self.translateViaCloudChain(mode: .deepLCloud, text: text, detected: detected, candidates: candidates)
+
+            case .openAICompatible:
+                // OpenAI-совместимый LLM (требует baseURL+key+model) → MyMemory, без Apple
+                await self.translateViaCloudChain(mode: .openAICompatible, text: text, detected: detected, candidates: candidates)
             }
         }
     }
@@ -610,6 +694,10 @@ final class AppModel {
             var my = MyMemoryProvider()
             my.contactEmail = cloudContactEmail
             return [DeepLProvider(), my]
+        case .openAICompatible:
+            var my = MyMemoryProvider()
+            my.contactEmail = cloudContactEmail
+            return [OpenAICompatibleProvider(), my]
         default:
             return []
         }
@@ -723,9 +811,9 @@ final class AppModel {
         guard let code = detected.languageCode?.identifier,
               availableLanguageCodes.contains(code)
         else {
-            return String(localized: "Apple Translation does not support \(name)")
+            return localizedString("Apple Translation does not support %@", name)
         }
-        return String(localized: "No supported translation direction from \(name)")
+        return localizedString("No supported translation direction from %@", name)
     }
 
     /// `.translationTask` перезапускается только при смене конфигурации,
@@ -763,4 +851,32 @@ final class AppModel {
         guard !translatedText.isEmpty else { return }
         clipboard.writeText(translatedText)
     }
+}
+
+/// Ядро локализации по конкретному коду языка — nonisolated: вызывается и
+/// из @MainActor (AppModel.localizedString) и из non-isolated мест
+/// (EngineMode/TranslationProviderError в TranslationProvider.swift,
+/// CloudTranslator.Failure) — те не привязаны к main actor, их методы
+/// могут выполняться в фоновом Task при сетевых ошибках провайдеров, и
+/// обратиться оттуда к MainActor-изолированному AppModel.shared без await
+/// нельзя (Swift 6 concurrency checker).
+nonisolated func localizedStringCore(forLanguageCode code: String, key: String, args: [CVarArg]) -> String {
+    let template: String
+    if let path = Bundle.main.path(forResource: code, ofType: "lproj"),
+       let bundle = Bundle(path: path)
+    {
+        let v = bundle.localizedString(forKey: key, value: nil, table: nil)
+        template = v != key ? v : String(localized: String.LocalizationValue(key))
+    } else {
+        template = String(localized: String.LocalizationValue(key))
+    }
+    return args.isEmpty ? template : String(format: template, arguments: args)
+}
+
+/// Для non-isolated контекстов — код языка читаем напрямую из
+/// UserDefaults (сам по себе потокобезопасен), а не через
+/// MainActor-изолированный AppModel.shared.appLocaleRaw.
+nonisolated func appLocalizedString(_ key: String, _ args: CVarArg...) -> String {
+    let code = UserDefaults.standard.string(forKey: "appLocale") ?? "en"
+    return localizedStringCore(forLanguageCode: code, key: key, args: args)
 }

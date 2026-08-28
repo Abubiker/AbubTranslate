@@ -68,7 +68,6 @@
 "Adds local models and, if they are missing, cloud providers as last resort. Text may leave your Mac." = "Добавляет локальные модели и, если их нет, облачные провайдеры как последний шанс. Текст может покинуть Mac.";
 "Apple + MyMemory" = "Apple + MyMemory";
 "Local neural only (OPUS)" = "Только локальная нейронка (OPUS)";
-"Apple first, MyMemory fallback for unsupported pairs. Free, works in Russia. Optional email raises quota." = "Apple сначала, MyMemory как запасной для неподдерживаемых пар. Бесплатно, работает в России. Почта опционально повышает лимит.";
 "Only offline OPUS models. Download models below. No network requests, ~150MB RAM during translation." = "Только офлайн-модели OPUS. Скачайте модели ниже. Без сети, ~150MB RAM во время перевода.";
 "Local model for %@ is not downloaded. Open Settings to download it." = "Локальная модель для %@ не скачана. Откройте Настройки чтобы скачать.";
 "Failed to load local model: %@" = "Не удалось загрузить локальную модель: %@";
@@ -173,9 +172,7 @@
 /* Трим: сухие описания вместо маркетинговых формулировок */
 "%lld languages available in the current engine." = "Доступно языков в текущем движке: %lld";
 "Adds offline OPUS models below." = "Плюс офлайн-модели OPUS ниже.";
-"Any keyboard layout. Uses the current selection, or the clipboard." = "Любая раскладка. Берёт выделение, иначе буфер обмена.";
 "Apple, then MyMemory for unsupported pairs." = "Apple, затем MyMemory для неподдерживаемых пар.";
-"Auto follows the system language." = "«Авто» следует языку системы.";
 "Downloaded one at a time, kept until deleted. Only the active model stays in memory." = "Скачиваются по одной, хранятся до удаления. В памяти — только активная модель.";
 "Email" = "Почта";
 "MyMemory — fallback" = "MyMemory — запасной вариант";
@@ -189,7 +186,6 @@
 "Unsaved changes" = "Есть несохранённые изменения";
 "Discard" = "Отменить";
 "Save" = "Сохранить";
-"Most changes apply immediately. Engine and credentials need Save." = "Большинство изменений применяется сразу. Движок и учётные данные — по кнопке «Сохранить».";
 
 /* Azure Translator — новый движок */
 "Cloud models (Azure)" = "Облачные модели (Azure)";
@@ -199,7 +195,6 @@
 "subscription key" = "ключ подписки";
 "Azure region" = "Регион Azure";
 "e.g. westeurope — optional for global resources" = "например westeurope — необязательно для глобального ресурса";
-"Region is only required for regional Azure resources; leave empty for a global single-service resource. Get a key at portal.azure.com — free F0 tier: 2M characters/month, cannot bill past it." = "Регион нужен только для регионального ресурса Azure; для глобального single-service оставьте пустым. Ключ — на portal.azure.com, бесплатный тариф F0: 2 млн символов/месяц, списать деньги сверх него физически нельзя.";
 "Automatic fallback if Azure has no key or fails." = "Автоматический запасной вариант, если у Azure нет ключа или он не сработал.";
 
 /* Google Translate — новый движок */
@@ -208,16 +203,26 @@
 "Google Translate" = "Google Translate";
 "Google key" = "Ключ Google";
 "API key" = "API-ключ";
-"Billed past the free tier — no hard cap like Azure's F0. Get a key at console.cloud.google.com, watching your own quota is on you." = "Платно сверх бесплатного лимита — жёсткого барьера как у Azure F0 здесь нет. Ключ — на console.cloud.google.com, следить за своей квотой — на вас.";
 "Automatic fallback if Google has no key or fails." = "Автоматический запасной вариант, если у Google нет ключа или он не сработал.";
 
 /* DeepL — новый движок */
 "Cloud models (DeepL)" = "Облачные модели (DeepL)";
-"DeepL. Requires a key. Blocks Russian IPs." = "DeepL. Нужен ключ. Блокирует IP из России.";
+"DeepL. Requires a key." = "DeepL. Нужен ключ.";
 "DeepL" = "DeepL";
 "DeepL key" = "Ключ DeepL";
-"Blocks Russian IPs at the network level. Get one at developers.deepl.com, free tier is a one-time 1M character credit." = "Блокирует IP из России на уровне сети. Получить на developers.deepl.com, бесплатный тир — разовый кредит 1 млн символов, без пополнения.";
 "Check usage" = "Проверить лимит";
 "Save a key first to check usage." = "Сначала сохраните ключ, чтобы проверить лимит.";
 "Used %lld of %lld characters." = "Использовано %lld из %lld символов.";
 "Automatic fallback if DeepL has no key or fails." = "Автоматический запасной вариант, если у DeepL нет ключа или он не сработал.";
+
+/* OpenAI compatible */
+"Cloud models (OpenAI)" = "Облачные модели (OpenAI)";
+"OpenAI-compatible API. Requires base URL, key and model." = "OpenAI-совместимый API. Нужны адрес, ключ и модель.";
+"OpenAI-compatible" = "OpenAI-совместимый";
+"Base URL" = "Базовый адрес";
+"API key" = "API-ключ";
+"Model" = "Модель";
+"Check" = "Проверить";
+"Save base URL, key and model first to check connection." = "Сначала сохраните адрес, ключ и модель для проверки.";
+"Test sends Hello en→ru with fixed prompt. Success is 200." = "Тест отправляет Hello en→ru фиксированным промптом. Успех — 200.";
+"Automatic fallback if OpenAI has no key or fails." = "Запасной MyMemory если у OpenAI нет ключа или ошибка.";

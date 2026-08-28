@@ -50,36 +50,80 @@ enum DSTokens {
 // MARK: - Card surfaces — depth over decoration
 
 struct CardSurface: ViewModifier {
-    var padding: CGFloat = DSTokens.lgPlus // 20 as per system: generous card padding
+    // Плотнее прежних 20 — карточки должны читаться почти слитным блоком,
+    // не набором отдельных коробок с большими воздушными полями.
+    var padding: CGFloat = DSTokens.lg
     func body(content: Content) -> some View {
-        content
-            .padding(padding)
-            .background(
-                RoundedRectangle(cornerRadius: DSTokens.radiusCard)
-                    .fill(DSTokens.Colors.bgCard)
-            )
-            // faint top highlight
-            .overlay(
-                RoundedRectangle(cornerRadius: DSTokens.radiusCard)
-                    .stroke(DSTokens.Colors.border, lineWidth: 0.5)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: DSTokens.radiusCard)
-                    .stroke(DSTokens.Colors.highlight, lineWidth: 0.5)
-                    .mask(
-                        RoundedRectangle(cornerRadius: DSTokens.radiusCard)
-                            .fill(
-                                LinearGradient(
-                                    colors: [Color.white.opacity(0.18), .clear],
-                                    startPoint: .top,
-                                    endPoint: .bottom
+        // Liquid Glass — только macOS 26+, .glassEffect() на более старых
+        // системах не существует. Применяется прямо к контенту (не вложен
+        // в .background{}) — так его рендерит система, включая свою кромку
+        // и подсветку, поэтому ручные border/highlight/shadow ниже для этой
+        // ветки убраны — дублировали бы то, что уже рисует стекло, и
+        // выглядели бы шумно поверх него. Без .tint()/.interactive():
+        // это статичный контейнер, не кнопка — попросили сдержанно.
+        if #available(macOS 26.0, *) {
+            content
+                .padding(padding)
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DSTokens.radiusCard))
+        } else {
+            content
+                .padding(padding)
+                .background(
+                    RoundedRectangle(cornerRadius: DSTokens.radiusCard)
+                        .fill(DSTokens.Colors.bgCard)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: DSTokens.radiusCard)
+                        .stroke(DSTokens.Colors.border, lineWidth: 0.5)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: DSTokens.radiusCard)
+                        .stroke(DSTokens.Colors.highlight, lineWidth: 0.5)
+                        .mask(
+                            RoundedRectangle(cornerRadius: DSTokens.radiusCard)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [Color.white.opacity(0.18), .clear],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )
                                 )
-                            )
-                    )
-                    .opacity(0.6)
+                        )
+                        .opacity(0.6)
+                )
+                .shadow(color: DSTokens.Colors.shadow.opacity(0.08), radius: 12, x: 0, y: 4)
+                .shadow(color: DSTokens.Colors.shadow.opacity(0.06), radius: 32, x: 0, y: 12)
+        }
+    }
+}
+
+/// Декоративный фон под settings-окном на macOS 26+ — референс от Stitch:
+/// тёмный градиент с мягкой диагональной световой полосой (светлая тема —
+/// пастельно-голубой вариант). Без этого стеклу карточек нечего
+/// преломлять — на плоском системном фоне .glassEffect() почти не виден.
+@available(macOS 26.0, *)
+struct SettingsBackground: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        ZStack {
+            LinearGradient(
+                colors: colorScheme == .dark
+                    ? [Color(red: 0.04, green: 0.06, blue: 0.13), Color(red: 0.11, green: 0.14, blue: 0.30)]
+                    : [Color(red: 0.96, green: 0.97, blue: 1.0), Color(red: 0.86, green: 0.91, blue: 0.99)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
             )
-            .shadow(color: DSTokens.Colors.shadow.opacity(0.08), radius: 12, x: 0, y: 4)
-            .shadow(color: DSTokens.Colors.shadow.opacity(0.06), radius: 32, x: 0, y: 12)
+            LinearGradient(
+                colors: colorScheme == .dark
+                    ? [.clear, Color.blue.opacity(0.22), Color.purple.opacity(0.14), .clear]
+                    : [.clear, Color.blue.opacity(0.16), .clear],
+                startPoint: .topTrailing,
+                endPoint: .bottomLeading
+            )
+            .blur(radius: 60)
+        }
+        .ignoresSafeArea()
     }
 }
 
@@ -149,18 +193,5 @@ extension View {
             .lineSpacing(1)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-/// `frame(minWidth:idealWidth:maxWidth:)`, только опционально — узкая
-/// раскладка ViewThatFits не должна ограничивать ширину, широкая должна.
-struct OptionalWidthRange: ViewModifier {
-    let range: ClosedRange<CGFloat>?
-    func body(content: Content) -> some View {
-        if let range {
-            content.frame(minWidth: range.lowerBound, idealWidth: (range.lowerBound + range.upperBound) / 2, maxWidth: range.upperBound)
-        } else {
-            content
-        }
     }
 }

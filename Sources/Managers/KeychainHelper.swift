@@ -87,6 +87,14 @@ enum KeychainHelper {
         }
     }
 
+    static var openAIKey: String? {
+        get { load(for: "openai_api_key") }
+        set {
+            if let v = newValue, !v.isEmpty { save(v, for: "openai_api_key") }
+            else { delete(for: "openai_api_key") }
+        }
+    }
+
     /// Миграция старых UserDefaults ключей в Keychain (если были).
     static func migrateIfNeeded() {
         let defaults = UserDefaults.standard
