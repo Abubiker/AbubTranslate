@@ -1,0 +1,226 @@
+/* Chinese (Simplified) */
+"Swap languages" = "交换语言";
+"Settings" = "设置";
+"Original" = "原文";
+"Paste text here — it translates automatically. Or select text anywhere and press the shortcut." = "在此粘贴文本会自动翻译。或者在任意位置选中文本，按快捷键。";
+"Translate" = "翻译";
+"Translation" = "译文";
+"Downloading the language pack…" = "正在下载语言包…";
+"Translating…" = "翻译中…";
+"The translation will appear here" = "译文将显示在此处";
+"Copy translation" = "复制译文";
+"Speak translation" = "朗读译文";
+"Stop" = "停止";
+"Languages" = "语言";
+"First language:" = "第一语言：";
+"Second language:" = "第二语言：";
+"The source language is detected automatically. Text in one of these two is translated into the other. A third language goes into whichever of the two matches your system language." = "原文语言会自动检测。这两种语言中任一种的文本会翻译成另一种。第三种语言会翻译成与系统语言匹配的那一种。";
+"Shortcuts" = "快捷键";
+"Translate:" = "翻译：";
+"Speak translation:" = "朗读译文：";
+"Shortcuts work in any keyboard layout and ignore Caps Lock. Translation uses the current selection, falling back to the clipboard." = "快捷键适用于任何键盘布局，且忽略大写锁定。翻译使用当前选中内容，若无选中则使用剪贴板。";
+"Translating the selection needs Accessibility access" = "翻译选中内容需要辅助功能权限";
+"Open System Settings…" = "打开系统设置…";
+"Appearance" = "外观";
+"Theme:" = "主题：";
+"Automatic" = "自动";
+"Light" = "浅色";
+"Dark" = "深色";
+"System" = "系统";
+"Launch at login" = "登录时启动";
+"Press keys…" = "按下按键…";
+"That shortcut is taken by another app" = "该快捷键已被其他应用占用";
+"Settings…" = "设置…";
+"Quit AbubTranslate" = "退出 AbubTranslate";
+"Nothing to translate" = "没有需要翻译的内容";
+"Could not detect the source language" = "无法检测原文语言";
+"Apple Translation does not support %@" = "Apple 翻译不支持 %@";
+"No supported translation direction from %@" = "从 %@ 没有受支持的翻译方向";
+"Cloud fallback" = "云端备用方案";
+"Use %@ when Apple Translation cannot handle the pair" = "当 Apple 翻译无法处理该语言对时使用 %@";
+"Email for a higher quota (optional):" = "用于提升配额的邮箱（可选）：";
+"Apple Translation supports a limited set of languages. For the rest the text is sent to an online service — it leaves your Mac. Everything else stays on device." = "Apple 翻译支持的语言有限。其余语言的文本会发送到在线服务——离开你的 Mac。其他内容都保留在本机。";
+"Translating via %@…" = "通过 %@ 翻译中…";
+"Daily cloud translation quota is used up" = "每日云翻译配额已用完";
+"Cloud translator returned an unexpected response" = "云翻译服务返回了意外响应";
+"Translate unsupported languages online" = "在线翻译不支持的语言";
+"Email:" = "邮箱：";
+"optional" = "可选";
+"Apple Translation supports a limited set of languages. For the rest the text is sent to %@ — it leaves your Mac. Everything else stays on device. An email raises the daily quota." = "Apple 翻译支持的语言有限。其余语言的文本会发送到 %@——离开你的 Mac。其他内容都保留在本机。填写邮箱可提升每日配额。";
+"AbubTranslate Settings" = "AbubTranslate 设置";
+"Apple Translation only" = "仅 Apple 翻译";
+"Apple + Local neural (OPUS)" = "Apple + 本地神经网络（OPUS）";
+"Apple + Local + Cloud fallback" = "Apple + 本地 + 云端备用方案";
+"Only on-device Apple Translation. No network requests." = "仅使用设备端 Apple 翻译。无网络请求。";
+"Adds offline OPUS models for unsupported languages. Download models in the section below." = "为不支持的语言添加离线 OPUS 模型。请在下方下载模型。";
+"Adds local models and, if they are missing, cloud providers as last resort. Text may leave your Mac." = "添加本地模型，若缺失则最终使用云端服务商。文本可能离开你的 Mac。";
+"Apple + MyMemory" = "Apple + MyMemory";
+"Local neural only (OPUS)" = "仅本地神经网络（OPUS）";
+"Only offline OPUS models. Download models below. No network requests, ~150MB RAM during translation." = "仅离线 OPUS 模型。请在下方下载模型。无网络请求，翻译期间约占用 150MB 内存。";
+"Local model for %@ is not downloaded. Open Settings to download it." = "%@ 的本地模型尚未下载。请打开设置进行下载。";
+"Failed to load local model: %@" = "本地模型加载失败：%@";
+"Local translation failed: %@" = "本地翻译失败：%@";
+"Local model does not support pair %@" = "本地模型不支持语言对 %@";
+"Translating via OPUS (offline)…" = "通过 OPUS（离线）翻译中…";
+"Open Settings to download model" = "打开设置以下载模型";
+"Translation engine" = "翻译引擎";
+"Engine:" = "引擎：";
+"Cloud fallback (when local model missing)" = "云端备用方案（本地模型缺失时）";
+"Email for MyMemory (optional):" = "MyMemory 邮箱（可选）：";
+"LibreTranslate URL (optional):" = "LibreTranslate 地址（可选）：";
+"LibreTranslate API key (if your server needs):" = "LibreTranslate API 密钥（若你的服务器需要）：";
+"Local neural models (OPUS) — offline" = "本地神经网络模型（OPUS）— 离线";
+"Downloaded models: %@" = "已下载模型：%@";
+"Not downloaded" = "未下载";
+"Download" = "下载";
+"Cancel" = "取消";
+"Delete" = "删除";
+"https://libretranslate.de/translate" = "https://libretranslate.de/translate";
+"Downloaded (%.1f MB)" = "已下载（%.1f MB）";
+"Downloading %d%%…" = "下载中 %d%%…";
+"Source language:" = "原文语言：";
+"Source language — Auto-detect or fixed" = "原文语言——自动检测或固定";
+"Auto-detect" = "自动检测";
+"Available for %@:" = "%@ 可用：";
+"MyMemory (Apple + MyMemory)" = "MyMemory（Apple + MyMemory）";
+"Email (optional):" = "邮箱（可选）：";
+"Languages, engines and shortcuts. Changes apply immediately." = "语言、引擎和快捷键。更改会立即生效。";
+"Language pair" = "语言对";
+"Source: Auto-detect" = "原文：自动检测";
+"Engine" = "引擎";
+"Pair & source" = "语言对与原文";
+"Source is translated into the other language of the pair. Third language goes into whichever matches your system language." = "原文会翻译成语言对中的另一种。第三种语言会翻译成与系统语言匹配的那一种。";
+"Source language" = "原文语言";
+"First language" = "第一语言";
+"Second language" = "第二语言";
+"Offline" = "离线";
+"Cloud" = "云端";
+"Keyboard" = "键盘";
+"Interface language" = "界面语言";
+"Interface & system" = "界面与系统";
+"Auto (System)" = "自动（跟随系统）";
+"Auto follows macOS system language. Interface updates immediately." = "自动模式跟随 macOS 系统语言。界面会立即更新。";
+"Local OPUS is fully offline. No network, no key needed — just download models below." = "本地 OPUS 完全离线。无需网络，无需密钥——只需在下方下载模型。";
+"Fully offline. No network requests." = "完全离线。无网络请求。";
+"LibreTranslate is open-source. Public libretranslate.de works without a key. You can run your own server and enter its URL here." = "LibreTranslate 是开源的。公共服务器 libretranslate.de 无需密钥即可使用。你也可以运行自己的服务器并在此填写其地址。";
+"Theme" = "主题";
+"Startup" = "启动";
+"Appearance & startup" = "外观与启动";
+"Local OPUS models work offline and use ~150 MB RAM only during translation (Neural Engine). Downloaded only when you press Download. Keep 3 most recent (LRU)." = "本地 OPUS 模型离线运行，仅在翻译期间使用约 150MB 内存（神经网络引擎）。只有点击下载才会下载。保留最近使用的 3 个（LRU）。";
+"Downloaded: %@" = "已下载：%@";
+"LibreTranslate URL (optional)" = "LibreTranslate 地址（可选）";
+"LibreTranslate API key (if your server needs)" = "LibreTranslate API 密钥（若你的服务器需要）";
+"MyMemory email (optional, fallback)" = "MyMemory 邮箱（可选，备用）";
+
+/* Redesign: explicit target language */
+"%@ is not configured" = "%@ 尚未配置";
+"%lld languages" = "%lld 种语言";
+"Already downloaded" = "已下载";
+"Available for %@: %@ languages. Switch engine to see different sets." = "%@ 可用：%@ 种语言。切换引擎可查看不同的语言集合。";
+"Download failed (HTTP %@)" = "下载失败（HTTP %@）";
+"Download selected" = "下载所选";
+"Downloading %lld%…" = "下载中 %lld%…";
+"Email (optional)" = "邮箱（可选）";
+"In queue: %lld" = "队列中：%lld";
+"Local neural models (OPUS)" = "本地神经网络模型（OPUS）";
+"Model not available for this pair" = "该语言对没有可用模型";
+"Model not found (404) for this pair" = "该语言对未找到模型（404）";
+"Models are downloaded one at a time and kept until you delete them. Only the model currently in use is loaded into memory; it is released after a minute of inactivity." = "模型逐个下载，会一直保留直到你删除。只有正在使用的模型会加载进内存，闲置一分钟后自动释放。";
+"MyMemory" = "MyMemory";
+"On disk: %lld models, %lld MB" = "磁盘占用：%lld 个模型，%lld MB";
+"Pick source languages to download for %@" = "选择要为 %@ 下载的原文语言";
+"Select to download" = "选择要下载的内容";
+"Swap source and target" = "交换原文与译文语言";
+"Target & source" = "译文与原文";
+"Text is already in %@" = "文本已经是 %@";
+"Text is translated into the target language. The source is detected automatically unless you fix it." = "文本会翻译成目标语言。原文语言会自动检测，除非手动指定。";
+"Translate into" = "翻译成";
+"Translate into %@" = "翻译成 %@";
+"Translate into this language" = "翻译成此语言";
+"Translate original text" = "翻译原文";
+"Translating into" = "翻译成";
+"Translation not supported for this language pair" = "不支持该语言对的翻译";
+
+/* Audit: summaryCard is now localized instead of verbatim */
+"Source: %@" = "原文：%@";
+"Waiting in queue…" = "排队等待中…";
+"MyMemory fallback" = "MyMemory 备用方案";
+"LibreTranslate" = "LibreTranslate";
+"Active: %@" = "当前使用：%@";
+"Fallback: %@" = "备用方案：%@";
+
+/* Trim: dry descriptions instead of marketing phrasing */
+"%lld languages available in the current engine." = "当前引擎支持 %lld 种语言。";
+"Adds offline OPUS models below." = "在下方添加离线 OPUS 模型。";
+"Apple, then MyMemory for unsupported pairs." = "优先 Apple，语言对不支持时使用 MyMemory。";
+"Downloaded one at a time, kept until deleted. Only the active model stays in memory." = "逐个下载，保留直至删除。只有当前使用的模型保留在内存中。";
+"Email" = "邮箱";
+"MyMemory — fallback" = "MyMemory — 备用方案";
+"No key needed. 5k characters/day, 50k with any email — no signup." = "无需密钥。匿名每日 5000 字符，填写任意邮箱可提升至 50000 字符——无需注册。";
+"Offline OPUS models. Download below." = "离线 OPUS 模型。请在下方下载。";
+"On-device. No network." = "本机运行。无网络。";
+"Source is detected automatically unless fixed." = "原文语言会自动检测，除非手动指定。";
+"Sources to download for %@" = "为 %@ 下载的原文语言";
+
+/* Save button for engine/token/email */
+"Unsaved changes" = "有未保存的更改";
+"Discard" = "放弃";
+"Save" = "保存";
+
+/* Azure Translator — new engine */
+"Cloud models (Azure)" = "云端模型（Azure）";
+"Azure Translator. Requires a key." = "Azure Translator。需要密钥。";
+"Azure Translator" = "Azure Translator";
+"Azure key" = "Azure 密钥";
+"subscription key" = "订阅密钥";
+"Azure region" = "Azure 区域";
+"e.g. westeurope — optional for global resources" = "例如 westeurope——全球资源可留空";
+"Automatic fallback if Azure has no key or fails." = "Azure 无密钥或失败时自动切换备用方案。";
+
+/* Google Translate — new engine */
+"Cloud models (Google)" = "云端模型（Google）";
+"Google Translate. Requires a key, billed past free tier." = "Google 翻译。需要密钥，超出免费额度后收费。";
+"Google Translate" = "Google 翻译";
+"Google key" = "Google 密钥";
+"API key" = "API 密钥";
+"Automatic fallback if Google has no key or fails." = "Google 无密钥或失败时自动切换备用方案。";
+
+/* DeepL — new engine */
+"Cloud models (DeepL)" = "云端模型（DeepL）";
+"DeepL. Requires a key." = "DeepL。需要密钥。";
+"DeepL" = "DeepL";
+"DeepL key" = "DeepL 密钥";
+"Check usage" = "查看用量";
+"Save a key first to check usage." = "请先保存密钥再查看用量。";
+"Used %lld of %lld characters." = "已使用 %lld / %lld 字符。";
+"Automatic fallback if DeepL has no key or fails." = "DeepL 无密钥或失败时自动切换备用方案。";
+
+/* Updates */
+"Check for Updates…" = "检查更新…";
+"Update available (%@)…" = "有可用更新（%@）…";
+"You're up to date" = "已是最新版本";
+"Current version: %@" = "当前版本：%@";
+"Last checked: %@" = "上次检查：%@";
+"Up to date" = "已是最新";
+"New version available" = "发现新版本";
+"AbubTranslate %@ is available — you have %@." = "AbubTranslate %@ 可用 — 当前为 %@。";
+"Download & Install" = "下载并安装";
+"Later" = "稍后";
+"Downloading…" = "正在下载…";
+"Installing…" = "正在安装…";
+"Checking…" = "正在检查…";
+"Update failed: %@" = "更新失败：%@";
+"The update server responded with status %ld" = "更新服务器返回状态 %ld";
+"No downloadable release was found" = "未找到可下载的发行文件";
+"Update download failed verification" = "下载未通过校验";
+"Could not mount the update package" = "无法挂载更新包";
+"Update package is malformed" = "更新包已损坏";
+"Run AbubTranslate from /Applications to update" = "请从“应用程序”文件夹运行 AbubTranslate 以更新";
+"Updates" = "更新";
+
+/* Panel clear button */
+"Clear" = "清除";
+
+/* Update completion notice */
+"Update installed" = "更新已安装";
+"AbubTranslate was updated to %@." = "AbubTranslate 已更新到 %@。";

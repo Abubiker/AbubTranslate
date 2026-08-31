@@ -1,0 +1,48 @@
+name: AbubTranslate
+options:
+  bundleIdPrefix: com.opensource
+  developmentLanguage: en
+  deploymentTarget:
+    macOS: "15.0"
+  createIntermediateGroups: true
+knownRegions:
+  - en
+  - ru
+  - es
+  - fr
+  - de
+  - pt
+  - zh
+  - ja
+  - ar
+  - hi
+  - Base
+
+targets:
+  AbubTranslate:
+    type: application
+    platform: macOS
+    sources:
+      - Sources
+      - path: LICENSE
+        buildPhase: resources
+    info:
+      path: Info.plist
+      properties:
+        CFBundleDisplayName: AbubTranslate
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        LSUIElement: true
+        NSHumanReadableCopyright: "GPL-3.0-only — © 2026 Dmitry Marchenko"
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    PRODUCT_BUNDLE_IDENTIFIER: com.opensource.abubtranslate
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_HARDENED_RUNTIME: true
+    GENERATE_INFOPLIST_FILE: false
+    ARCHS: arm64
+    ONLY_ACTIVE_ARCH: true
+    SUPPORTED_ARCHS: arm64
+    EXCLUDED_ARCHS[sdk=macosx*]: x86_64
+    MACOSX_DEPLOYMENT_TARGET: "15.0"

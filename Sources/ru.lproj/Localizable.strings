@@ -1,0 +1,258 @@
+/* PanelView */
+"Swap languages" = "Поменять языки местами";
+"Settings" = "Настройки";
+"Original" = "Оригинал";
+"Paste text here — it translates automatically. Or select text anywhere and press the shortcut." = "Вставьте текст сюда — переведётся сам. Или выделите текст где угодно и нажмите хоткей.";
+"Translate" = "Перевести";
+"Translation" = "Перевод";
+"Downloading the language pack…" = "Скачивается языковой пакет…";
+"Translating…" = "Переводим…";
+"The translation will appear here" = "Здесь появится перевод";
+"Copy translation" = "Скопировать перевод";
+"Speak translation" = "Озвучить перевод";
+"Stop" = "Стоп";
+
+/* SettingsView */
+"Languages" = "Языки";
+"First language:" = "Первый язык:";
+"Second language:" = "Второй язык:";
+"The source language is detected automatically. Text in one of these two is translated into the other. A third language goes into whichever of the two matches your system language." = "Исходный язык определяется автоматически. Текст на одном из этих двух переводится в другой. Третий язык уходит в тот из двух, который совпадает с языком системы.";
+"Shortcuts" = "Горячие клавиши";
+"Translate:" = "Перевести:";
+"Speak translation:" = "Озвучить перевод:";
+"Shortcuts work in any keyboard layout and ignore Caps Lock. Translation uses the current selection, falling back to the clipboard." = "Работают при любой раскладке и не зависят от Caps Lock. Переводится выделенный текст, а если выделения нет — буфер обмена.";
+"Translating the selection needs Accessibility access" = "Для перевода выделенного нужен «Универсальный доступ»";
+"Open System Settings…" = "Открыть Настройки системы…";
+"Appearance" = "Внешний вид";
+"Theme:" = "Тема:";
+"Automatic" = "Системная";
+"Light" = "Светлая";
+"Dark" = "Тёмная";
+"System" = "Система";
+"Launch at login" = "Запускать при входе в систему";
+
+/* HotkeyRecorder */
+"Press keys…" = "Нажмите клавиши…";
+"That shortcut is taken by another app" = "Комбинация занята другим приложением";
+
+/* Status menu */
+"Settings…" = "Настройки…";
+"Quit AbubTranslate" = "Выйти из AbubTranslate";
+
+/* AppModel */
+"Nothing to translate" = "Нечего переводить";
+"Could not detect the source language" = "Не удалось определить язык текста";
+"Apple Translation does not support %@" = "Apple Translation не поддерживает язык «%@»";
+"No supported translation direction from %@" = "Нет поддерживаемого направления перевода с «%@»";
+
+/* Облачный запасной переводчик */
+"Cloud fallback" = "Запасной облачный перевод";
+"Use %@ when Apple Translation cannot handle the pair" = "Использовать %@, когда Apple Translation не умеет пару";
+"Email for a higher quota (optional):" = "Почта для увеличения лимита (необязательно):";
+"Apple Translation supports a limited set of languages. For the rest the text is sent to an online service — it leaves your Mac. Everything else stays on device." = "Apple Translation умеет ограниченный набор языков. Для остальных текст отправляется в онлайн-сервис — он покидает ваш Mac. Всё прочее остаётся на устройстве.";
+"Translating via %@…" = "Переводим через %@…";
+"Daily cloud translation quota is used up" = "Суточный лимит облачного перевода исчерпан";
+"Cloud translator returned an unexpected response" = "Облачный переводчик вернул неожиданный ответ";
+"Translate unsupported languages online" = "Переводить неподдерживаемые языки онлайн";
+"Email:" = "Почта:";
+"optional" = "необязательно";
+"Apple Translation supports a limited set of languages. For the rest the text is sent to %@ — it leaves your Mac. Everything else stays on device. An email raises the daily quota." = "Apple Translation умеет ограниченный набор языков. Для остальных текст отправляется в %@ — он покидает ваш Mac. Всё прочее остаётся на устройстве. Почта поднимает суточный лимит.";
+"AbubTranslate Settings" = "Настройки AbubTranslate";
+
+/* EngineMode */
+"Apple Translation only" = "Только Apple Translation";
+"Apple + Local neural (OPUS)" = "Apple + Локальная нейронка (OPUS)";
+"Apple + Local + Cloud fallback" = "Apple + Локаль + Облако";
+"Only on-device Apple Translation. No network requests." = "Только локальный Apple Translation. Никаких сетевых запросов.";
+"Adds offline OPUS models for unsupported languages. Download models in the section below." = "Добавляет офлайн-модели OPUS для неподдерживаемых языков. Скачайте модели ниже.";
+"Adds local models and, if they are missing, cloud providers as last resort. Text may leave your Mac." = "Добавляет локальные модели и, если их нет, облачные провайдеры как последний шанс. Текст может покинуть Mac.";
+"Apple + MyMemory" = "Apple + MyMemory";
+"Local neural only (OPUS)" = "Только локальная нейронка (OPUS)";
+"Only offline OPUS models. Download models below. No network requests, ~150MB RAM during translation." = "Только офлайн-модели OPUS. Скачайте модели ниже. Без сети, ~150MB RAM во время перевода.";
+"Local model for %@ is not downloaded. Open Settings to download it." = "Локальная модель для %@ не скачана. Откройте Настройки чтобы скачать.";
+"Failed to load local model: %@" = "Не удалось загрузить локальную модель: %@";
+"Local translation failed: %@" = "Локальный перевод не удался: %@";
+"Local model does not support pair %@" = "Локальная модель не поддерживает пару %@";
+"Translating via OPUS (offline)…" = "Переводим через OPUS (офлайн)…";
+"Open Settings to download model" = "Открыть Настройки чтобы скачать модель";
+"Translation engine" = "Движок перевода";
+"Engine:" = "Движок:";
+"Cloud fallback (when local model missing)" = "Облачный запасной (когда локальной модели нет)";
+"Email for MyMemory (optional):" = "Почта для MyMemory (необязательно):";
+"LibreTranslate URL (optional):" = "URL LibreTranslate (необязательно):";
+"LibreTranslate API key (if your server needs):" = "Ключ LibreTranslate (если сервер требует):";
+"Local neural models (OPUS) — offline" = "Локальные нейронки (OPUS) — офлайн";
+"Downloaded models: %@" = "Скачанные модели: %@";
+"Not downloaded" = "Не скачана";
+"Download" = "Скачать";
+"Cancel" = "Отмена";
+"Delete" = "Удалить";
+"https://libretranslate.de/translate" = "https://libretranslate.de/translate";
+"Downloaded (%.1f MB)" = "Скачана (%.1f MB)";
+"Downloading %d%%…" = "Скачивается %d%%…";
+"Source language:" = "Язык оригинала:";
+"Source language — Auto-detect or fixed" = "Язык оригинала — авто или фиксированный";
+"Auto-detect" = "Авто-определение";
+"Available for %@:" = "Доступно для %@:";
+"MyMemory (Apple + MyMemory)" = "MyMemory (Apple + MyMemory)";
+"Email (optional):" = "Почта (необязательно):";
+
+/* New UI — auto locale */
+"Languages, engines and shortcuts. Changes apply immediately." = "Языки, движки и хоткеи. Изменения применяются сразу.";
+"Language pair" = "Языковая пара";
+"Source: Auto-detect" = "Источник: Авто";
+"Engine" = "Движок";
+"Pair & source" = "Пара и источник";
+"Source is translated into the other language of the pair. Third language goes into whichever matches your system language." = "Источник переводится в другой язык пары. Третий язык уходит в тот, который совпадает с языком системы.";
+"Source language" = "Язык оригинала";
+"First language" = "Первый язык";
+"Second language" = "Второй язык";
+"Offline" = "Офлайн";
+"Cloud" = "Облако";
+"Keyboard" = "Клавиатура";
+"Interface language" = "Язык интерфейса";
+"Interface & system" = "Интерфейс и система";
+"Auto (System)" = "Авто (система)";
+"Auto follows macOS system language. Interface updates immediately." = "Авто — язык macOS. Интерфейс обновляется сразу.";
+"Local OPUS is fully offline. No network, no key needed — just download models below." = "Локальный OPUS полностью офлайн. Без сети, без ключа — просто скачайте модели ниже.";
+"Fully offline. No network requests." = "Полностью офлайн. Без сетевых запросов.";
+"LibreTranslate is open-source. Public libretranslate.de works without a key. You can run your own server and enter its URL here." = "LibreTranslate — open-source. Публичный libretranslate.de без ключа. Можете запустить свой сервер и указать URL.";
+"Theme" = "Тема";
+"Startup" = "Автозапуск";
+"Appearance & startup" = "Внешний вид и запуск";
+"Local OPUS models work offline and use ~150 MB RAM only during translation (Neural Engine). Downloaded only when you press Download. Keep 3 most recent (LRU)." = "Локальные OPUS-модели офлайн, ~150 МБ RAM только во время перевода (Neural Engine). Скачиваются по нажатию. Хранятся 3 последние (LRU).";
+"Downloaded: %@" = "Скачано: %@";
+"LibreTranslate URL (optional)" = "URL LibreTranslate (необязательно)";
+"LibreTranslate API key (if your server needs)" = "Ключ LibreTranslate (если сервер требует)";
+"MyMemory email (optional, fallback)" = "Почта MyMemory (необязательно, запасной)";
+
+/* Шапки карточек настроек */
+"Local neural models (OPUS)" = "Локальные нейромодели (OPUS)";
+
+/* Строки, оставшиеся без перевода */
+"Email (optional)" = "Почта (необязательно)";
+"Translate original text" = "Перевести оригинал";
+"Translation not supported for this language pair" = "Перевод для этой языковой пары не поддерживается";
+"Model not available for this pair" = "Модель для этой пары недоступна";
+"Model not found (404) for this pair" = "Модель для этой пары не найдена (404)";
+"%@ is not configured" = "%@ не настроен";
+"Download failed (HTTP %@)" = "Не удалось скачать (HTTP %@)";
+"Available for %@: %@ languages. Switch engine to see different sets." = "Доступно для %@: языков — %@. Смените движок, чтобы увидеть другой набор.";
+"Downloading %lld%…" = "Скачивается %lld%…";
+
+/* Редизайн панели: явная цель вместо пары */
+"Translating into" = "Перевод на";
+"Translate into" = "Перевод на";
+"Translate into this language" = "Язык, на который переводим";
+"Target & source" = "Цель и оригинал";
+"Text is translated into the target language. The source is detected automatically unless you fix it." = "Текст переводится на целевой язык. Оригинал определяется автоматически, пока вы не зададите его вручную.";
+"Swap source and target" = "Поменять оригинал и цель местами";
+"Text is already in %@" = "Текст уже на языке «%@»";
+"Translate into %@" = "Перевести на «%@»";
+"%lld languages" = "языков: %lld";
+"MyMemory" = "MyMemory";
+
+/* Мультиселект локальных моделей */
+"Pick source languages to download for %@" = "Выберите исходные языки для скачивания в «%@»";
+"Download selected" = "Скачать выбранные";
+"In queue: %lld" = "В очереди: %lld";
+"On disk: %lld models, %lld MB" = "На диске: моделей — %lld, %lld МБ";
+"Already downloaded" = "Уже скачано";
+"Select to download" = "Отметьте для скачивания";
+"Models are downloaded one at a time and kept until you delete them. Only the model currently in use is loaded into memory; it is released after a minute of inactivity." = "Модели скачиваются по одной и хранятся, пока вы их не удалите. В память загружается только используемая — она выгружается после минуты простоя.";
+
+/* Аудит: summaryCard теперь локализуется, а не выводится дословно */
+"Source: %@" = "Источник: %@";
+"Waiting in queue…" = "Ждёт своей очереди…";
+"MyMemory fallback" = "Запасной вариант — MyMemory";
+"LibreTranslate" = "LibreTranslate";
+"Active: %@" = "Работает: %@";
+"Fallback: %@" = "Запасной вариант: %@";
+
+/* Трим: сухие описания вместо маркетинговых формулировок */
+"%lld languages available in the current engine." = "Доступно языков в текущем движке: %lld";
+"Adds offline OPUS models below." = "Плюс офлайн-модели OPUS ниже.";
+"Apple, then MyMemory for unsupported pairs." = "Apple, затем MyMemory для неподдерживаемых пар.";
+"Downloaded one at a time, kept until deleted. Only the active model stays in memory." = "Скачиваются по одной, хранятся до удаления. В памяти — только активная модель.";
+"Email" = "Почта";
+"MyMemory — fallback" = "MyMemory — запасной вариант";
+"No key needed. 5k characters/day, 50k with any email — no signup." = "Ключ не нужен. 5 тыс. символов в сутки, 50 тыс. с любой почтой — без проверки и регистрации.";
+"Offline OPUS models. Download below." = "Офлайн-модели OPUS. Скачивание ниже.";
+"On-device. No network." = "На устройстве. Без сети.";
+"Source is detected automatically unless fixed." = "Оригинал определяется автоматически, если не задан вручную.";
+"Sources to download for %@" = "Исходные языки для «%@»";
+
+/* Кнопка сохранения для движка/токена/почты */
+"Unsaved changes" = "Есть несохранённые изменения";
+"Discard" = "Отменить";
+"Save" = "Сохранить";
+
+/* Azure Translator — новый движок */
+"Cloud models (Azure)" = "Облачные модели (Azure)";
+"Azure Translator. Requires a key." = "Azure Translator. Нужен ключ.";
+"Azure Translator" = "Azure Translator";
+"Azure key" = "Ключ Azure";
+"subscription key" = "ключ подписки";
+"Azure region" = "Регион Azure";
+"e.g. westeurope — optional for global resources" = "например westeurope — необязательно для глобального ресурса";
+"Automatic fallback if Azure has no key or fails." = "Автоматический запасной вариант, если у Azure нет ключа или он не сработал.";
+
+/* Google Translate — новый движок */
+"Cloud models (Google)" = "Облачные модели (Google)";
+"Google Translate. Requires a key, billed past free tier." = "Google Translate. Нужен ключ, платно сверх бесплатного лимита.";
+"Google Translate" = "Google Translate";
+"Google key" = "Ключ Google";
+"API key" = "API-ключ";
+"Automatic fallback if Google has no key or fails." = "Автоматический запасной вариант, если у Google нет ключа или он не сработал.";
+
+/* DeepL — новый движок */
+"Cloud models (DeepL)" = "Облачные модели (DeepL)";
+"DeepL. Requires a key." = "DeepL. Нужен ключ.";
+"DeepL" = "DeepL";
+"DeepL key" = "Ключ DeepL";
+"Check usage" = "Проверить лимит";
+"Save a key first to check usage." = "Сначала сохраните ключ, чтобы проверить лимит.";
+"Used %lld of %lld characters." = "Использовано %lld из %lld символов.";
+"Automatic fallback if DeepL has no key or fails." = "Автоматический запасной вариант, если у DeepL нет ключа или он не сработал.";
+
+/* OpenAI compatible */
+"Cloud models (OpenAI)" = "Облачные модели (OpenAI)";
+"OpenAI-compatible API. Requires base URL, key and model." = "OpenAI-совместимый API. Нужны адрес, ключ и модель.";
+"OpenAI-compatible" = "OpenAI-совместимый";
+"Base URL" = "Базовый адрес";
+"API key" = "API-ключ";
+"Model" = "Модель";
+"Check" = "Проверить";
+"Save base URL, key and model first to check connection." = "Сначала сохраните адрес, ключ и модель для проверки.";
+"Test sends Hello en→ru with fixed prompt. Success is 200." = "Тест отправляет Hello en→ru фиксированным промптом. Успех — 200.";
+"Automatic fallback if OpenAI has no key or fails." = "Запасной MyMemory если у OpenAI нет ключа или ошибка.";
+
+/* Updates */
+"Check for Updates…" = "Проверить обновления…";
+"Update available (%@)…" = "Доступно обновление (%@)…";
+"You're up to date" = "У вас последняя версия";
+"Current version: %@" = "Текущая версия: %@";
+"Last checked: %@" = "Последняя проверка: %@";
+"Up to date" = "Обновлений нет";
+"New version available" = "Доступна новая версия";
+"AbubTranslate %@ is available — you have %@." = "Доступен AbubTranslate %@ — у вас %@.";
+"Download & Install" = "Скачать и установить";
+"Later" = "Позже";
+"Downloading…" = "Загрузка…";
+"Installing…" = "Установка…";
+"Checking…" = "Проверка…";
+"Update failed: %@" = "Не удалось обновиться: %@";
+"The update server responded with status %ld" = "Сервер обновлений ответил статусом %ld";
+"No downloadable release was found" = "Не найден файл релиза для загрузки";
+"Update download failed verification" = "Загрузка не прошла проверку контрольной суммы";
+"Could not mount the update package" = "Не удалось смонтировать пакет обновления";
+"Update package is malformed" = "Пакет обновления повреждён";
+"Run AbubTranslate from /Applications to update" = "Для обновления запустите AbubTranslate из папки «Программы»";
+"Updates" = "Обновления";
+
+/* Panel clear button */
+"Clear" = "Очистить";
+
+/* Update completion notice */
+"Update installed" = "Обновление установлено";
+"AbubTranslate was updated to %@." = "AbubTranslate обновлён до версии %@.";

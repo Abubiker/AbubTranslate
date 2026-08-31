@@ -1,0 +1,226 @@
+/* German */
+"Swap languages" = "Sprachen tauschen";
+"Settings" = "Einstellungen";
+"Original" = "Original";
+"Paste text here — it translates automatically. Or select text anywhere and press the shortcut." = "Text hier einfügen — wird automatisch übersetzt. Oder Text irgendwo markieren und den Tastaturkürzel drücken.";
+"Translate" = "Übersetzen";
+"Translation" = "Übersetzung";
+"Downloading the language pack…" = "Sprachpaket wird heruntergeladen…";
+"Translating…" = "Übersetze…";
+"The translation will appear here" = "Die Übersetzung erscheint hier";
+"Copy translation" = "Übersetzung kopieren";
+"Speak translation" = "Übersetzung vorlesen";
+"Stop" = "Stopp";
+"Languages" = "Sprachen";
+"First language:" = "Erste Sprache:";
+"Second language:" = "Zweite Sprache:";
+"The source language is detected automatically. Text in one of these two is translated into the other. A third language goes into whichever of the two matches your system language." = "Die Ausgangssprache wird automatisch erkannt. Text in einer dieser beiden Sprachen wird in die andere übersetzt. Eine dritte Sprache geht in die, die der Systemsprache entspricht.";
+"Shortcuts" = "Tastaturkürzel";
+"Translate:" = "Übersetzen:";
+"Speak translation:" = "Übersetzung vorlesen:";
+"Shortcuts work in any keyboard layout and ignore Caps Lock. Translation uses the current selection, falling back to the clipboard." = "Tastaturkürzel funktionieren mit jedem Tastaturlayout und ignorieren Feststelltaste. Übersetzt wird die aktuelle Auswahl, sonst die Zwischenablage.";
+"Translating the selection needs Accessibility access" = "Die Auswahl zu übersetzen erfordert Bedienungshilfen-Zugriff";
+"Open System Settings…" = "Systemeinstellungen öffnen…";
+"Appearance" = "Erscheinungsbild";
+"Theme:" = "Design:";
+"Automatic" = "Automatisch";
+"Light" = "Hell";
+"Dark" = "Dunkel";
+"System" = "System";
+"Launch at login" = "Beim Anmelden starten";
+"Press keys…" = "Tasten drücken…";
+"That shortcut is taken by another app" = "Dieses Kürzel wird bereits von einer anderen App verwendet";
+"Settings…" = "Einstellungen…";
+"Quit AbubTranslate" = "AbubTranslate beenden";
+"Nothing to translate" = "Nichts zu übersetzen";
+"Could not detect the source language" = "Ausgangssprache konnte nicht erkannt werden";
+"Apple Translation does not support %@" = "Apple Translation unterstützt %@ nicht";
+"No supported translation direction from %@" = "Keine unterstützte Übersetzungsrichtung von %@";
+"Cloud fallback" = "Cloud-Ausweichlösung";
+"Use %@ when Apple Translation cannot handle the pair" = "%@ verwenden, wenn Apple Translation das Sprachpaar nicht kann";
+"Email for a higher quota (optional):" = "E-Mail für höheres Kontingent (optional):";
+"Apple Translation supports a limited set of languages. For the rest the text is sent to an online service — it leaves your Mac. Everything else stays on device." = "Apple Translation unterstützt eine begrenzte Anzahl an Sprachen. Für den Rest wird der Text an einen Onlinedienst gesendet — er verlässt deinen Mac. Alles andere bleibt auf dem Gerät.";
+"Translating via %@…" = "Übersetze via %@…";
+"Daily cloud translation quota is used up" = "Tägliches Cloud-Übersetzungskontingent ist aufgebraucht";
+"Cloud translator returned an unexpected response" = "Cloud-Übersetzer lieferte eine unerwartete Antwort";
+"Translate unsupported languages online" = "Nicht unterstützte Sprachen online übersetzen";
+"Email:" = "E-Mail:";
+"optional" = "optional";
+"Apple Translation supports a limited set of languages. For the rest the text is sent to %@ — it leaves your Mac. Everything else stays on device. An email raises the daily quota." = "Apple Translation unterstützt eine begrenzte Anzahl an Sprachen. Für den Rest wird der Text an %@ gesendet — er verlässt deinen Mac. Alles andere bleibt auf dem Gerät. Eine E-Mail erhöht das Tageskontingent.";
+"AbubTranslate Settings" = "AbubTranslate-Einstellungen";
+"Apple Translation only" = "Nur Apple Translation";
+"Apple + Local neural (OPUS)" = "Apple + lokales neuronales Netz (OPUS)";
+"Apple + Local + Cloud fallback" = "Apple + lokal + Cloud-Ausweichlösung";
+"Only on-device Apple Translation. No network requests." = "Nur Apple Translation auf dem Gerät. Keine Netzwerkanfragen.";
+"Adds offline OPUS models for unsupported languages. Download models in the section below." = "Fügt Offline-OPUS-Modelle für nicht unterstützte Sprachen hinzu. Modelle unten herunterladen.";
+"Adds local models and, if they are missing, cloud providers as last resort. Text may leave your Mac." = "Fügt lokale Modelle hinzu und, falls diese fehlen, Cloud-Anbieter als letzten Ausweg. Text kann deinen Mac verlassen.";
+"Apple + MyMemory" = "Apple + MyMemory";
+"Local neural only (OPUS)" = "Nur lokales neuronales Netz (OPUS)";
+"Only offline OPUS models. Download models below. No network requests, ~150MB RAM during translation." = "Nur Offline-OPUS-Modelle. Modelle unten herunterladen. Keine Netzwerkanfragen, ~150 MB RAM während der Übersetzung.";
+"Local model for %@ is not downloaded. Open Settings to download it." = "Lokales Modell für %@ ist nicht heruntergeladen. Einstellungen öffnen, um es herunterzuladen.";
+"Failed to load local model: %@" = "Lokales Modell konnte nicht geladen werden: %@";
+"Local translation failed: %@" = "Lokale Übersetzung fehlgeschlagen: %@";
+"Local model does not support pair %@" = "Lokales Modell unterstützt das Sprachpaar %@ nicht";
+"Translating via OPUS (offline)…" = "Übersetze via OPUS (offline)…";
+"Open Settings to download model" = "Einstellungen öffnen, um das Modell herunterzuladen";
+"Translation engine" = "Übersetzungs-Engine";
+"Engine:" = "Engine:";
+"Cloud fallback (when local model missing)" = "Cloud-Ausweichlösung (wenn lokales Modell fehlt)";
+"Email for MyMemory (optional):" = "E-Mail für MyMemory (optional):";
+"LibreTranslate URL (optional):" = "LibreTranslate-URL (optional):";
+"LibreTranslate API key (if your server needs):" = "LibreTranslate-API-Schlüssel (falls dein Server ihn braucht):";
+"Local neural models (OPUS) — offline" = "Lokale neuronale Modelle (OPUS) — offline";
+"Downloaded models: %@" = "Heruntergeladene Modelle: %@";
+"Not downloaded" = "Nicht heruntergeladen";
+"Download" = "Herunterladen";
+"Cancel" = "Abbrechen";
+"Delete" = "Löschen";
+"https://libretranslate.de/translate" = "https://libretranslate.de/translate";
+"Downloaded (%.1f MB)" = "Heruntergeladen (%.1f MB)";
+"Downloading %d%%…" = "Herunterladen %d %%…";
+"Source language:" = "Ausgangssprache:";
+"Source language — Auto-detect or fixed" = "Ausgangssprache — automatisch oder fest";
+"Auto-detect" = "Automatisch erkennen";
+"Available for %@:" = "Verfügbar für %@:";
+"MyMemory (Apple + MyMemory)" = "MyMemory (Apple + MyMemory)";
+"Email (optional):" = "E-Mail (optional):";
+"Languages, engines and shortcuts. Changes apply immediately." = "Sprachen, Engines und Kürzel. Änderungen gelten sofort.";
+"Language pair" = "Sprachpaar";
+"Source: Auto-detect" = "Quelle: automatisch";
+"Engine" = "Engine";
+"Pair & source" = "Paar und Quelle";
+"Source is translated into the other language of the pair. Third language goes into whichever matches your system language." = "Die Quelle wird in die andere Sprache des Paars übersetzt. Eine dritte Sprache geht in die, die der Systemsprache entspricht.";
+"Source language" = "Ausgangssprache";
+"First language" = "Erste Sprache";
+"Second language" = "Zweite Sprache";
+"Offline" = "Offline";
+"Cloud" = "Cloud";
+"Keyboard" = "Tastatur";
+"Interface language" = "Sprache der Oberfläche";
+"Interface & system" = "Oberfläche und System";
+"Auto (System)" = "Automatisch (System)";
+"Auto follows macOS system language. Interface updates immediately." = "Automatisch folgt der macOS-Systemsprache. Die Oberfläche wird sofort aktualisiert.";
+"Local OPUS is fully offline. No network, no key needed — just download models below." = "Lokales OPUS ist vollständig offline. Kein Netzwerk, kein Schlüssel nötig — einfach Modelle unten herunterladen.";
+"Fully offline. No network requests." = "Vollständig offline. Keine Netzwerkanfragen.";
+"LibreTranslate is open-source. Public libretranslate.de works without a key. You can run your own server and enter its URL here." = "LibreTranslate ist Open Source. Der öffentliche Server libretranslate.de funktioniert ohne Schlüssel. Du kannst einen eigenen Server betreiben und dessen URL hier eintragen.";
+"Theme" = "Design";
+"Startup" = "Start";
+"Appearance & startup" = "Erscheinungsbild und Start";
+"Local OPUS models work offline and use ~150 MB RAM only during translation (Neural Engine). Downloaded only when you press Download. Keep 3 most recent (LRU)." = "Lokale OPUS-Modelle laufen offline und benötigen nur während der Übersetzung ~150 MB RAM (Neural Engine). Heruntergeladen nur auf Klick. Die 3 zuletzt genutzten bleiben erhalten (LRU).";
+"Downloaded: %@" = "Heruntergeladen: %@";
+"LibreTranslate URL (optional)" = "LibreTranslate-URL (optional)";
+"LibreTranslate API key (if your server needs)" = "LibreTranslate-API-Schlüssel (falls dein Server ihn braucht)";
+"MyMemory email (optional, fallback)" = "MyMemory-E-Mail (optional, Ausweichlösung)";
+
+/* Redesign: explicit target language */
+"%@ is not configured" = "%@ ist nicht konfiguriert";
+"%lld languages" = "%lld Sprachen";
+"Already downloaded" = "Bereits heruntergeladen";
+"Available for %@: %@ languages. Switch engine to see different sets." = "Verfügbar für %@: %@ Sprachen. Engine wechseln für andere Sprachsets.";
+"Download failed (HTTP %@)" = "Download fehlgeschlagen (HTTP %@)";
+"Download selected" = "Auswahl herunterladen";
+"Downloading %lld%…" = "Herunterladen %lld %%…";
+"Email (optional)" = "E-Mail (optional)";
+"In queue: %lld" = "In Warteschlange: %lld";
+"Local neural models (OPUS)" = "Lokale neuronale Modelle (OPUS)";
+"Model not available for this pair" = "Modell für dieses Sprachpaar nicht verfügbar";
+"Model not found (404) for this pair" = "Modell für dieses Sprachpaar nicht gefunden (404)";
+"Models are downloaded one at a time and kept until you delete them. Only the model currently in use is loaded into memory; it is released after a minute of inactivity." = "Modelle werden nacheinander heruntergeladen und bleiben erhalten, bis du sie löschst. Nur das aktive Modell ist im Speicher; es wird nach einer Minute Inaktivität freigegeben.";
+"MyMemory" = "MyMemory";
+"On disk: %lld models, %lld MB" = "Auf der Festplatte: %lld Modelle, %lld MB";
+"Pick source languages to download for %@" = "Ausgangssprachen für %@ zum Herunterladen auswählen";
+"Select to download" = "Zum Herunterladen auswählen";
+"Swap source and target" = "Quelle und Ziel tauschen";
+"Target & source" = "Ziel und Quelle";
+"Text is already in %@" = "Text ist bereits auf %@";
+"Text is translated into the target language. The source is detected automatically unless you fix it." = "Der Text wird in die Zielsprache übersetzt. Die Quelle wird automatisch erkannt, sofern nicht festgelegt.";
+"Translate into" = "Übersetzen nach";
+"Translate into %@" = "Übersetzen nach %@";
+"Translate into this language" = "In diese Sprache übersetzen";
+"Translate original text" = "Originaltext übersetzen";
+"Translating into" = "Übersetzen nach";
+"Translation not supported for this language pair" = "Übersetzung für dieses Sprachpaar nicht unterstützt";
+
+/* Audit: summaryCard is now localized instead of verbatim */
+"Source: %@" = "Quelle: %@";
+"Waiting in queue…" = "Wartet in der Warteschlange…";
+"MyMemory fallback" = "MyMemory-Ausweichlösung";
+"LibreTranslate" = "LibreTranslate";
+"Active: %@" = "Aktiv: %@";
+"Fallback: %@" = "Ausweichlösung: %@";
+
+/* Trim: dry descriptions instead of marketing phrasing */
+"%lld languages available in the current engine." = "%lld Sprachen in der aktuellen Engine verfügbar.";
+"Adds offline OPUS models below." = "Fügt unten Offline-OPUS-Modelle hinzu.";
+"Apple, then MyMemory for unsupported pairs." = "Apple, dann MyMemory für nicht unterstützte Sprachpaare.";
+"Downloaded one at a time, kept until deleted. Only the active model stays in memory." = "Nacheinander heruntergeladen, bleiben bis zum Löschen erhalten. Nur das aktive Modell bleibt im Speicher.";
+"Email" = "E-Mail";
+"MyMemory — fallback" = "MyMemory — Ausweichlösung";
+"No key needed. 5k characters/day, 50k with any email — no signup." = "Kein Schlüssel nötig. 5000 Zeichen/Tag anonym, 50 000 mit beliebiger E-Mail — ohne Anmeldung.";
+"Offline OPUS models. Download below." = "Offline-OPUS-Modelle. Unten herunterladen.";
+"On-device. No network." = "Auf dem Gerät. Kein Netzwerk.";
+"Source is detected automatically unless fixed." = "Die Quelle wird automatisch erkannt, sofern nicht festgelegt.";
+"Sources to download for %@" = "Quellen zum Herunterladen für %@";
+
+/* Save button for engine/token/email */
+"Unsaved changes" = "Nicht gespeicherte Änderungen";
+"Discard" = "Verwerfen";
+"Save" = "Speichern";
+
+/* Azure Translator — new engine */
+"Cloud models (Azure)" = "Cloud-Modelle (Azure)";
+"Azure Translator. Requires a key." = "Azure Translator. Erfordert einen Schlüssel.";
+"Azure Translator" = "Azure Translator";
+"Azure key" = "Azure-Schlüssel";
+"subscription key" = "Abo-Schlüssel";
+"Azure region" = "Azure-Region";
+"e.g. westeurope — optional for global resources" = "z. B. westeurope — optional für globale Ressourcen";
+"Automatic fallback if Azure has no key or fails." = "Automatische Ausweichlösung, wenn Azure keinen Schlüssel hat oder fehlschlägt.";
+
+/* Google Translate — new engine */
+"Cloud models (Google)" = "Cloud-Modelle (Google)";
+"Google Translate. Requires a key, billed past free tier." = "Google Translate. Erfordert einen Schlüssel, kostenpflichtig über das Gratiskontingent hinaus.";
+"Google Translate" = "Google Translate";
+"Google key" = "Google-Schlüssel";
+"API key" = "API-Schlüssel";
+"Automatic fallback if Google has no key or fails." = "Automatische Ausweichlösung, wenn Google keinen Schlüssel hat oder fehlschlägt.";
+
+/* DeepL — new engine */
+"Cloud models (DeepL)" = "Cloud-Modelle (DeepL)";
+"DeepL. Requires a key." = "DeepL. Erfordert einen Schlüssel.";
+"DeepL" = "DeepL";
+"DeepL key" = "DeepL-Schlüssel";
+"Check usage" = "Nutzung prüfen";
+"Save a key first to check usage." = "Zuerst einen Schlüssel speichern, um die Nutzung zu prüfen.";
+"Used %lld of %lld characters." = "%lld von %lld Zeichen verwendet.";
+"Automatic fallback if DeepL has no key or fails." = "Automatische Ausweichlösung, wenn DeepL keinen Schlüssel hat oder fehlschlägt.";
+
+/* Updates */
+"Check for Updates…" = "Nach Updates suchen…";
+"Update available (%@)…" = "Update verfügbar (%@)…";
+"You're up to date" = "Sie sind auf dem neuesten Stand";
+"Current version: %@" = "Aktuelle Version: %@";
+"Last checked: %@" = "Letzte Prüfung: %@";
+"Up to date" = "Aktuell";
+"New version available" = "Neue Version verfügbar";
+"AbubTranslate %@ is available — you have %@." = "AbubTranslate %@ ist verfügbar — Sie haben %@.";
+"Download & Install" = "Herunterladen & installieren";
+"Later" = "Später";
+"Downloading…" = "Wird geladen…";
+"Installing…" = "Wird installiert…";
+"Checking…" = "Wird geprüft…";
+"Update failed: %@" = "Update fehlgeschlagen: %@";
+"The update server responded with status %ld" = "Der Update-Server antwortete mit Status %ld";
+"No downloadable release was found" = "Keine herunterladbare Version gefunden";
+"Update download failed verification" = "Der Download hat die Überprüfung nicht bestanden";
+"Could not mount the update package" = "Update-Paket konnte nicht gemountet werden";
+"Update package is malformed" = "Das Update-Paket ist beschädigt";
+"Run AbubTranslate from /Applications to update" = "Zum Aktualisieren AbubTranslate aus dem Programmordner starten";
+"Updates" = "Updates";
+
+/* Panel clear button */
+"Clear" = "Leeren";
+
+/* Update completion notice */
+"Update installed" = "Update installiert";
+"AbubTranslate was updated to %@." = "AbubTranslate wurde auf %@ aktualisiert.";
