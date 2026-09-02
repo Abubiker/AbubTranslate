@@ -513,6 +513,20 @@ struct SettingsView: View {
             }
         }
         .settingsCardSurface()
+        // Пока плашка видима — опрашиваем доверие раз в секунду.
+        // Разового didBecomeActive мало: TCC распространяет выдачу
+        // асинхронно, и возврат из System Settings за пару секунд
+        // читал ещё старый ответ — плашка висела до следующего фокуса.
+        // Отмена задачи идёт автоматически: при выдаче id меняется.
+        .task(id: model.needsAccessibilityPermission) {
+            while !Task.isCancelled, model.needsAccessibilityPermission {
+                // Опрос только когда приложение активно: вернул фокус из
+                // System Settings — получил свежий ответ; уснул в фоне —
+                // не долбит trustd каждую секунду.
+                if NSApp.isActive { model.refreshAccessibility() }
+                try? await Task.sleep(for: .seconds(1))
+            }
+        }
     }
 
     /// Строчный список в стиле System Settings.app: подпись слева, control
@@ -747,6 +761,21 @@ struct SettingsView: View {
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
+
+            // Тумблер включён, а предупреждение не гаснет — запись TCC
+            // осталась за прежней сборкой (пересборка/self-update меняют
+            // cdhash). Живому процессу помогает только перезапуск.
+            HStack(alignment: .firstTextBaseline, spacing: DSTokens.xs) {
+                Text("Already granted but still showing? The entry points to an older build — restart the app.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button("Restart App") {
+                    model.restartApp()
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.mini)
+            }
         }
         .padding(DSTokens.md)
         .background(

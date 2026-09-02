@@ -528,6 +528,10 @@ final class AppModel {
     /// активирует наше приложение, и синтетический ⌘C ушёл бы в саму панель.
     func activateFromHotKey() {
         Task { @MainActor in
+            // Хоткей — точка, в которой пользователь уже мог выдать доступ в
+            // System Settings: обновляем флаг здесь, чтобы плашка в настройках
+            // не доживала до следующего didBecomeActive.
+            refreshAccessibility()
             let selected = await selection.readSelection()
             showPanel?()
             if let selected, !selected.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -590,6 +594,29 @@ final class AppModel {
                 if hasAccessibility { return }
             }
         }
+    }
+
+    /// Перезапуск приложения: после самонастройки/self-update запись
+    /// «Универсального доступа» в System Settings остаётся за прежним
+    /// cdhash — тумблер включён, живой процесс не доверен, плашка не
+    /// гаснет. Лечится только новым запуском текущей сборки.
+    /// Паттерн — как `UpdateChecker.scheduleRestart`: `open` срабатывает
+    /// уже после termination, запас 2с — на случай медленного закрытия
+    /// (иначе `open` попал бы в живой процесс, reopen suppressed → приложение
+    /// умерло бы без перезапуска).
+    func restartApp() {
+        let path = Bundle.main.bundlePath
+        let script = "sleep 2; /usr/bin/open \"\(path)\""
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/sh")
+        process.arguments = ["-c", script]
+        do {
+            try process.run()
+        } catch {
+            NSLog("AbubTranslate restart error: \(error.localizedDescription)")
+            return
+        }
+        NSApp.terminate(nil)
     }
 
     func speakLastTranslation() {

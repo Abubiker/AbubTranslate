@@ -256,3 +256,13 @@
 /* Update completion notice */
 "Update installed" = "Обновление установлено";
 "AbubTranslate was updated to %@." = "AbubTranslate обновлён до версии %@.";
+
+/* About */
+"About AbubTranslate" = "О программе AbubTranslate";
+"A simple menu-bar translator: choose the source language and the translation engine — on-device or cloud." = "Простой переводчик в строке меню: выберите язык-источник и движок перевода — на устройстве или в облаке.";
+"License: %@" = "Лицензия: %@";
+"Author: %@" = "Автор: %@";
+"GitHub Page" = "Страница на GitHub";
+"OK" = "ОК";
+"Already granted but still showing? The entry points to an older build — restart the app." = "Доступ уже выдан, но предупреждение не исчезает? Запись ссылается на старую сборку — перезапустите приложение.";
+"Restart App" = "Перезапустить";

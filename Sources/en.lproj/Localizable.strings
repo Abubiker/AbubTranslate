@@ -236,3 +236,13 @@
 /* Update completion notice */
 "Update installed" = "Update installed";
 "AbubTranslate was updated to %@." = "AbubTranslate was updated to %@.";
+
+/* About */
+"About AbubTranslate" = "About AbubTranslate";
+"A simple menu-bar translator: choose the source language and the translation engine — on-device or cloud." = "A simple menu-bar translator: choose the source language and the translation engine — on-device or cloud.";
+"License: %@" = "License: %@";
+"Author: %@" = "Author: %@";
+"GitHub Page" = "GitHub Page";
+"OK" = "OK";
+"Already granted but still showing? The entry points to an older build — restart the app." = "Already granted but still showing? The entry points to an older build — restart the app.";
+"Restart App" = "Restart App";

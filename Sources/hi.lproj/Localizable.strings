@@ -224,3 +224,11 @@
 /* Update completion notice */
 "Update installed" = "अपडेट इंस्टॉल हो गया";
 "AbubTranslate was updated to %@." = "AbubTranslate को %@ में अपडेट कर दिया गया है।";
+
+/* About */
+"About AbubTranslate" = "AbubTranslate के बारे में";
+"A simple menu-bar translator: choose the source language and the translation engine — on-device or cloud." = "मेनू-बार के लिए एक सरल अनुवादक: स्रोत भाषा और अनुवाद इंजन चुनें — डिवाइस पर या क्लाउड में।";
+"License: %@" = "लाइसेंस: %@";
+"Author: %@" = "लेखक: %@";
+"GitHub Page" = "GitHub पेज";
+"OK" = "ठीक है";

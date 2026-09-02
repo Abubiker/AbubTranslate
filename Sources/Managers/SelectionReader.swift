@@ -12,10 +12,9 @@ final class SelectionReader {
     private let timeout = Duration.milliseconds(300)
     private let pollStep = Duration.milliseconds(20)
 
-    /// Системный диалог показываем один раз за запуск: без этого каждое
-    /// нажатие хоткея при отсутствии разрешения открывает новое окно запроса.
-    private var didPrompt = false
-
+    /// Системный диалог запроса доступа вызывается только со старта приложения
+    /// (AppDelegate) и с кнопки в настройках: нажатие хоткея не должно
+    /// порождать модальных окон — пользователь ждёт перевода, а не опроса.
     static var isTrusted: Bool {
         AXIsProcessTrusted()
     }
@@ -31,18 +30,13 @@ final class SelectionReader {
     /// `nil` — выделения нет, нет разрешения или приложение не ответило.
     /// Буфер обмена в любом случае остаётся таким, каким был.
     func readSelection() async -> String? {
-        guard Self.isTrusted else {
-            if !didPrompt {
-                didPrompt = true
-                Self.requestTrust()
-            }
-            return nil
-        }
+        guard Self.isTrusted else { return nil }
 
         let pasteboard = NSPasteboard.general
         let saved = snapshot(of: pasteboard)
         let before = pasteboard.changeCount
 
+        await waitHotKeyModifiersReleased()
         guard postCommandC() else { return nil }
 
         var waited = Duration.zero
@@ -94,6 +88,20 @@ final class SelectionReader {
     }
 
     // MARK: - Синтетический ⌘C
+
+    /// На macOS 14+ локальный фильтр подавления — no-op, и синтетический
+    /// ⌘C при физически удерживаемых модификаторах хоткея уезжает в целевое
+    /// приложение как ⌥⇧C. Ждём отпускания клавиш (палец уходит с хоткея
+    /// быстрее нашего окна) и только потом шлём копирование.
+    private func waitHotKeyModifiersReleased() async {
+        var waited = Duration.zero
+        while waited < Duration.milliseconds(200) {
+            let flags = CGEventSource.flagsState(.hidSystemState)
+            if flags.isDisjoint(with: [.maskShift, .maskControl, .maskAlternate, .maskCommand]) { return }
+            try? await Task.sleep(for: pollStep)
+            waited += pollStep
+        }
+    }
 
     private func postCommandC() -> Bool {
         guard let source = CGEventSource(stateID: .combinedSessionState) else { return false }

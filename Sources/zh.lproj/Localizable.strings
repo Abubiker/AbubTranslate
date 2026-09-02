@@ -224,3 +224,11 @@
 /* Update completion notice */
 "Update installed" = "更新已安装";
 "AbubTranslate was updated to %@." = "AbubTranslate 已更新到 %@。";
+
+/* About */
+"About AbubTranslate" = "关于 AbubTranslate";
+"A simple menu-bar translator: choose the source language and the translation engine — on-device or cloud." = "简单的菜单栏翻译器：可选择源语言和翻译引擎——本地或云端。";
+"License: %@" = "许可证：%@";
+"Author: %@" = "作者：%@";
+"GitHub Page" = "GitHub 页面";
+"OK" = "好";

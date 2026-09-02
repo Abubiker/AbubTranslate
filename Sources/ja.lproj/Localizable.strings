@@ -224,3 +224,11 @@
 /* Update completion notice */
 "Update installed" = "アップデートが完了しました";
 "AbubTranslate was updated to %@." = "AbubTranslate が %@ に更新されました。";
+
+/* About */
+"About AbubTranslate" = "AbubTranslate について";
+"A simple menu-bar translator: choose the source language and the translation engine — on-device or cloud." = "メニューバーのシンプルな翻訳ツール：翻訳元言語と翻訳エンジン（オンデバイス／クラウド）を選択できます。";
+"License: %@" = "ライセンス：%@";
+"Author: %@" = "作者：%@";
+"GitHub Page" = "GitHub ページ";
+"OK" = "OK";

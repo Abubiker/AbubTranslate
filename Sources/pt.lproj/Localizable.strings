@@ -224,3 +224,11 @@
 /* Update completion notice */
 "Update installed" = "Atualização instalada";
 "AbubTranslate was updated to %@." = "O AbubTranslate foi atualizado para %@.";
+
+/* About */
+"About AbubTranslate" = "Sobre o AbubTranslate";
+"A simple menu-bar translator: choose the source language and the translation engine — on-device or cloud." = "Um tradutor simples na barra de menus: escolha o idioma de origem e o motor de tradução — local ou na nuvem.";
+"License: %@" = "Licença: %@";
+"Author: %@" = "Autor: %@";
+"GitHub Page" = "Página no GitHub";
+"OK" = "OK";

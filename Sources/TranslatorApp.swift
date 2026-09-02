@@ -15,8 +15,15 @@ struct TranslatorApp: App {
     // Окно настроек создаёт AppDelegate вручную: сцена Settings открывается
     // только приватным селектором showSettingsWindow:, который из accessory
     // приложения без строки меню не срабатывает.
+    //
+    // .restorationBehavior(.disabled) обязателен: это единственная сцена
+    // приложения, и без неё SwiftUI при любом reopen/активации accessory-
+    // приложения без видимых окон показывает окно Settings-сцены сам —
+    // нажатие хоткея (NSApp.activate в togglePopover) «иногда» открывало
+    // настройки без единого клика по ним.
     var body: some Scene {
         Settings { EmptyView() }
+            .restorationBehavior(.disabled)
     }
 }
 
@@ -31,6 +38,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
     /// Чтобы не долбить GitHub лишний раз: баннер/алерт на одну найденную
     /// версию показывается один раз за запуск.
     private var notifiedVersion: String?
+    /// Повторный правый клик, пока «О программе» открыт, не должен
+    /// стекать вторым модалным окном.
+    private var aboutOpen = false
+
+    /// Активация accessory-приложения без видимых окон (NSApp.activate при
+    /// показе поповера из хоткея) приходит как reopen — без этого SwiftUI
+    /// поднимает окно единственной Settings-сцены. Панель и настройки живут
+    /// вручную, reopen нам не нужен ни в каком виде.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        false
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -85,6 +103,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
             queue: .main
         ) { _ in
             MainActor.assumeIsolated { AppModel.shared.refreshAccessibility() }
+        }
+
+        // «Универсальный доступ» просим один раз на старте, а не по хоткею:
+        // нажатие горячей клавиши не должно порождать системный диалог —
+        // раньше при отсутствии разрешения первое ⌥⇧T поднимало окно
+        // «приложение хочет управлять этим компьютером». Отказ — тихий
+        // откат на перевод из буфера, плашка в настройках остаётся точкой
+        // входа для повторного запроса.
+        if !SelectionReader.isTrusted {
+            SelectionReader.requestTrust()
         }
 
         // Тестовый вход: позволяет проверить окно настроек без кликов мышью.
@@ -321,6 +349,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
 
         let menu = NSMenu()
         let checker = UpdateChecker.shared
+        let about = menu.addItem(
+            withTitle: AppModel.shared.localizedString("About AbubTranslate"),
+            action: #selector(aboutFromMenu),
+            keyEquivalent: ""
+        )
+        about.target = self
+        menu.addItem(.separator())
         let updateTitle: String
         let updateBusy: Bool
         switch checker.status {
@@ -383,6 +418,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
         NSApp.terminate(nil)
     }
 
+    /// «О программе»: короткое описание, версия, лицензия, автор, ссылка на
+    /// репозиторий. GitHub-кнопка открывает страницу проекта в браузере.
+    @objc private func aboutFromMenu() {
+        guard !aboutOpen else { return }
+        aboutOpen = true
+        defer { aboutOpen = false }
+        if popover.isShown { popover.performClose(nil) }
+        let model = AppModel.shared
+        let alert = NSAlert()
+        alert.messageText = model.localizedString("About AbubTranslate")
+        alert.informativeText = [
+            model.localizedString("A simple menu-bar translator: choose the source language and the translation engine — on-device or cloud."),
+            "v" + UpdateChecker.shared.currentVersion,
+            model.localizedString("License: %@", "GPL-3.0-only"),
+            // Имя автора во всех локалях остаётся на русском.
+            model.localizedString("Author: %@", "Дмитрий Марченко"),
+        ].joined(separator: "\n")
+        alert.addButton(withTitle: model.localizedString("GitHub Page"))
+        alert.addButton(withTitle: model.localizedString("OK"))
+        NSApp.activate()
+        if alert.runModal() == .alertFirstButtonReturn,
+           let url = URL(string: "https://github.com/Abubiker/AbubTranslate") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
     /// Своё окно настроек вместо сцены SwiftUI: сцену можно открыть только
     /// приватным селектором, а он у accessory-приложения без строки меню
     /// не находит цели и молча ничего не делает.
@@ -412,6 +473,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
         // Окно переживает закрытие: пересоздавать его на каждый показ значит
         // терять состояние полей и каждый раз платить за сборку иерархии.
         window.isReleasedWhenClosed = false
+        // Restorable окно ещё и возвращается state restoration AppKit —
+        // настройки всплывали без запроса пользователя.
+        window.isRestorable = false
         window.collectionBehavior = [.moveToActiveSpace]
         window.center()
         return window
