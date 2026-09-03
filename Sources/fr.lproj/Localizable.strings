@@ -232,3 +232,21 @@
 "Author: %@" = "Auteur : %@";
 "GitHub Page" = "Page GitHub";
 "OK" = "OK";
+
+/* New cloud engines (Yandex Cloud, LibreTranslate) + OpenAI thinking toggle */
+"Cloud models (Yandex)" = "Modèles cloud (Yandex)";
+"Yandex Cloud Translate. Requires an API key, billed per character." = "Yandex Cloud Translate. Clé API requise, facturation par caractère.";
+"LibreTranslate instance. Own URL, key optional on self-hosted." = "Instance LibreTranslate. URL propre ; clé optionnelle en auto-hébergé.";
+"Yandex Cloud Translate" = "Yandex Cloud Translate";
+"Yandex key" = "Clé Yandex";
+"service account API key" = "clé API du compte de service";
+"Folder ID" = "ID du dossier";
+"optional for service-account keys" = "optionnel pour les clés de compte de service";
+"Yandex Cloud, billed per character — a card must be linked. API key with the translate scope from the IAM console." = "Yandex Cloud facturé par caractère — carte requise. Clé API avec le scope translate depuis la console IAM.";
+"Automatic fallback if Yandex has no key or fails." = "Repli automatique si Yandex n'a pas de clé ou échoue.";
+"Server URL" = "URL du serveur";
+"optional on self-hosted" = "optionnel en auto-hébergé";
+"Empty URL means the public instance (key required). Your own instance needs no key unless started with --api-keys." = "URL vide = instance publique (clé requise). Votre instance n'exige pas de clé sauf si démarrée avec --api-keys.";
+"Automatic fallback if LibreTranslate has no key or fails." = "Repli automatique si LibreTranslate n'a pas de clé ou échoue.";
+"Disable model thinking" = "Désactiver le raisonnement du modèle";
+"Turns off reasoning tokens on DeepSeek/Qwen/o-series models — the main cause of slow translations. Strict servers that reject the extra fields get an automatic retry without them." = "Désactive les tokens de raisonnement des DeepSeek/Qwen/série-o — principale cause de traductions lentes. Les serveurs stricts qui rejettent les champs supplémentaires obtiennent une nouvelle tentative automatique sans eux.";

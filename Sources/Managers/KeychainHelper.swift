@@ -95,6 +95,22 @@ enum KeychainHelper {
         }
     }
 
+    static var yandexKey: String? {
+        get { load(for: "yandex_key") }
+        set {
+            if let v = newValue, !v.isEmpty { save(v, for: "yandex_key") }
+            else { delete(for: "yandex_key") }
+        }
+    }
+
+    static var libreTranslateKey: String? {
+        get { load(for: "libre_api_key") }
+        set {
+            if let v = newValue, !v.isEmpty { save(v, for: "libre_api_key") }
+            else { delete(for: "libre_api_key") }
+        }
+    }
+
     /// Миграция старых UserDefaults ключей в Keychain (если были).
     static func migrateIfNeeded() {
         let defaults = UserDefaults.standard
@@ -103,16 +119,10 @@ enum KeychainHelper {
         // остаться в Keychain от предыдущих версий: без провайдера этот
         // ключ мёртвый груз.
         delete(for: "hf_token")
+        // Старое имя URL-поля LibreTranslate из первой версии: теперь адрес
+        // живёт в UserDefaults "libretranslate_base_url". Ключи yandex_key/
+        // libre_api_key больше не чистим — провайдеры вернулись в приложение.
         defaults.removeObject(forKey: "libreTranslateURL")
-        // LibreTranslate убран из приложения — публичный инстанс переехал
-        // и стал платным. Подчищаем то, что могло остаться в Keychain
-        // от предыдущих версий: без провайдера эти ключи мёртвый груз.
         delete(for: "libre_url")
-        delete(for: "libre_api_key")
-        // Yandex убран из приложения — нет постоянного бесплатного тира,
-        // решили не держать ради формальности. Та же чистка осиротевших
-        // значений.
-        delete(for: "yandex_key")
-        delete(for: "yandex_folder_id")
     }
 }

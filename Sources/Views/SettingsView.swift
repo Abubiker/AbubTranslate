@@ -17,6 +17,11 @@ struct SettingsView: View {
     @State private var openAIBaseURL: String = ""
     @State private var openAIKey: String = ""
     @State private var openAIModel: String = ""
+    @State private var openAIDisableThinking = true
+    @State private var yandexKey: String = ""
+    @State private var yandexFolderId: String = ""
+    @State private var libreBaseURL: String = ""
+    @State private var libreKey: String = ""
     @State private var engineMode: String = "apple"
     // Снимок последнего сохранённого состояния — сравнение hasCloudDraftChanges
     // идёт против ЭТИХ @State, не против model.*. model.engineMode/
@@ -35,6 +40,11 @@ struct SettingsView: View {
     @State private var savedOpenAIBaseURL: String = ""
     @State private var savedOpenAIKey: String = ""
     @State private var savedOpenAIModel: String = ""
+    @State private var savedOpenAIDisableThinking = true
+    @State private var savedYandexKey: String = ""
+    @State private var savedYandexFolderId: String = ""
+    @State private var savedLibreBaseURL: String = ""
+    @State private var savedLibreKey: String = ""
     @State private var sourceLanguage: String = "auto"
     @State private var appLocaleRaw: String = "en"
     @State private var deepLUsageText: String?
@@ -100,6 +110,11 @@ struct SettingsView: View {
         openAIBaseURL = model.openAIBaseURL ?? ""
         openAIKey = model.openAIKey ?? ""
         openAIModel = model.openAIModel ?? ""
+        openAIDisableThinking = model.openAIDisableThinking
+        yandexKey = model.yandexKey ?? ""
+        yandexFolderId = model.yandexFolderId ?? ""
+        libreBaseURL = model.libreTranslateBaseURL ?? ""
+        libreKey = model.libreTranslateKey ?? ""
         savedEngineMode = engineMode
         savedCloudEmail = cloudEmail
         savedAzureKey = azureKey
@@ -109,6 +124,11 @@ struct SettingsView: View {
         savedOpenAIBaseURL = openAIBaseURL
         savedOpenAIKey = openAIKey
         savedOpenAIModel = openAIModel
+        savedOpenAIDisableThinking = openAIDisableThinking
+        savedYandexKey = yandexKey
+        savedYandexFolderId = yandexFolderId
+        savedLibreBaseURL = libreBaseURL
+        savedLibreKey = libreKey
     }
 
     private var hasCloudDraftChanges: Bool {
@@ -121,6 +141,11 @@ struct SettingsView: View {
             || openAIBaseURL != savedOpenAIBaseURL
             || openAIKey != savedOpenAIKey
             || openAIModel != savedOpenAIModel
+            || openAIDisableThinking != savedOpenAIDisableThinking
+            || yandexKey != savedYandexKey
+            || yandexFolderId != savedYandexFolderId
+            || libreBaseURL != savedLibreBaseURL
+            || libreKey != savedLibreKey
     }
 
     private func saveCloudDraft() {
@@ -136,6 +161,11 @@ struct SettingsView: View {
         model.openAIBaseURL = openAIBaseURL
         model.openAIKey = openAIKey
         model.openAIModel = openAIModel
+        model.openAIDisableThinking = openAIDisableThinking
+        model.yandexKey = yandexKey
+        model.yandexFolderId = yandexFolderId
+        model.libreTranslateBaseURL = libreBaseURL
+        model.libreTranslateKey = libreKey
         savedEngineMode = engineMode
         savedCloudEmail = cloudEmail
         savedAzureKey = azureKey
@@ -145,6 +175,11 @@ struct SettingsView: View {
         savedOpenAIBaseURL = openAIBaseURL
         savedOpenAIKey = openAIKey
         savedOpenAIModel = openAIModel
+        savedOpenAIDisableThinking = openAIDisableThinking
+        savedYandexKey = yandexKey
+        savedYandexFolderId = yandexFolderId
+        savedLibreBaseURL = libreBaseURL
+        savedLibreKey = libreKey
     }
 
     private func checkDeepLUsage() async {
@@ -162,8 +197,12 @@ struct SettingsView: View {
         openAICheckLoading = true
         defer { openAICheckLoading = false }
         do {
-            _ = try await OpenAICompatibleProvider().checkConnection()
-            openAICheckText = "200 success"
+            let (_, _, elapsed) = try await OpenAICompatibleProvider().checkConnection()
+            // Тайминг — не украшение: «долго отвечает» без него неотличимо от
+            // «вообще не работает», а эффект выключения reasoning виден числами.
+            let seconds = Double(elapsed.components.seconds)
+                + Double(elapsed.components.attoseconds) * 1e-18
+            openAICheckText = String(format: "200, %.1f s", seconds)
             openAICheckSuccess = true
         } catch {
             // показать код + текст ошибки
@@ -246,6 +285,10 @@ struct SettingsView: View {
             deepLCard
         } else if engineMode == EngineMode.openAICompatible.rawValue {
             openAICard
+        } else if engineMode == EngineMode.yandexCloud.rawValue {
+            yandexCard
+        } else if engineMode == EngineMode.libreTranslate.rawValue {
+            libreCard
         }
     }
 
@@ -452,6 +495,11 @@ struct SettingsView: View {
                 .font(.system(size: 13, design: .monospaced))
                 .autocorrectionDisabled()
 
+            Toggle("Disable model thinking", isOn: $openAIDisableThinking)
+                .font(.system(size: 13))
+            Text("Turns off reasoning tokens on DeepSeek/Qwen/o-series models — the main cause of slow translations. Strict servers that reject the extra fields get an automatic retry without them.")
+                .footnoteMuted()
+
             HStack(spacing: DSTokens.sm) {
                 Button {
                     Task { await checkOpenAIConnection() }
@@ -489,6 +537,66 @@ struct SettingsView: View {
                     .textFieldStyle(.roundedBorder)
                     .font(.system(size: 13))
                 Text("Automatic fallback if OpenAI has no key or fails.")
+                    .footnoteMuted()
+            }
+        }
+        .settingsCardSurface()
+    }
+
+    private var yandexCard: some View {
+        VStack(alignment: .leading, spacing: DSTokens.sm) {
+            cardHeader(overline: "Cloud", title: "Yandex Cloud Translate", icon: "cloud", description: nil)
+
+            SecureField("Yandex key", text: $yandexKey, prompt: Text("service account API key"))
+                .textFieldStyle(.roundedBorder)
+                .font(.system(size: 13))
+            TextField("Folder ID", text: $yandexFolderId, prompt: Text("optional for service-account keys"))
+                .textFieldStyle(.roundedBorder)
+                .font(.system(size: 13))
+                .autocorrectionDisabled()
+                .textContentType(nil)
+
+            Text("Yandex Cloud, billed per character — a card must be linked. API key with the translate scope from the IAM console.")
+                .footnoteMuted()
+
+            Divider().opacity(0.5)
+
+            VStack(alignment: .leading, spacing: DSTokens.xs) {
+                providerLabel("MyMemory — fallback")
+                TextField("Email", text: $cloudEmail, prompt: Text("optional"))
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: 13))
+                Text("Automatic fallback if Yandex has no key or fails.")
+                    .footnoteMuted()
+            }
+        }
+        .settingsCardSurface()
+    }
+
+    private var libreCard: some View {
+        VStack(alignment: .leading, spacing: DSTokens.sm) {
+            cardHeader(overline: "Cloud", title: "LibreTranslate", icon: "cloud", description: nil)
+
+            TextField("Server URL", text: $libreBaseURL, prompt: Text("https://libretranslate.com"))
+                .textFieldStyle(.roundedBorder)
+                .font(.system(size: 13))
+                .autocorrectionDisabled()
+                .textContentType(.URL)
+            SecureField("API key", text: $libreKey, prompt: Text("optional on self-hosted"))
+                .textFieldStyle(.roundedBorder)
+                .font(.system(size: 13))
+
+            Text("Empty URL means the public instance (key required). Your own instance needs no key unless started with --api-keys.")
+                .footnoteMuted()
+
+            Divider().opacity(0.5)
+
+            VStack(alignment: .leading, spacing: DSTokens.xs) {
+                providerLabel("MyMemory — fallback")
+                TextField("Email", text: $cloudEmail, prompt: Text("optional"))
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: 13))
+                Text("Automatic fallback if LibreTranslate has no key or fails.")
                     .footnoteMuted()
             }
         }

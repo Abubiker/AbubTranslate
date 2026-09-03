@@ -232,3 +232,21 @@
 "Author: %@" = "المؤلف: %@";
 "GitHub Page" = "صفحة GitHub";
 "OK" = "موافق";
+
+/* New cloud engines (Yandex Cloud, LibreTranslate) + OpenAI thinking toggle */
+"Cloud models (Yandex)" = "نماذج سحابية (Yandex)";
+"Yandex Cloud Translate. Requires an API key, billed per character." = "Yandex Cloud Translate. يتطلب مفتاح API، التسعير لكل حرف.";
+"LibreTranslate instance. Own URL, key optional on self-hosted." = "نسخة LibreTranslate. رابط خاص؛ المفتاح اختياري في الاستضافة الذاتية.";
+"Yandex Cloud Translate" = "Yandex Cloud Translate";
+"Yandex key" = "مفتاح Yandex";
+"service account API key" = "مفتاح API لحساب الخدمة";
+"Folder ID" = "معرّف المجلد";
+"optional for service-account keys" = "اختياري لمفاتيح حساب الخدمة";
+"Yandex Cloud, billed per character — a card must be linked. API key with the translate scope from the IAM console." = "Yandex Cloud بتسعير لكل حرف — يلزم ربط بطاقة. أنشئ مفتاح API بنطاق translate من وحدة تحكم IAM.";
+"Automatic fallback if Yandex has no key or fails." = "بديل تلقائي إذا لم يتوفر مفتاح Yandex أو فشل.";
+"Server URL" = "عنوان الخادم";
+"optional on self-hosted" = "اختياري في الاستضافة الذاتية";
+"Empty URL means the public instance (key required). Your own instance needs no key unless started with --api-keys." = "العنوان الفارغ يعني النسخة العامة (المفتاح إلزامي). نسختك الخاصة لا تطلب مفتاحًا ما لم تُشغَّل بـ --api-keys.";
+"Automatic fallback if LibreTranslate has no key or fails." = "بديل تلقائي إذا لم يتوفر مفتاح LibreTranslate أو فشل.";
+"Disable model thinking" = "تعطيل تفكير النموذج";
+"Turns off reasoning tokens on DeepSeek/Qwen/o-series models — the main cause of slow translations. Strict servers that reject the extra fields get an automatic retry without them." = "يعطّل رموز الاستدلال في نماذج DeepSeek/Qwen/sلسلة o — السبب الرئيسي لبطء الترجمة. الخوادم الصارمة التي ترفض الحقول الإضافية يُعاد المحاولة معها تلقائيًا بدونها.";

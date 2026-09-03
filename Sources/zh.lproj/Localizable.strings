@@ -232,3 +232,21 @@
 "Author: %@" = "作者：%@";
 "GitHub Page" = "GitHub 页面";
 "OK" = "好";
+
+/* New cloud engines (Yandex Cloud, LibreTranslate) + OpenAI thinking toggle */
+"Cloud models (Yandex)" = "云端模型（Yandex）";
+"Yandex Cloud Translate. Requires an API key, billed per character." = "Yandex Cloud Translate。需要 API 密钥，按字符计费。";
+"LibreTranslate instance. Own URL, key optional on self-hosted." = "LibreTranslate 实例。自备地址，自建实例密钥可选。";
+"Yandex Cloud Translate" = "Yandex Cloud Translate";
+"Yandex key" = "Yandex 密钥";
+"service account API key" = "服务账号 API 密钥";
+"Folder ID" = "文件夹 ID";
+"optional for service-account keys" = "服务账号密钥可留空";
+"Yandex Cloud, billed per character — a card must be linked. API key with the translate scope from the IAM console." = "Yandex Cloud 按字符计费，需绑定银行卡；请在 IAM 控制台创建带 translate 范围的 API 密钥。";
+"Automatic fallback if Yandex has no key or fails." = "若 Yandex 无密钥或失败，自动改用 MyMemory。";
+"Server URL" = "服务器地址";
+"optional on self-hosted" = "自建实例可选";
+"Empty URL means the public instance (key required). Your own instance needs no key unless started with --api-keys." = "留空表示公共实例（需要密钥）。自建实例除非以 --api-keys 启动，否则无需密钥。";
+"Automatic fallback if LibreTranslate has no key or fails." = "若 LibreTranslate 无密钥或失败，自动改用 MyMemory。";
+"Disable model thinking" = "关闭模型思考";
+"Turns off reasoning tokens on DeepSeek/Qwen/o-series models — the main cause of slow translations. Strict servers that reject the extra fields get an automatic retry without them." = "关闭 DeepSeek/Qwen/o 系列的推理 token——翻译过慢的主要原因。若严格服务器拒绝多余字段，会自动去掉它们重试。";

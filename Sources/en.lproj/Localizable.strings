@@ -246,3 +246,21 @@
 "OK" = "OK";
 "Already granted but still showing? The entry points to an older build — restart the app." = "Already granted but still showing? The entry points to an older build — restart the app.";
 "Restart App" = "Restart App";
+
+/* New cloud engines (Yandex Cloud, LibreTranslate) + OpenAI thinking toggle */
+"Cloud models (Yandex)" = "Cloud models (Yandex)";
+"Yandex Cloud Translate. Requires an API key, billed per character." = "Yandex Cloud Translate. Requires an API key, billed per character.";
+"LibreTranslate instance. Own URL, key optional on self-hosted." = "LibreTranslate instance. Own URL, key optional on self-hosted.";
+"Yandex Cloud Translate" = "Yandex Cloud Translate";
+"Yandex key" = "Yandex key";
+"service account API key" = "service account API key";
+"Folder ID" = "Folder ID";
+"optional for service-account keys" = "optional for service-account keys";
+"Yandex Cloud, billed per character — a card must be linked. API key with the translate scope from the IAM console." = "Yandex Cloud, billed per character — a card must be linked. API key with the translate scope from the IAM console.";
+"Automatic fallback if Yandex has no key or fails." = "Automatic fallback if Yandex has no key or fails.";
+"Server URL" = "Server URL";
+"optional on self-hosted" = "optional on self-hosted";
+"Empty URL means the public instance (key required). Your own instance needs no key unless started with --api-keys." = "Empty URL means the public instance (key required). Your own instance needs no key unless started with --api-keys.";
+"Automatic fallback if LibreTranslate has no key or fails." = "Automatic fallback if LibreTranslate has no key or fails.";
+"Disable model thinking" = "Disable model thinking";
+"Turns off reasoning tokens on DeepSeek/Qwen/o-series models — the main cause of slow translations. Strict servers that reject the extra fields get an automatic retry without them." = "Turns off reasoning tokens on DeepSeek/Qwen/o-series models — the main cause of slow translations. Strict servers that reject the extra fields get an automatic retry without them.";

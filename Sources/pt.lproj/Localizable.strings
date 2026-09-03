@@ -232,3 +232,21 @@
 "Author: %@" = "Autor: %@";
 "GitHub Page" = "Página no GitHub";
 "OK" = "OK";
+
+/* New cloud engines (Yandex Cloud, LibreTranslate) + OpenAI thinking toggle */
+"Cloud models (Yandex)" = "Modelos na nuvem (Yandex)";
+"Yandex Cloud Translate. Requires an API key, billed per character." = "Yandex Cloud Translate. Requer chave de API, cobrança por caractere.";
+"LibreTranslate instance. Own URL, key optional on self-hosted." = "Instância do LibreTranslate. URL própria; chave opcional em auto-hospedado.";
+"Yandex Cloud Translate" = "Yandex Cloud Translate";
+"Yandex key" = "Chave do Yandex";
+"service account API key" = "chave de API da conta de serviço";
+"Folder ID" = "ID da pasta";
+"optional for service-account keys" = "opcional para chaves de conta de serviço";
+"Yandex Cloud, billed per character — a card must be linked. API key with the translate scope from the IAM console." = "Yandex Cloud com cobrança por caractere — cartão vinculado é obrigatório. Chave de API com escopo translate do console IAM.";
+"Automatic fallback if Yandex has no key or fails." = "Alternativa automática se o Yandex não tiver chave ou falhar.";
+"Server URL" = "URL do servidor";
+"optional on self-hosted" = "opcional em auto-hospedado";
+"Empty URL means the public instance (key required). Your own instance needs no key unless started with --api-keys." = "URL vazia usa a instância pública (chave obrigatória). Sua própria instância não exige chave, exceto se iniciada com --api-keys.";
+"Automatic fallback if LibreTranslate has no key or fails." = "Alternativa automática se o LibreTranslate não tiver chave ou falhar.";
+"Disable model thinking" = "Desativar o raciocínio do modelo";
+"Turns off reasoning tokens on DeepSeek/Qwen/o-series models — the main cause of slow translations. Strict servers that reject the extra fields get an automatic retry without them." = "Desliga tokens de raciocínio em DeepSeek/Qwen/série-o — a principal causa de traduções lentas. Servidores rígidos que rejeitam campos extras recebem nova tentativa automática sem eles.";

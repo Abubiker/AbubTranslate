@@ -232,3 +232,21 @@
 "Author: %@" = "Autor: %@";
 "GitHub Page" = "GitHub-Seite";
 "OK" = "OK";
+
+/* New cloud engines (Yandex Cloud, LibreTranslate) + OpenAI thinking toggle */
+"Cloud models (Yandex)" = "Cloud-Modelle (Yandex)";
+"Yandex Cloud Translate. Requires an API key, billed per character." = "Yandex Cloud Translate. API-Schlüssel erforderlich, Abrechnung pro Zeichen.";
+"LibreTranslate instance. Own URL, key optional on self-hosted." = "LibreTranslate-Instanz. Eigene URL, Schlüssel bei Self-Hosting optional.";
+"Yandex Cloud Translate" = "Yandex Cloud Translate";
+"Yandex key" = "Yandex-Schlüssel";
+"service account API key" = "API-Schlüssel des Servicekontos";
+"Folder ID" = "Ordner-ID";
+"optional for service-account keys" = "optional für Schlüssel von Servicekonten";
+"Yandex Cloud, billed per character — a card must be linked. API key with the translate scope from the IAM console." = "Yandex Cloud, Abrechnung pro Zeichen — Kreditkarte erforderlich. API-Schlüssel mit translate-Scope aus der IAM-Konsole.";
+"Automatic fallback if Yandex has no key or fails." = "Automatische Ausweichlösung, wenn Yandex keinen Schlüssel hat oder fehlschlägt.";
+"Server URL" = "Server-URL";
+"optional on self-hosted" = "bei Self-Hosting optional";
+"Empty URL means the public instance (key required). Your own instance needs no key unless started with --api-keys." = "Leere URL bedeutet die öffentliche Instanz (Schlüssel erforderlich). Eine eigene Instanz braucht keinen Schlüssel, sofern sie ohne --api-keys gestartet wird.";
+"Automatic fallback if LibreTranslate has no key or fails." = "Automatische Ausweichlösung, wenn LibreTranslate keinen Schlüssel hat oder fehlschlägt.";
+"Disable model thinking" = "Modelldenken deaktivieren";
+"Turns off reasoning tokens on DeepSeek/Qwen/o-series models — the main cause of slow translations. Strict servers that reject the extra fields get an automatic retry without them." = "Deaktiviert Reasoning-Tokens bei DeepSeek/Qwen/o-Serien — die Hauptursache langsamer Übersetzungen. Strenge Server, die zusätzliche Felder ablehnen, erhalten automatisch einen Versuch ohne sie.";

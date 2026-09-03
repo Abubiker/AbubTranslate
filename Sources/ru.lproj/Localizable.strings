@@ -266,3 +266,5 @@
 "OK" = "ОК";
 "Already granted but still showing? The entry points to an older build — restart the app." = "Доступ уже выдан, но предупреждение не исчезает? Запись ссылается на старую сборку — перезапустите приложение.";
 "Restart App" = "Перезапустить";
+
+/* New cloud engines (Yandex Cloud, LibreTranslate) + OpenAI thinking toggle */

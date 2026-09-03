@@ -46,6 +46,8 @@ enum TranslationProviderError: LocalizedError {
 /// 401/403: повторить всегда можно, толку никогда, падаем в цепочку сразу.
 enum ChunkRetry {
     static let attempts = 3
+    /// Сколько чанков гоним параллельно в `translateChunked`.
+    static let windowSize = 3
 
     static func isTransient(_ error: Error) -> Bool {
         if error is CancellationError { return false }
@@ -78,30 +80,55 @@ enum ChunkRetry {
 }
 
 extension TranslationProvider {
-    /// Общий цикл нарезки: один чанк = одна заявка с повторами по
-    /// `ChunkRetry.isTransient`, склейка сохраняет исходные переносы.
+    /// Общий цикл нарезки: чанки переводятся параллельно (окно в 3 заявки —
+    /// 10k символов через LLM последовательными волнами шли минутами),
+    /// порядок склейки сохраняется исходными переносами. Один чанк = одна
+    /// заявка с повторами по `ChunkRetry.isTransient`: сетевой сбой или 5xx
+    /// вычитает из перевода один чанк, а не весь текст.
     func translateChunked(
         _ text: String,
         from source: String,
         to target: String,
-        _ translate: (String) async throws -> String
+        _ translate: @escaping @Sendable (String) async throws -> String
     ) async throws -> String {
-        var parts: [String] = []
-        for piece in TextChunker.pieces(text, limit: charLimit) {
-            try Task.checkCancellation()
-            let translated = try await withChunkRetry { try await translate(piece.text) }
-            parts.append(translated + piece.trailing)
+        let pieces = TextChunker.pieces(text, limit: charLimit)
+        guard !pieces.isEmpty else { return "" }
+        if pieces.count == 1 {
+            return try await translateWithRetry(pieces[0].text, translate) + pieces[0].trailing
         }
-        return parts.joined()
+
+        return try await withThrowingTaskGroup(of: (Int, String).self) { group in
+            var started = 0
+            while started < pieces.count, started < ChunkRetry.windowSize {
+                let index = started
+                started += 1
+                group.addTask {
+                    (index, try await self.translateWithRetry(pieces[index].text, translate))
+                }
+            }
+            var results = [String](repeating: "", count: pieces.count)
+            for try await (index, translated) in group {
+                results[index] = translated + pieces[index].trailing
+                if started < pieces.count {
+                    let next = started
+                    started += 1
+                    group.addTask {
+                        (next, try await self.translateWithRetry(pieces[next].text, translate))
+                    }
+                }
+            }
+            return results.joined()
+        }
     }
 
-    private func withChunkRetry<T>(
-        _ work: () async throws -> T
-    ) async throws -> T {
+    private func translateWithRetry(
+        _ text: String,
+        _ translate: @Sendable (String) async throws -> String
+    ) async throws -> String {
         var lastError: (any Error)?
         for attempt in 0..<ChunkRetry.attempts {
             do {
-                return try await work()
+                return try await translate(text)
             } catch let error where ChunkRetry.isTransient(error) {
                 lastError = error
                 guard attempt < ChunkRetry.attempts - 1 else { break }
@@ -122,10 +149,12 @@ extension TranslationProvider {
 ///
 /// HuggingFace как движок тоже убран (не из-за него самого — работал
 /// нормально после смены модели на Helsinki-NLP opus-mt) — по прямому
-/// запросу пользователя. Yandex тоже убран следом — нет постоянного
-/// бесплатного тира (тарификация посимвольно с первого символа), решили не
-/// держать ради формальности. Финальный набор: Apple / Apple+MyMemory /
-/// Azure / Google / DeepL.
+/// запросу пользователя. Yandex и LibreTranslate в первых версиях были,
+/// затем убраны (у Yandex не было бесплатного тира, публичный инстанс
+/// LibreTranslate переехал и стал платным). Вернулись осознанно: оба как
+/// полноценные ключевые провайдеры — Yandex Cloud Translate (постоянный
+/// API-ключ сервисного аккаунта) и LibreTranslate (свой URL инстанса,
+/// ключ опционален для self-hosted).
 enum EngineMode: String, CaseIterable, Sendable {
     case appleOnly = "apple"
     case appleMyMemory = "apple_mymemory"
@@ -133,9 +162,12 @@ enum EngineMode: String, CaseIterable, Sendable {
     case googleCloud = "google_cloud"
     case deepLCloud = "deepl_cloud"
     case openAICompatible = "openai_compat"
+    case yandexCloud = "yandex_cloud"
+    case libreTranslate = "libretranslate"
 
     static var pickerCases: [EngineMode] {
-        [.appleOnly, .appleMyMemory, .azureCloud, .googleCloud, .deepLCloud, .openAICompatible]
+        [.appleOnly, .appleMyMemory, .azureCloud, .googleCloud, .deepLCloud,
+         .openAICompatible, .yandexCloud, .libreTranslate]
     }
 
     /// Имя провайдера, который в этом режиме пробуется первым — сравнивается
@@ -155,6 +187,10 @@ enum EngineMode: String, CaseIterable, Sendable {
             return "DeepL"
         case .openAICompatible:
             return "OpenAI"
+        case .yandexCloud:
+            return "Yandex"
+        case .libreTranslate:
+            return "LibreTranslate"
         }
     }
 
@@ -168,6 +204,8 @@ enum EngineMode: String, CaseIterable, Sendable {
         case .googleCloud: return "Cloud models (Google)"
         case .deepLCloud: return "Cloud models (DeepL)"
         case .openAICompatible: return "Cloud models (OpenAI)"
+        case .yandexCloud: return "Cloud models (Yandex)"
+        case .libreTranslate: return "LibreTranslate"
         }
     }
 
@@ -179,6 +217,8 @@ enum EngineMode: String, CaseIterable, Sendable {
         case .googleCloud: return "Google Translate. Requires a key, billed past free tier."
         case .deepLCloud: return "DeepL. Requires a key."
         case .openAICompatible: return "OpenAI-compatible API. Requires base URL, key and model."
+        case .yandexCloud: return "Yandex Cloud Translate. Requires an API key, billed per character."
+        case .libreTranslate: return "LibreTranslate instance. Own URL, key optional on self-hosted."
         }
     }
 
@@ -197,6 +237,10 @@ enum EngineMode: String, CaseIterable, Sendable {
             return appLocalizedString("Cloud models (DeepL)")
         case .openAICompatible:
             return appLocalizedString("Cloud models (OpenAI)")
+        case .yandexCloud:
+            return appLocalizedString("Cloud models (Yandex)")
+        case .libreTranslate:
+            return appLocalizedString("LibreTranslate")
         }
     }
 
@@ -214,20 +258,24 @@ enum EngineMode: String, CaseIterable, Sendable {
             return appLocalizedString("DeepL. Requires a key.")
         case .openAICompatible:
             return appLocalizedString("OpenAI-compatible API. Requires base URL, key and model.")
+        case .yandexCloud:
+            return appLocalizedString("Yandex Cloud Translate. Requires an API key, billed per character.")
+        case .libreTranslate:
+            return appLocalizedString("LibreTranslate instance. Own URL, key optional on self-hosted.")
         }
     }
 
-    /// Legacy-значения из версий с Local OPUS, парой A/B, HuggingFace и
-    /// Yandex. `local_only`/`apple_local` теряют офлайн-часть и
-    /// откатываются на Apple; остальные — на MyMemory, у которого нет ни
-    /// ключа, ни гео-блокировок.
+    /// Legacy-значения из версий с Local OPUS, парой A/B и HuggingFace.
+    /// `local_only`/`apple_local` теряют офлайн-часть и откатываются на
+    /// Apple; `hf_cloud` — на MyMemory, у которого нет ни ключа, ни
+    /// гео-блокировок. `yandex_cloud` больше не миграция: raw вернулся в
+    /// качестве реального режима, старый юзер без ключа получит цепочку
+    /// «Yandex → MyMemory», где MyMemory честно подхватит.
     static func migrated(from raw: String) -> EngineMode? {
         switch raw {
         case "local_only", "apple_local":
             return .appleOnly
-        case "apple_local_cloud", "hf_cloud", "yandex_cloud":
-            // Убранные из приложения движки — кто был на них, откатывается
-            // на бесплатный движок без ключа, а не на первый попавшийся.
+        case "apple_local_cloud", "hf_cloud":
             return .appleMyMemory
         default:
             return EngineMode(rawValue: raw)
@@ -308,6 +356,29 @@ enum EngineLanguageSupport {
         "sl","sv","ta","tr","uk","vi","zh",
     ]
 
+    /// Yandex Cloud Translate — политика как у DeepL: берётся проверенное
+    /// ядро, полный официальный список (yandex.cloud/docs/translate/concepts/
+    /// language) без живого ключа не снять (ListLanguages требует folderId и
+    /// авторизации). Сервер решает, поддержана ли пара: неподдержанная даёт
+    /// 400 и честно уходит в MyMemory.
+    static let yandexCodes = [
+        "en","ru","uk","be","de","fr","es","it","pt","pl","nl","cs","sk","sl","hr","bs","sr",
+        "bg","ro","hu","da","no","fi","sv","et","lv","lt","tr","az","kk","ky","tg","tk","uz",
+        "hy","ka","zh","ja","ko","ar","he","hi","bn","fa","ur","id","ms","th","vi","el","ga",
+        "is","ca","eu","gl","la","mn","af","am","ne","si","sw","yo","ha","so","km","lo","my",
+        "ta","te","kn","ml","mr","gu","pa","cv","ba","tt","sah","udm","mhr",
+    ]
+
+    /// LibreTranslate — ядро Argos Translate: языки с рабочими моделями в
+    /// публичном инстансе. Остальные коды у разных инстансов отличаются
+    /// (зависит от докачанных моделей) — сервер решает, при неподдержанной
+    /// паре даёт ошибку, цепочка уходит в MyMemory (политика DeepL).
+    static let libreTranslateCodes = [
+        "en","ru","uk","de","fr","es","it","pt","pl","nl","cs","sk","sl","hr","bg","ro","hu",
+        "da","no","fi","sv","et","lv","lt","tr","el","he","ar","fa","zh","ja","ko","vi","id",
+        "ms","hi","bn","ta","te","th","ca","eu","gl","la","eo","ga","is","af","sw","ku",
+    ]
+
     static func codes(for mode: EngineMode, appleAvailable: [String]) -> [String] {
         switch mode {
         case .appleOnly:
@@ -326,6 +397,10 @@ enum EngineLanguageSupport {
         case .openAICompatible:
             // LLM — любые пары, отдаём самый широкий набор как у Google
             return googleCodes
+        case .yandexCloud:
+            return yandexCodes
+        case .libreTranslate:
+            return libreTranslateCodes
         }
     }
 }

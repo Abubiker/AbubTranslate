@@ -232,3 +232,21 @@
 "Author: %@" = "作者：%@";
 "GitHub Page" = "GitHub ページ";
 "OK" = "OK";
+
+/* New cloud engines (Yandex Cloud, LibreTranslate) + OpenAI thinking toggle */
+"Cloud models (Yandex)" = "クラウドモデル (Yandex)";
+"Yandex Cloud Translate. Requires an API key, billed per character." = "Yandex Cloud Translate。APIキーが必要、文字単位の課金。";
+"LibreTranslate instance. Own URL, key optional on self-hosted." = "LibreTranslate インスタンス。独自URL、セルフホストではキー任意。";
+"Yandex Cloud Translate" = "Yandex Cloud Translate";
+"Yandex key" = "Yandexキー";
+"service account API key" = "サービスアカウントのAPIキー";
+"Folder ID" = "フォルダーID";
+"optional for service-account keys" = "サービスアカウントキーでは任意";
+"Yandex Cloud, billed per character — a card must be linked. API key with the translate scope from the IAM console." = "Yandex Cloudは文字単位課金 — カード登録が必要。IAMコンソールでtranslateスコープのAPIキーを取得してください。";
+"Automatic fallback if Yandex has no key or fails." = "Yandexにキーがない場合や失敗した場合は自動でMyMemoryにフォールバック。";
+"Server URL" = "サーバーURL";
+"optional on self-hosted" = "セルフホストでは任意";
+"Empty URL means the public instance (key required). Your own instance needs no key unless started with --api-keys." = "URLが空の場合は公開インスタンス（キー必須）。自前のインスタンスは --api-keys なしではキー不要。";
+"Automatic fallback if LibreTranslate has no key or fails." = "LibreTranslateにキーがない場合や失敗した場合は自動でMyMemoryにフォールバック。";
+"Disable model thinking" = "モデルの思考を無効化";
+"Turns off reasoning tokens on DeepSeek/Qwen/o-series models — the main cause of slow translations. Strict servers that reject the extra fields get an automatic retry without them." = "DeepSeek/Qwen/oシリーズのreasoningトークンを無効化 — 翻訳が遅い主な原因です。追加フィールドを拒否する厳格なサーバーでは、自動的にそれなしで再試行します。";

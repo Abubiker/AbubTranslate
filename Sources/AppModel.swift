@@ -261,6 +261,36 @@ final class AppModel {
         set { KeychainHelper.openAIKey = newValue }
     }
 
+    /// Гасить reasoning-токены у family-моделей (DeepSeek/Qwen/o-серия) —
+    /// по умолчанию включено: без этого перевод через deepseek-r1-подобные
+    /// модели ждёт десятки секунд на размышлениях вслух.
+    var openAIDisableThinking: Bool {
+        get { UserDefaults.standard.object(forKey: "openai_disable_thinking") as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: "openai_disable_thinking") }
+    }
+
+    var yandexKey: String? {
+        get { KeychainHelper.yandexKey }
+        set { KeychainHelper.yandexKey = newValue }
+    }
+
+    /// Не секрет — каталог Yandex Cloud, обязателен только для ключей
+    /// обычного пользователя (ключ сервисного аккаунта не требует).
+    var yandexFolderId: String? {
+        get { UserDefaults.standard.string(forKey: "yandex_folder_id") }
+        set { UserDefaults.standard.set(newValue, forKey: "yandex_folder_id") }
+    }
+
+    var libreTranslateBaseURL: String? {
+        get { UserDefaults.standard.string(forKey: "libretranslate_base_url") }
+        set { UserDefaults.standard.set(newValue, forKey: "libretranslate_base_url") }
+    }
+
+    var libreTranslateKey: String? {
+        get { KeychainHelper.libreTranslateKey }
+        set { KeychainHelper.libreTranslateKey = newValue }
+    }
+
     var targetLanguage: Locale.Language { Locale.Language(identifier: targetLanguageCode) }
 
     /// Менять местами нечего, пока исходный язык неизвестен.
@@ -712,6 +742,14 @@ final class AppModel {
             case .openAICompatible:
                 // OpenAI-совместимый LLM (требует baseURL+key+model) → MyMemory, без Apple
                 await self.translateViaCloudChain(mode: .openAICompatible, text: text, detected: detected, candidates: candidates)
+
+            case .yandexCloud:
+                // Облачные модели: Yandex Cloud Translate (требует ключ) → MyMemory, без Apple
+                await self.translateViaCloudChain(mode: .yandexCloud, text: text, detected: detected, candidates: candidates)
+
+            case .libreTranslate:
+                // Облачные модели: LibreTranslate-инстанс (URL, ключ опц.) → MyMemory, без Apple
+                await self.translateViaCloudChain(mode: .libreTranslate, text: text, detected: detected, candidates: candidates)
             }
         }
     }
@@ -770,6 +808,14 @@ final class AppModel {
             var my = MyMemoryProvider()
             my.contactEmail = cloudContactEmail
             return [OpenAICompatibleProvider(), my]
+        case .yandexCloud:
+            var my = MyMemoryProvider()
+            my.contactEmail = cloudContactEmail
+            return [YandexTranslateProvider(), my]
+        case .libreTranslate:
+            var my = MyMemoryProvider()
+            my.contactEmail = cloudContactEmail
+            return [LibreTranslateProvider(), my]
         default:
             return []
         }

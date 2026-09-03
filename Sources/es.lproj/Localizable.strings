@@ -232,3 +232,21 @@
 "Author: %@" = "Autor: %@";
 "GitHub Page" = "Página de GitHub";
 "OK" = "Aceptar";
+
+/* New cloud engines (Yandex Cloud, LibreTranslate) + OpenAI thinking toggle */
+"Cloud models (Yandex)" = "Modelos en la nube (Yandex)";
+"Yandex Cloud Translate. Requires an API key, billed per character." = "Yandex Cloud Translate. Requiere clave de API, facturación por carácter.";
+"LibreTranslate instance. Own URL, key optional on self-hosted." = "Instancia de LibreTranslate. URL propia; clave opcional en autoalojado.";
+"Yandex Cloud Translate" = "Yandex Cloud Translate";
+"Yandex key" = "Clave de Yandex";
+"service account API key" = "clave de API de cuenta de servicio";
+"Folder ID" = "ID de carpeta";
+"optional for service-account keys" = "opcional para claves de cuenta de servicio";
+"Yandex Cloud, billed per character — a card must be linked. API key with the translate scope from the IAM console." = "Yandex Cloud con facturación por carácter: se requiere tarjeta. Clave de API con alcance translate de la consola IAM.";
+"Automatic fallback if Yandex has no key or fails." = "Alternativa automática si Yandex no tiene clave o falla.";
+"Server URL" = "URL del servidor";
+"optional on self-hosted" = "opcional en autoalojado";
+"Empty URL means the public instance (key required). Your own instance needs no key unless started with --api-keys." = "La URL vacía usa la instancia pública (clave obligatoria). Su propia instancia no requiere clave salvo que se inicie con --api-keys.";
+"Automatic fallback if LibreTranslate has no key or fails." = "Alternativa automática si LibreTranslate no tiene clave o falla.";
+"Disable model thinking" = "Desactivar el razonamiento del modelo";
+"Turns off reasoning tokens on DeepSeek/Qwen/o-series models — the main cause of slow translations. Strict servers that reject the extra fields get an automatic retry without them." = "Apaga los tokens de razonamiento en DeepSeek/Qwen/serie-o, principal causa de traducciones lentas. Si un servidor estricto rechaza los campos extra, reintenta automáticamente sin ellos.";

@@ -232,3 +232,21 @@
 "Author: %@" = "लेखक: %@";
 "GitHub Page" = "GitHub पेज";
 "OK" = "ठीक है";
+
+/* New cloud engines (Yandex Cloud, LibreTranslate) + OpenAI thinking toggle */
+"Cloud models (Yandex)" = "क्लाउड मॉडल (Yandex)";
+"Yandex Cloud Translate. Requires an API key, billed per character." = "Yandex Cloud Translate. API कुंजी चाहिए, प्रति-वर्ण शुल्क।";
+"LibreTranslate instance. Own URL, key optional on self-hosted." = "LibreTranslate इंस्टैंस. अपना URL; self-hosted पर कुंजी वैकल्पिक।";
+"Yandex Cloud Translate" = "Yandex Cloud Translate";
+"Yandex key" = "Yandex कुंजी";
+"service account API key" = "सर्विस अकाउंट की API कुंजी";
+"Folder ID" = "फोल्डर आईडी";
+"optional for service-account keys" = "सर्विस अकाउंट कुंजियों के लिए वैकल्पिक";
+"Yandex Cloud, billed per character — a card must be linked. API key with the translate scope from the IAM console." = "Yandex Cloud में प्रति-वर्ण बिलिंग — कार्ड बाँधना ज़रूरी। IAM कंसोल से translate scope वाली API कुंजी बनाएँ।";
+"Automatic fallback if Yandex has no key or fails." = "यदि Yandex में कुंजी नहीं है या वह विफल हो तो स्वतः MyMemory।";
+"Server URL" = "सर्वर URL";
+"optional on self-hosted" = "self-hosted पर वैकल्पिक";
+"Empty URL means the public instance (key required). Your own instance needs no key unless started with --api-keys." = "खाली URL का अर्थ सार्वजनिक इंस्टैंस (कुंजी अनिवार्य)। अपना इंस्टैंस --api-keys के बिना कुंजी नहीं माँगता।";
+"Automatic fallback if LibreTranslate has no key or fails." = "यदि LibreTranslate में कुंजी नहीं है या वह विफल हो तो स्वतः MyMemory।";
+"Disable model thinking" = "मॉडल की reasoning बंद करें";
+"Turns off reasoning tokens on DeepSeek/Qwen/o-series models — the main cause of slow translations. Strict servers that reject the extra fields get an automatic retry without them." = "DeepSeek/Qwen/o-सीरीज़ में reasoning टोकन बंद करता है — धीमे अनुवादों का मुख्य कारण। कड़े सर्वर अतिरिक्त फ़ील्ड अस्वीकार करें तो बिना उनके स्वतः पुनप्रयास होता है।";

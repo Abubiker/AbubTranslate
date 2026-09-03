@@ -30,9 +30,14 @@ targets:
       path: Info.plist
       properties:
         CFBundleDisplayName: AbubTranslate
-        CFBundleShortVersionString: "1.0.1"
-        CFBundleVersion: "2"
+        CFBundleShortVersionString: "1.0.4"
+        CFBundleVersion: "3"
         LSUIElement: true
+        # Локальный трафик без TLS: Ollama/LM Studio на localhost и
+        # self-hosted LibreTranslate в LAN — штатные сценарии приложения.
+        # Только local networking, произвольный http:// остаётся закрытым.
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
         NSHumanReadableCopyright: "GPL-3.0-only — © 2026 Dmitry Marchenko"
 settings:
   base:
