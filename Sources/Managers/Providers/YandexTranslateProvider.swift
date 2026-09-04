@@ -82,7 +82,10 @@ struct YandexTranslateProvider: TranslationProvider {
         case 401, 403:
             return .service("Yandex (\(status)): \(message)")
         case 429:
-            return .quotaExceeded
+            // По-минутный лимит облака переждивается бэк-оффом
+            // (метка (429) для ChunkRetry), дневная квота — тоже, но
+            // ретраи ограничены attempts, дальше честный откат.
+            return .service("Yandex (429): \(message)")
         case 400:
             // Неподдерживаемый язык/пара приходит как 400 с внятным
             // сообщением — при неизвестном языке честнее в фолбэк, чем в

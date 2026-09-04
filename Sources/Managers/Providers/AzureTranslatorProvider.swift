@@ -93,7 +93,13 @@ struct AzureTranslatorProvider: TranslationProvider {
             return .service("Azure: \(message)")
         }
         if status == 429 {
-            return .quotaExceeded
+            // Считаем true-quota только явные упоминания квоты; голый 429 у
+            // Azure — это поминутный SFR, переждиваемый бэк-оффом (метка
+            // (429) для ChunkRetry).
+            if message.lowercased().contains("quota") || message.lowercased().contains("budget") {
+                return .quotaExceeded
+            }
+            return .service("Azure (429): \(message)")
         }
         if status == 400, let code, code == 400036 || code == 400018 {
             return .notSupported

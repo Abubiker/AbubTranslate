@@ -173,24 +173,28 @@ struct OpenAICompatibleProvider: TranslationProvider {
     /// не берём: эвристика по имени, а строгие сервера, для которых лишних
     /// полей не бывает, ловятся ретраем в `postChat`.
     /// `thinking`/`enable_thinking` — диалект DeepSeek/Qwen-совместимых
-    /// шлюзов; `reasoning_effort` — OpenAI.
+    /// шлюзов; `reasoning_effort` — OpenAI; `reasoning:{effort:none}` —
+    /// OpenRouter (имена моделей его не выдают, зато узнаваем адрес).
     private func reasoningFields(model: String) -> [String: Any] {
         let lower = model.lowercased()
         let tokens = Set(lower.split(whereSeparator: { !$0.isLetter && !$0.isNumber }).map(String.init))
+        var fields: [String: Any] = [:]
         if lower.contains("deepseek") {
-            return ["thinking": ["type": "disabled"]]
-        }
-        if lower.contains("qwen") || lower.contains("glm-4.5") || lower.contains("kimi-k2") {
-            return ["enable_thinking": false]
-        }
-        if lower.contains("gpt-5") || lower.contains("chatgpt-") || tokens.contains("o3") || tokens.contains("o4") {
-            return ["reasoning_effort": "none"]
-        }
-        if tokens.contains("o1") || tokens.contains("o2") {
+            fields["thinking"] = ["type": "disabled"]
+        } else if lower.contains("qwen") || lower.contains("glm-4.5") || lower.contains("kimi-k2") {
+            fields["enable_thinking"] = false
+        } else if lower.contains("gpt-5") || lower.contains("chatgpt-") || tokens.contains("o3") || tokens.contains("o4") {
+            fields["reasoning_effort"] = "none"
+        } else if tokens.contains("o1") || tokens.contains("o2") {
             // у o1 нет "none" — минимум low
-            return ["reasoning_effort": "low"]
+            fields["reasoning_effort"] = "low"
         }
-        return [:]
+        if baseURL?.lowercased().contains("openrouter.ai") == true {
+            // OpenRouter понимает этот диалект для всех моделей, умеющих
+            // thinking (список supported_parameters в /api/v1/models).
+            fields["reasoning"] = ["effort": "none"]
+        }
+        return fields
     }
 
     /// OpenAI-серия reasoning-моделей (o1+, gpt-5): у них ДРУГОЙ контракт
@@ -238,7 +242,11 @@ struct OpenAICompatibleProvider: TranslationProvider {
     private func postOnce(url: URL, body: [String: Any]) async throws -> ChatResponse {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.timeoutInterval = 20
+        // 45, а не 20: LLM с незакрытым thinking отвечает дольше порога, и
+        // прошлый 20-секундный таймаут резал живой перевод на корню —
+        // URLError(.timedOut) считался транзиентным, три ретрая сжигали
+        // минуту и провал были бы тихим откатом на MyMemory.
+        request.timeoutInterval = 45
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         if let k = key?.trimmingCharacters(in: .whitespacesAndNewlines), !k.isEmpty {
             request.setValue("Bearer \(k)", forHTTPHeaderField: "Authorization")
@@ -247,6 +255,94 @@ struct OpenAICompatibleProvider: TranslationProvider {
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw TranslationProviderError.badResponse }
         return ChatResponse(data: data, http: http)
+    }
+
+    // MARK: - Диагностика (`--openai-latency`)
+
+    /// Результат одного зондового Hello-запроса с произвольными
+    /// дополнительными полями. Поля лимита (max_tokens/temperature) НЕ
+    /// шлются намеренно: reasoning-токены съедают completion-бюджет, и
+    /// урезанный max_tokens дал бы 200 без content вместо честного
+    /// «думаем N секунд».
+    struct ProbeResult {
+        let status: Int
+        let elapsed: Duration
+        let completionTokens: Int
+        let reasoningTokens: Int
+        let hasReasoning: Bool
+        let snippet: String
+        let error: String?
+    }
+
+    func probe(extraFields: [String: Any]) async -> ProbeResult {
+        guard let url = endpointURL(),
+              let m = model?.trimmingCharacters(in: .whitespacesAndNewlines), !m.isEmpty,
+              isConfigured()
+        else {
+            return ProbeResult(status: -1, elapsed: .zero, completionTokens: 0,
+                               reasoningTokens: 0, hasReasoning: false, snippet: "", error: "not configured")
+        }
+        var body: [String: Any] = [
+            "model": m,
+            "messages": [
+                ["role": "system", "content": systemPrompt(from: "en", to: "ru")],
+                ["role": "user", "content": "Hello"],
+            ],
+        ]
+        for (k, v) in extraFields { body[k] = v }
+
+        let start = ContinuousClock.now
+        do {
+            let result = try await postOnce(url: url, body: body)
+            let elapsed = start.duration(to: .now)
+            guard (200...299).contains(result.http.statusCode) else {
+                return ProbeResult(
+                    status: result.http.statusCode, elapsed: elapsed,
+                    completionTokens: 0, reasoningTokens: 0, hasReasoning: false,
+                    snippet: "", error: String(data: result.data, encoding: .utf8)
+                )
+            }
+            let obj = try? JSONSerialization.jsonObject(with: result.data) as? [String: Any]
+            let choices = obj?["choices"] as? [[String: Any]]
+            let msg = choices?.first?["message"] as? [String: Any]
+            let content = (msg?["content"] as? String) ?? ""
+            let hasReasoning = !((msg?["reasoning_content"] as? String) ?? "").isEmpty
+            let usage = obj?["usage"] as? [String: Any]
+            let details = usage?["completion_tokens_details"] as? [String: Any]
+            return ProbeResult(
+                status: result.http.statusCode,
+                elapsed: elapsed,
+                completionTokens: usage?["completion_tokens"] as? Int ?? 0,
+                reasoningTokens: details?["reasoning_tokens"] as? Int ?? 0,
+                hasReasoning: hasReasoning,
+                snippet: String(content.prefix(40)),
+                error: nil
+            )
+        } catch {
+            return ProbeResult(status: -1, elapsed: start.duration(to: .now), completionTokens: 0,
+                               reasoningTokens: 0, hasReasoning: false, snippet: "",
+                               error: error.localizedDescription)
+        }
+    }
+
+    /// GET {base}/models — каталог проксирует почти все реализации;
+    /// имена нужны, чтобы искать non-thinking-близнецев модели.
+    func listModelIDs() async -> [String] {
+        guard let endpointBase = endpointURL() else { return [] }
+        var endpoint = endpointBase.absoluteString
+        guard endpoint.hasSuffix("/chat/completions") else { return [] }
+        endpoint.removeLast("/chat/completions".count)
+        guard let url = URL(string: endpoint + "/models") else { return [] }
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 15
+        if let k = key?.trimmingCharacters(in: .whitespacesAndNewlines), !k.isEmpty {
+            request.setValue("Bearer \(k)", forHTTPHeaderField: "Authorization")
+        }
+        guard let (data, _) = try? await URLSession.shared.data(for: request),
+              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let arr = obj["data"] as? [[String: Any]]
+        else { return [] }
+        return arr.compactMap { $0["id"] as? String }
     }
 
     private static func looksLikeUnknownFieldError(_ data: Data) -> Bool {
@@ -259,18 +355,15 @@ struct OpenAICompatibleProvider: TranslationProvider {
     private func mapError(status: Int, data: Data) -> TranslationProviderError {
         let text = String(data: data, encoding: .utf8) ?? "HTTP \(status)"
         // попытаться достать message из OpenAI error
+        // 429 — не всегда «квота кончилась»: у агрегаторов это по-минутный
+        // RPM-лимит, переждиваемый бэк-оффом (ChunkRetry.rateLimitBackoff),
+        // метка (429) в тексте служит признаком ретрая, наружу идёт
+        // настоящее сообщение прокси вместо вранья про дневную квоту.
         if let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
            let err = obj["error"] as? [String: Any],
            let msg = err["message"] as? String {
-            if status == 401 || status == 403 {
-                return .service("OpenAI (\(status)): \(msg)")
-            }
-            if status == 429 { return .quotaExceeded }
             return .service("OpenAI (\(status)): \(msg)")
         }
-        if status == 401 || status == 403 { return .service("OpenAI (\(status)): \(text)") }
-        if status == 429 { return .quotaExceeded }
-        if status == 400 { return .service("OpenAI (\(status)): \(text)") }
         return .service("OpenAI (\(status)): \(text)")
     }
 }

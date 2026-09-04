@@ -88,7 +88,8 @@ struct LibreTranslateProvider: TranslationProvider {
 
         switch status {
         case 429:
-            return .quotaExceeded
+            // RPM-окно инстанса переждивается бэк-оффом (метка (429))
+            return .service("LibreTranslate (429): \(message)")
         case 401, 403:
             // Без ключа на облачном инстансе — типичная первопричина; это
             // конфигурация, а не временный сбой: сразу в фолбэк MyMemory.

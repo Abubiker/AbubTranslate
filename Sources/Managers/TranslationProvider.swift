@@ -48,6 +48,11 @@ enum ChunkRetry {
     static let attempts = 3
     /// Сколько чанков гоним параллельно в `translateChunked`.
     static let windowSize = 3
+    /// Бэк-оффы: обычные сетевые сбои — доли секунды; 429 — окно
+    /// rate-limitа у агрегаторов (6 RPM у gonkabroker и подобных)
+    /// очищается десятками секунд, 0.5s-повторы его не дождутся.
+    static let backoff: [Duration] = [.milliseconds(500), .seconds(1)]
+    static let rateLimitBackoff: [Duration] = [.seconds(15), .seconds(40)]
 
     static func isTransient(_ error: Error) -> Bool {
         if error is CancellationError { return false }
@@ -55,7 +60,7 @@ enum ChunkRetry {
             switch e {
             case .badResponse: return true
             case .service(let msg):
-                return ["(500)", "(502)", "(503)", "(504)"].contains { msg.contains($0) }
+                return ["(500)", "(502)", "(503)", "(504)", "(429)"].contains { msg.contains($0) }
             case .notConfigured, .quotaExceeded, .notSupported:
                 return false
             }
@@ -132,7 +137,12 @@ extension TranslationProvider {
             } catch let error where ChunkRetry.isTransient(error) {
                 lastError = error
                 guard attempt < ChunkRetry.attempts - 1 else { break }
-                try await Task.sleep(for: .milliseconds(500 * (1 << attempt)))
+                let isRateLimit = (error as? TranslationProviderError).map {
+                    if case .service(let msg) = $0 { return msg.contains("(429)") }
+                    return false
+                } ?? false
+                let backoff = (isRateLimit ? ChunkRetry.rateLimitBackoff : ChunkRetry.backoff)[attempt]
+                try await Task.sleep(for: backoff)
             }
         }
         throw lastError ?? TranslationProviderError.badResponse

@@ -135,6 +135,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
         if ProcessInfo.processInfo.arguments.contains("--update-selftest") {
             Task { await runUpdateSelfTest() }
         }
+        if ProcessInfo.processInfo.arguments.contains("--openai-latency") {
+            Task { await runOpenAILatencySelfTest() }
+        }
 
         // Самоаппдейт: подчистить осколки прерванной установки, затем
         // плановая проверка (не чаще раза в сутки, внутри checker).
@@ -476,7 +479,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
         // Restorable окно ещё и возвращается state restoration AppKit —
         // настройки всплывали без запроса пользователя.
         window.isRestorable = false
-        window.collectionBehavior = [.moveToActiveSpace]
+        // Никакого .moveToActiveSpace: по докам Apple окно с ним переносится
+        // на активный Space при ЛЮБОЙ активации приложения — то есть
+        // NSApp.activate() из показа поповера хоткеем показывал и это
+        // пережившее закрытие окно (isReleasedWhenClosed=false). Явный
+        // openSettingsFromMenu делает makeKeyAndOrderFront, и окно само
+        // переедет на текущий Space — поведение «следуй за пользователем»
+        // без side-эффекта «всплывай по активации».
         window.center()
         return window
     }
@@ -769,6 +778,66 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
             log("download error: \(error.localizedDescription)")
         }
         log("=== end ===")
+    }
+
+    /// Диагноз «прокси режет поля выключения thinking»: матрица диалектов
+    /// на живом ключе. Каждый вариант — свой Hello en→ru; два раунда в
+    /// обратном порядке, чтобы прогрев/кэш не окрасили сравнение. Лог —
+    /// тот же файл, что у остальных самотестов.
+    /// `open -a /Applications/AbubTranslate.app --args --openai-latency`
+    private func runOpenAILatencySelfTest() async {
+        let log = selfTestLog
+        let provider = OpenAICompatibleProvider()
+        log("=== openai latency selftest ===")
+        guard provider.isConfigured() else {
+            log("нет конфигурации — сохраните URL/ключ/модель в настройках")
+            return
+        }
+        log("model: \(provider.model ?? "nil")")
+        let ids = await provider.listModelIDs()
+        let related = ids.filter { $0.lowercased().contains("deepseek") || $0.lowercased().contains("flash") }
+        log("models deepseek/flash: \(related.isEmpty ? idJoin(ids) : idJoin(related))")
+
+        let variants: [(name: String, fields: [String: Any])] = [
+            ("bare", [:]),
+            ("thinking", ["thinking": ["type": "disabled"]]),
+            ("enable_thinking", ["enable_thinking": false]),
+            ("reasoning_effort", ["reasoning_effort": "none"]),
+            ("openrouter_reasoning", ["reasoning": ["effort": "none"]]),
+            ("superset", [
+                "thinking": ["type": "disabled"],
+                "enable_thinking": false,
+                "reasoning": ["effort": "none"],
+            ]),
+        ]
+        var results: [String: [(ms: Int, noThinking: Bool)]] = [:]
+        for round in 1...2 {
+            let ordered = round == 1 ? variants : variants.reversed()
+            for variant in ordered {
+                let r = await provider.probe(extraFields: variant.fields)
+                let ms = Int(r.elapsed.components.seconds) * 1000 + Int(r.elapsed.components.attoseconds / 1_000_000_000_000_000)
+                let noThinking = r.status == 200 && !r.hasReasoning && r.reasoningTokens == 0
+                results[variant.name, default: []].append((ms, noThinking))
+                let err = r.error.map { " err=\($0.prefix(120))" } ?? ""
+                log("r\(round) \(variant.name): status=\(r.status) \(ms)ms completion=\(r.completionTokens) reasoning_tokens=\(r.reasoningTokens) reasoning_content=\(r.hasReasoning ? "yes" : "no") text=\"\(r.snippet)\"\(err)")
+                try? await Task.sleep(for: .seconds(2))
+            }
+        }
+        // Победитель — вариант, стабильно (оба раунда) вернувший 200 без
+        // reasoning; единственный везучий ответ раунда не считается.
+        let winners = results
+            .filter { $0.value.count == 2 && $0.value.allSatisfy(\.noThinking) }
+            .sorted { ($0.value.map(\.ms).reduce(0, +)) < ($1.value.map(\.ms).reduce(0, +)) }
+        if let winner = winners.first {
+            log("кандидат: \(winner.key) (avg \(winner.value.map(\.ms).reduce(0, +) / 2)ms)")
+        } else {
+            log("кандидат: нет — ни один диалект стабильно не отключил thinking")
+        }
+        log("=== end ===")
+    }
+
+    private func idJoin(_ ids: [String]) -> String {
+        ids.prefix(40).joined(separator: ", ")
     }
 
     /// Буфер семплов прогресса для самотеста.
