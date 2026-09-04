@@ -883,6 +883,11 @@ final class AppModel {
             case .installed, .supported:
                 if availability == .supported {
                     self.status = .preparing
+                    // «Supported» = пакет не скачан. Системный алерт «Загрузить»
+                    // закрывается по нажатию, докачка идёт в фоне, а наша
+                    // сессия падает недоступной — без вотчера панель так и
+                    // висела бы в ошибке до следующей смены пары.
+                    self.watchLanguageInstall(source: detected, target: target)
                 }
                 self.currentTargetCode = target.languageCode?.identifier ?? self.targetLanguageCode
                 self.startSession(source: detected, target: target)
@@ -894,6 +899,37 @@ final class AppModel {
             }
         }
         return false
+    }
+
+    private var preparingWatchdog: Task<Void, Never>?
+
+    /// Ждёт установки языкового пакета после согласия пользователя на
+    /// загрузку и сам перезапускает перевод тем же текстом. Статус уже
+    /// `.preparing`, так что упавшую было сессию перезапускает установка.
+    private func watchLanguageInstall(source: Locale.Language, target: Locale.Language) {
+        preparingWatchdog?.cancel()
+        preparingWatchdog = Task { @MainActor [weak self] in
+            guard let self else { return }
+            // 5 минут: пакет может быть сотни мегабайт и качаться по плохой
+            // сети. Всё это время пара остаётся .supported — отличить
+            // «качается» от «отменено» по API нельзя, поэтому при таймауте
+            // просто честная ошибка, а не вечный spinner.
+            for _ in 0..<150 {
+                try? await Task.sleep(for: .seconds(2))
+                guard !Task.isCancelled else { return }
+                let availability = await Self.availabilityStatus(from: source, to: target)
+                guard !Task.isCancelled else { return }
+                if availability == .installed {
+                    self.lastTranslatedSource = ""
+                    self.translate(text: self.sourceText)
+                    return
+                }
+                if availability != .supported { break }
+            }
+            if case .preparing = self.status {
+                self.status = .failed(self.localizedString("Language pack was not downloaded"))
+            }
+        }
     }
 
     private func activeCloudProviders(for mode: EngineMode? = nil) -> [any TranslationProvider] {
@@ -1066,6 +1102,7 @@ final class AppModel {
         translatedText = result
         status = .done
         canOfferFallbackEngine = false
+        preparingWatchdog?.cancel()
         lastElapsed = translateStarted?.duration(to: .now)
         translateStarted = nil
         if let key = pendingCacheKey {
@@ -1117,6 +1154,7 @@ final class AppModel {
         translationTask?.cancel()
         autoTranslateTask?.cancel()
         sourceRetranslateTask?.cancel()
+        preparingWatchdog?.cancel()
         speech.stop()
         sourceText = ""
         translatedText = ""

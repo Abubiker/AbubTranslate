@@ -102,6 +102,9 @@ struct PanelView: View {
             } catch is CancellationError {
                 return
             } catch {
+                // Пока статус .preparing — пакет докачивается, падение
+                // сессии в этот момент штатное; перезапуск сделает watchdog.
+                if model.status == .preparing { return }
                 model.failTranslation(error.localizedDescription)
             }
         }

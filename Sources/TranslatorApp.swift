@@ -476,6 +476,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
         window.styleMask = [.titled, .closable]
         window.isReleasedWhenClosed = false
         window.isRestorable = false
+        // Крестик — тоже завершение онбординга. Без этого закрытие окна
+        // кнопкой не ставило флаг и показ вылезал при каждом запуске
+        // (проверено жизнью).
+        NotificationCenter.default.addObserver(
+            forName: NSWindow.willCloseNotification,
+            object: window,
+            queue: .main
+        ) { _ in
+            UserDefaults.standard.set(true, forKey: "onboarded")
+        }
         window.center()
         onboardingWindow = window
         NSApp.activate()
