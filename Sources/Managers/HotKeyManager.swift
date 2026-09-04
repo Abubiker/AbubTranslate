@@ -8,6 +8,7 @@ final class HotKeyManager: @unchecked Sendable {
     enum Slot: Int {
         case translate
         case speak
+        case ocr
     }
 
     var onKeyDown: ((Slot) -> Void)?

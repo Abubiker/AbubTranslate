@@ -268,3 +268,27 @@
 "Restart App" = "Перезапустить";
 
 /* New cloud engines (Yandex Cloud, LibreTranslate) + OpenAI thinking toggle */
+
+/* Wave 1: OCR from clipboard, replace in place, cache chip, onboarding */
+"Translate screenshot from clipboard" = "Перевести скриншот из буфера";
+"Translate screenshot:" = "Скриншот:";
+"No image in clipboard — take a screenshot (Shift-Cmd-Control-4) or drop an image on the panel" = "В буфере нет изображения — сделайте скриншот (⇧⌘⌃4) или перетащите картинку на панель";
+"No text found in the image" = "На изображении не найдено текста";
+"Replace selection in place" = "Заменить выделение на месте";
+"From cache" = "из кэша";
+"on-device" = "на устройстве";
+"Dictionary" = "Словарь";
+"Welcome to AbubTranslate" = "Добро пожаловать в AbubTranslate";
+"Skip" = "Пропустить";
+"Back" = "Назад";
+"Continue" = "Далее";
+"Done" = "Готово";
+"Pick the language you read fastest. It is changeable in Settings anytime." = "Выберите язык, который читаете быстрее всего. Потом можно поменять в настройках.";
+"Accessibility access" = "Универсальный доступ";
+"Lets AbubTranslate read the selected text without touching your clipboard. Translation also works without it — via clipboard fallback." = "Позволяет читать выделенный текст, не трогая буфер обмена. Без разрешения перевод тоже работает — через буфер.";
+"Not granted yet" = "Ещё не выдан";
+"Granted" = "Выдан";
+"Try it right now" = "Попробуйте прямо сейчас";
+"Select any word in any window — a browser, Notes, a chat — and press %@. AbubTranslate shows the panel itself." = "Выделите любое слово в любом окне — браузер, Заметки, чат — и нажмите %@. AbubTranslate сам покажет панель.";
+"Waiting for your first selection…" = "Жду первое выделение…";
+"It works. Translation done." = "Работает. Перевод выполнен.";

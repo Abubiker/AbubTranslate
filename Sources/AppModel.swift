@@ -32,6 +32,17 @@ final class AppModel {
     /// Коллбеки показа панели и окна настроек — подставляет AppDelegate.
     var showPanel: (() -> Void)?
     var showSettings: (() -> Void)?
+    var hidePanel: (() -> Void)?
+
+    /// Картинка в буфере — предпосылка OCR-подсказки. Бейдж на иконке
+    /// рисует AppDelegate, логика решения живёт здесь.
+    var hasClipboardImage = false {
+        didSet { if hasClipboardImage != oldValue { onClipboardImageChanged?(hasClipboardImage) } }
+    }
+    var onClipboardImageChanged: ((Bool) -> Void)?
+    /// Онбординг засчитывается первым успешным выделением, прочитанным
+    /// с хоткея — интерактивный шаг «попробуй прямо сейчас».
+    var onboardingSelectionOK = false
 
     private var pendingText = ""
     private var translationTask: Task<Void, Never>?
@@ -52,6 +63,11 @@ final class AppModel {
     /// Последний перевод пришёл из облака, а не с устройства.
     var lastUsedCloud = false
     var lastProviderName: String?
+    var lastUsedCache = false
+    /// Сколько длился последний боевой перевод — чип «OpenAI · 2.1s».
+    var lastElapsed: Duration?
+    private var translateStarted: ContinuousClock.Instant?
+    private var pendingCacheKey: String?
     var isSpeaking: Bool { speech.isSpeaking }
     var canSpeak: Bool { !translatedText.isEmpty || speech.lastSpokenText != nil }
 
@@ -531,6 +547,7 @@ final class AppModel {
         }
         applyHotKey(.translate)
         applyHotKey(.speak)
+        applyHotKey(.ocr)
     }
 
     /// `false` — комбинация занята другим приложением.
@@ -546,6 +563,8 @@ final class AppModel {
             Task { @MainActor in activateFromHotKey() }
         case .speak:
             Task { @MainActor in speakLastTranslation() }
+        case .ocr:
+            Task { @MainActor in translateClipboardImage() }
         }
     }
 
@@ -565,10 +584,68 @@ final class AppModel {
             let selected = await selection.readSelection()
             showPanel?()
             if let selected, !selected.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                onboardingSelectionOK = true
                 translate(text: selected)
             } else {
                 translateFromClipboard()
             }
+        }
+    }
+
+    /// OCR картинки из буфера (меню-пункт, хоткей ⌥⇧S, drop на панель).
+    /// Никакой магии без клика пользователя: бейдж только подсказывает.
+    func translateClipboardImage() {
+        hasClipboardImage = false
+        guard let data = ImageOCRManager.imageData(from: .general) else {
+            showPanel?()
+            sourceText = ""
+            translatedText = ""
+            status = .failed(localizedString("No image in clipboard — take a screenshot (Shift-Cmd-Control-4) or drop an image on the panel"))
+            return
+        }
+        recognize(data)
+    }
+
+    func recognize(_ data: Data) {
+        hasClipboardImage = false
+        showPanel?()
+        translationTask?.cancel()
+        sourceText = ""
+        translatedText = ""
+        lastProviderName = "OCR"
+        lastUsedCloud = false
+        status = .working
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            guard let text = await ImageOCRManager.recognize(data) else {
+                self.lastProviderName = nil
+                self.status = .failed(self.localizedString("No text found in the image"))
+                return
+            }
+            self.lastProviderName = nil
+            self.translate(text: text)
+        }
+    }
+
+    /// «Заменить на месте»: перевод уходит в буфер, панель закрывается,
+    /// ⌘В вставляется в целевое приложение поверх выделения, буфер
+    /// возвращается. Отменяется штатным ⌘Z самого приложения.
+    func replaceInPlace() {
+        guard !translatedText.isEmpty else { return }
+        let text = translatedText
+        hidePanel?()
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(180))
+            // Неудача вставки (не дождались приложения) — молча остаёмся:
+            // перевод уже в буфере, ⌘V руками пользователя всегда работает.
+            _ = await selection.replaceClipboardAndPaste(text)
+        }
+    }
+
+    /// Watch картинок стартует AppDelegate после готовности UI.
+    func startClipboardImageWatch() {
+        clipboard.watchImages { [weak self] in
+            self?.hasClipboardImage = true
         }
     }
 
@@ -676,6 +753,30 @@ final class AppModel {
             return
         }
         if sourceText != text { sourceText = text }
+
+        // Кэш — до всего остального: повторное выделение того же текста
+        // не должно ни определять язык, ни трогать движок, ни жрать квоту.
+        let cacheKey = TranslationCache.key(
+            engine: engineMode,
+            source: sourceLanguageCode ?? "auto",
+            target: targetLanguageCode,
+            text: text
+        )
+        pendingCacheKey = cacheKey
+        if let cached = TranslationCache.load(cacheKey) {
+            lastTranslatedSource = text
+            translatedText = cached
+            detectedLanguage = LanguageDetector.detect(text)
+            status = .done
+            lastUsedCloud = false
+            lastUsedCache = true
+            lastProviderName = nil
+            lastElapsed = nil
+            return
+        }
+        lastUsedCache = false
+        translateStarted = .now
+
         lastTranslatedSource = text
         translatedText = ""
         lastUsedCloud = false
@@ -954,10 +1055,18 @@ final class AppModel {
     func finishTranslation(_ result: String) {
         translatedText = result
         status = .done
+        lastElapsed = translateStarted?.duration(to: .now)
+        translateStarted = nil
+        if let key = pendingCacheKey {
+            TranslationCache.store(key, result)
+            pendingCacheKey = nil
+        }
     }
 
     func failTranslation(_ message: String) {
         status = .failed(message)
+        pendingCacheKey = nil
+        translateStarted = nil
     }
 
     /// Флаг фидбека копирования: панель показывает всплывающую ✓ и свой
@@ -991,6 +1100,9 @@ final class AppModel {
         lastTranslatedSource = ""
         lastUsedCloud = false
         lastProviderName = nil
+        lastUsedCache = false
+        lastElapsed = nil
+        pendingCacheKey = nil
         copiedFlash = false
         status = .idle
     }

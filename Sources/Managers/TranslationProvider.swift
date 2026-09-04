@@ -84,12 +84,31 @@ enum ChunkRetry {
     }
 }
 
+/// Окно чанкования одного перевода: стартует с `ChunkRetry.windowSize`,
+/// но первый же 429 от провайдера сводит его к 1 на весь перевод —
+/// агрегаторы с поминутным RPM (OpenRouter :free, gonkabroker) наш
+/// параллельный шторм из 3 заявок наказывают каскадом 429 и бэк-оффов,
+/// превращая 5-секундный перевод в минуту ожидания.
+private final class ChunkWindow: @unchecked Sendable {
+    private let lock = NSLock()
+    private var rateLimited = false
+
+    var size: Int {
+        lock.lock(); defer { lock.unlock() }
+        return rateLimited ? 1 : ChunkRetry.windowSize
+    }
+
+    func noteRateLimit() {
+        lock.lock(); rateLimited = true; lock.unlock()
+    }
+}
+
 extension TranslationProvider {
     /// Общий цикл нарезки: чанки переводятся параллельно (окно в 3 заявки —
     /// 10k символов через LLM последовательными волнами шли минутами),
     /// порядок склейки сохраняется исходными переносами. Один чанк = одна
     /// заявка с повторами по `ChunkRetry.isTransient`: сетевой сбой или 5xx
-    /// вычитает из перевода один чанк, а не весь текст.
+    /// вычитает из перевода один чанк, а не весь текст. 429 сужает окно до 1.
     func translateChunked(
         _ text: String,
         from source: String,
@@ -98,27 +117,32 @@ extension TranslationProvider {
     ) async throws -> String {
         let pieces = TextChunker.pieces(text, limit: charLimit)
         guard !pieces.isEmpty else { return "" }
+        let window = ChunkWindow()
         if pieces.count == 1 {
-            return try await translateWithRetry(pieces[0].text, translate) + pieces[0].trailing
+            return try await translateWithRetry(pieces[0].text, window, translate) + pieces[0].trailing
         }
 
         return try await withThrowingTaskGroup(of: (Int, String).self) { group in
             var started = 0
-            while started < pieces.count, started < ChunkRetry.windowSize {
+            var inflight = 0
+            while started < pieces.count, inflight < window.size {
                 let index = started
                 started += 1
+                inflight += 1
                 group.addTask {
-                    (index, try await self.translateWithRetry(pieces[index].text, translate))
+                    (index, try await self.translateWithRetry(pieces[index].text, window, translate))
                 }
             }
             var results = [String](repeating: "", count: pieces.count)
             for try await (index, translated) in group {
+                inflight -= 1
                 results[index] = translated + pieces[index].trailing
-                if started < pieces.count {
+                while started < pieces.count, inflight < window.size {
                     let next = started
                     started += 1
+                    inflight += 1
                     group.addTask {
-                        (next, try await self.translateWithRetry(pieces[next].text, translate))
+                        (next, try await self.translateWithRetry(pieces[next].text, window, translate))
                     }
                 }
             }
@@ -128,6 +152,7 @@ extension TranslationProvider {
 
     private func translateWithRetry(
         _ text: String,
+        _ window: ChunkWindow,
         _ translate: @Sendable (String) async throws -> String
     ) async throws -> String {
         var lastError: (any Error)?
@@ -141,6 +166,7 @@ extension TranslationProvider {
                     if case .service(let msg) = $0 { return msg.contains("(429)") }
                     return false
                 } ?? false
+                if isRateLimit { window.noteRateLimit() }
                 let backoff = (isRateLimit ? ChunkRetry.rateLimitBackoff : ChunkRetry.backoff)[attempt]
                 try await Task.sleep(for: backoff)
             }

@@ -14,6 +14,12 @@ struct HotkeyBinding: Equatable, Codable {
         keyCode: UInt32(kVK_ANSI_Y),
         modifiers: UInt32(optionKey | shiftKey)
     )
+    /// ⌥⇧S — та же буква S, что у划/Bob/Easydict на скриншот-функции:
+    /// привычка пользователя переносится, а не переучивается.
+    static let defaultOCR = HotkeyBinding(
+        keyCode: UInt32(kVK_ANSI_S),
+        modifiers: UInt32(optionKey | shiftKey)
+    )
 
     static func load(slot: HotKeyManager.Slot) -> HotkeyBinding {
         switch slot {
@@ -21,6 +27,8 @@ struct HotkeyBinding: Equatable, Codable {
             return load(key: "hotkey.translate", fallback: .defaultTranslate)
         case .speak:
             return load(key: "hotkey.speak", fallback: .defaultSpeak)
+        case .ocr:
+            return load(key: "hotkey.ocr", fallback: .defaultOCR)
         }
     }
 
@@ -29,6 +37,7 @@ struct HotkeyBinding: Equatable, Codable {
         switch slot {
         case .translate: key = "hotkey.translate"
         case .speak: key = "hotkey.speak"
+        case .ocr: key = "hotkey.ocr"
         }
         let defaults = UserDefaults.standard
         defaults.set(Int(keyCode), forKey: key + ".keyCode")

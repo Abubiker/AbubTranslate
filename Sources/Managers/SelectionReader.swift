@@ -1,20 +1,30 @@
 import AppKit
 import Carbon.HIToolbox
 
-/// Читает выделенный текст в активном приложении.
+/// Защита от само-триггера: restore буфера после синтетического ⌘C/V
+/// поднимает changeCount с чужой картинкой — watch изображениям в буфере
+/// должен пропустить это окно.
+@MainActor
+enum ClipboardGate {
+    nonisolated(unsafe) static var suppressedUntil = Date.distantPast
+}
+
+/// Читает выделенный текст и вставляет перевод на место выделения.
 ///
-/// Синхронного API для этого в macOS нет, поэтому используется общепринятый
-/// приём: синтетический ⌘C, ожидание изменения `changeCount` и обязательное
-/// восстановление прежнего буфера обмена.
+/// Приоритетный путь — Accessibility API (`AXSelectedText`): без касания
+/// буфера и поллинга, латентность десятки миллисекунд. Не все приложения
+/// отдают выделение через AX (Electron-редакторы часто молчат) — для них
+/// остаётся общепринятый приём: синтетический ⌘C, ожидание изменения
+/// `changeCount` и обязательное восстановление прежнего буфера.
 @MainActor
 final class SelectionReader {
     /// Сколько ждём, пока приложение положит выделение в буфер.
     private let timeout = Duration.milliseconds(300)
     private let pollStep = Duration.milliseconds(20)
+    /// AX-вызовы к зависшему приложению блокируют поток на секунды —
+    /// обрываем переписку с элементом раньше фолбэка.
+    private let axTimeout: Float = 0.3
 
-    /// Системный диалог запроса доступа вызывается только со старта приложения
-    /// (AppDelegate) и с кнопки в настройках: нажатие хоткея не должно
-    /// порождать модальных окон — пользователь ждёт перевода, а не опроса.
     static var isTrusted: Bool {
         AXIsProcessTrusted()
     }
@@ -31,6 +41,7 @@ final class SelectionReader {
     /// Буфер обмена в любом случае остаётся таким, каким был.
     func readSelection() async -> String? {
         guard Self.isTrusted else { return nil }
+        if let ax = readSelectionViaAX() { return ax }
 
         let pasteboard = NSPasteboard.general
         let saved = snapshot(of: pasteboard)
@@ -54,6 +65,59 @@ final class SelectionReader {
             restore(saved, to: pasteboard)
         }
         return nil
+    }
+
+    /// Быстрый путь: системный AX-элемент → focused app → focused UI
+    /// element → `AXSelectedText`. Пустой/nil-ответ означает «этот клиент
+    /// не отдаёт», и вызывающий падает на clipboard-путь, а не «выделения
+    /// нет» — различить их снаружи нельзя.
+    private func readSelectionViaAX() -> String? {
+        let system = AXUIElementCreateSystemWide()
+        var appRef: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(system, kAXFocusedApplicationAttribute as CFString, &appRef) == .success,
+              let appRef
+        else { return nil }
+        let app = appRef as! AXUIElement
+        AXUIElementSetMessagingTimeout(app, axTimeout)
+
+        // Свой собственный поповер с focused-полем ввода давал бы «выделение
+        // из себя же» — читаем только чужое приложение. kAXPidAttribute не
+        // в Swift-оверлее ApplicationServices — константа стабильна как строка.
+        var own = false
+        var pidRef: CFTypeRef?
+        if AXUIElementCopyAttributeValue(app, "AXPID" as CFString, &pidRef) == .success,
+           let number = pidRef as? NSNumber, number.intValue == getpid() { own = true }
+        guard !own else { return nil }
+
+        var elRef: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(app, kAXFocusedUIElementAttribute as CFString, &elRef) == .success,
+              let elRef
+        else { return nil }
+        let element = elRef as! AXUIElement
+
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(element, kAXSelectedTextAttribute as CFString, &value) == .success,
+              let text = value as? String
+        else { return nil }
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : text
+    }
+
+    /// Вставляет `text` на место выделения целевого приложения: пишет в
+    /// буфер, шлёт ⌘V и возвращает прежний буфер обратно — перевод к
+    /// моменту restore уже в документе, буфер снова «как был».
+    func replaceClipboardAndPaste(_ text: String) async -> Bool {
+        let pasteboard = NSPasteboard.general
+        let saved = snapshot(of: pasteboard)
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
+        guard postCommand(.init(kVK_ANSI_V)) else {
+            restore(saved, to: pasteboard)
+            return false
+        }
+        try? await Task.sleep(for: .milliseconds(350))
+        restore(saved, to: pasteboard)
+        return true
     }
 
     // MARK: - Буфер обмена
@@ -83,11 +147,12 @@ final class SelectionReader {
     /// записи от другого приложения ровно в то же окно в 300мс.
     private func restore(_ items: [NSPasteboardItem], to pasteboard: NSPasteboard) {
         pasteboard.clearContents()
+        ClipboardGate.suppressedUntil = Date().addingTimeInterval(1.5)
         guard !items.isEmpty else { return }
         pasteboard.writeObjects(items)
     }
 
-    // MARK: - Синтетический ⌘C
+    // MARK: - Синтетические клавиши
 
     /// На macOS 14+ локальный фильтр подавления — no-op, и синтетический
     /// ⌘C при физически удерживаемых модификаторах хоткея уезжает в целевое
@@ -103,21 +168,18 @@ final class SelectionReader {
         }
     }
 
-    private func postCommandC() -> Bool {
+    private func postCommandC() -> Bool { postCommand(CGKeyCode(kVK_ANSI_C)) }
+
+    private func postCommand(_ key: CGKeyCode) -> Bool {
         guard let source = CGEventSource(stateID: .combinedSessionState) else { return false }
         // Гасим физически зажатые модификаторы хоткея (⌥⇧), иначе в активное
-        // приложение уедет ⌥⇧⌘C вместо чистого ⌘C.
+        // приложение уедет ⌥⇧C вместо чистого C.
         // setLocalEventsFilterDuringSuppressionState deprecated в macOS 14, но на M-series всё ещё работает.
-        // Для M-only (arm64) оставляем как есть, подавляем warning.
-        if #available(macOS 14.0, *) {
-            // no-op, API deprecated but still functional on Apple Silicon
-        }
         source.setLocalEventsFilterDuringSuppressionState(
             [.permitLocalMouseEvents, .permitSystemDefinedEvents],
             state: .eventSuppressionStateSuppressionInterval
         )
 
-        let key = CGKeyCode(kVK_ANSI_C)
         guard let down = CGEvent(keyboardEventSource: source, virtualKey: key, keyDown: true),
               let up = CGEvent(keyboardEventSource: source, virtualKey: key, keyDown: false)
         else { return false }

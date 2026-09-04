@@ -68,7 +68,7 @@ struct OpenAICompatibleProvider: TranslationProvider {
         ]
         applyBudgetFields(into: &body, model: m, cap: 64)
         if disableThinking {
-            reasoningFields(model: m).forEach { body[$0] = $1 }
+            reasoningFields(model: m, host: url.host).forEach { body[$0] = $1 }
         }
 
         let start = ContinuousClock.now
@@ -142,7 +142,7 @@ struct OpenAICompatibleProvider: TranslationProvider {
         // max_completion_tokens — по семейству модели в applyBudgetFields.
         applyBudgetFields(into: &body, model: m, cap: min(4096, max(128, chunk.count * 3 + 64)))
         if disableThinking {
-            reasoningFields(model: m).forEach { body[$0] = $1 }
+            reasoningFields(model: m, host: url.host).forEach { body[$0] = $1 }
         }
 
         let result = try await postChat(url: url, body: body)
@@ -169,27 +169,58 @@ struct OpenAICompatibleProvider: TranslationProvider {
 
     // MARK: - Reasoning-off и пост
 
+    /// Память «этот хост проглотил это поле»: на первый 5xx/жалобу поля
+    /// запоминаются (см. postChat), reasoningFields больше их не шлёт —
+    /// steady-state один хоп вместо лестницы каждый раз. Чиселенко
+    /// «thinking→reasoning_effort:none» для DeepSeek-ветки — частный случай:
+    /// при отвергнутом thinking пробуется замена (замер forgetapi: thinking
+    /// — 5xx, effort-none — 200 и reasoning_tokens=0).
+    private final class DialectMemory: @unchecked Sendable {
+        static let shared = DialectMemory()
+        private let lock = NSLock()
+        private var rejected: [String: Set<String>] = [:]
+
+        func isRejected(_ key: String, host: String) -> Bool {
+            lock.lock(); defer { lock.unlock() }
+            return rejected[host]?.contains(key) ?? false
+        }
+
+        func mergeRejected(host: String, keys: Set<String>) {
+            guard !keys.isEmpty else { return }
+            lock.lock(); rejected[host, default: []].formUnion(keys); lock.unlock()
+        }
+    }
+
     /// Поля выключения размышлений по семейству модели. Денег за незнание
     /// не берём: эвристика по имени, а строгие сервера, для которых лишних
     /// полей не бывает, ловятся ретраем в `postChat`.
     /// `thinking`/`enable_thinking` — диалект DeepSeek/Qwen-совместимых
     /// шлюзов; `reasoning_effort` — OpenAI; `reasoning:{effort:none}` —
     /// OpenRouter (имена моделей его не выдают, зато узнаваем адрес).
-    private func reasoningFields(model: String) -> [String: Any] {
+    private func reasoningFields(model: String, host: String?) -> [String: Any] {
         let lower = model.lowercased()
         let tokens = Set(lower.split(whereSeparator: { !$0.isLetter && !$0.isNumber }).map(String.init))
+        func allowed(_ key: String) -> Bool {
+            guard let host else { return true }
+            return !DialectMemory.shared.isRejected(key, host: host)
+        }
         var fields: [String: Any] = [:]
         if lower.contains("deepseek") {
-            fields["thinking"] = ["type": "disabled"]
+            if allowed("thinking") {
+                fields["thinking"] = ["type": "disabled"]
+            } else if allowed("reasoning_effort") {
+                // thinking этим хостом проглочен — пробуем OpenAI-стандарт
+                fields["reasoning_effort"] = "none"
+            }
         } else if lower.contains("qwen") || lower.contains("glm-4.5") || lower.contains("kimi-k2") {
-            fields["enable_thinking"] = false
+            if allowed("enable_thinking") { fields["enable_thinking"] = false }
         } else if lower.contains("gpt-5") || lower.contains("chatgpt-") || tokens.contains("o3") || tokens.contains("o4") {
-            fields["reasoning_effort"] = "none"
+            if allowed("reasoning_effort") { fields["reasoning_effort"] = "none" }
         } else if tokens.contains("o1") || tokens.contains("o2") {
             // у o1 нет "none" — минимум low
-            fields["reasoning_effort"] = "low"
+            if allowed("reasoning_effort") { fields["reasoning_effort"] = "low" }
         }
-        if baseURL?.lowercased().contains("openrouter.ai") == true {
+        if baseURL?.lowercased().contains("openrouter.ai") == true, allowed("reasoning") {
             // OpenRouter понимает этот диалект для всех моделей, умеющих
             // thinking (список supported_parameters в /api/v1/models).
             fields["reasoning"] = ["effort": "none"]
@@ -219,24 +250,65 @@ struct OpenAICompatibleProvider: TranslationProvider {
         }
     }
 
-    private static let reasoningFieldKeys = ["thinking", "enable_thinking", "reasoning_effort"]
+    /// Все ключи, которые `reasoningFields` вообще добавляет к телу.
+    /// «reasoning» — объект OpenRouter; без него в списке hasExtras врал
+    /// для любых openrouter-запросов: strip-ретрай не включался на 400
+    /// «Reasoning is mandatory» (minimax-m2.7:free), а «голый» кандидат
+    /// уносил dict с собой.
+    private static let reasoningFieldKeys = ["thinking", "enable_thinking", "reasoning_effort", "reasoning"]
 
     struct ChatResponse {
         let data: Data
         let http: HTTPURLResponse
     }
 
-    /// POST с телом; при 400 с жалобой на неизвестные поля и наличии
-    /// reasoning-допов — один ретрай без них (строгий vLLM и подобные).
+    /// POST с телом-лесенкой: family-диалект → (если был `thinking`)
+    /// OpenAI-стандартный `reasoning_effort:none` → голое тело. Первый
+    /// же ответ <500 (в т.ч. честные 4xx валидации, которые mapError
+    /// разберёт наверху) прекращает лестницу; 5xx и 400 с жалобой на
+    /// поля — сигнал «тело ядовитое для этого шлюза», следующий кандидат.
+    /// Замеры: forgetapi на `thinking` — 502 за 90мс, на `reasoning_effort`
+    /// — 200; голая заявка без всех допов теряла бы шанс выключить
+    /// thinking, поэтому effort идёт до stripped-bare, а не после.
     private func postChat(url: URL, body: [String: Any]) async throws -> ChatResponse {
-        let first = try await postOnce(url: url, body: body)
+        var candidates: [[String: Any]] = [body]
         let hasExtras = Self.reasoningFieldKeys.contains { body[$0] != nil }
-        guard first.http.statusCode == 400, hasExtras, Self.looksLikeUnknownFieldError(first.data) else {
-            return first
+        if hasExtras {
+            if body["thinking"] != nil, !body.keys.contains("reasoning_effort") {
+                var effort = body
+                for key in Self.reasoningFieldKeys { effort.removeValue(forKey: key) }
+                effort["reasoning_effort"] = "none"
+                candidates.append(effort)
+            }
+            var bare = body
+            for key in Self.reasoningFieldKeys { bare.removeValue(forKey: key) }
+            candidates.append(bare)
         }
-        var stripped = body
-        for key in Self.reasoningFieldKeys { stripped.removeValue(forKey: key) }
-        return try await postOnce(url: url, body: stripped)
+
+        var last: ChatResponse?
+        for (i, candidate) in candidates.enumerated() {
+            let result = try await postOnce(url: url, body: candidate)
+            let status = result.http.statusCode
+            let poison = (500...599).contains(status)
+                || (status == 400 && Self.looksLikeUnknownFieldError(result.data))
+            guard poison else {
+                if i > 0, let host = url.host {
+                    // Победитель лестницы не содержит ключей, которые были
+                    // в отравленном оригинале, — значит хост не переваривает
+                    // именно их: записываем в память, reasoningFields
+                    // перестанет их строить. Отклонённый effort-заменитель
+                    // тоже попадает в множество → ветка сама деградирует до
+                    // пустого набора, осцилляции mark/clear больше нет.
+                    let dropped = Self.reasoningFieldKeys.filter {
+                        body[$0] != nil && candidate[$0] == nil
+                    }
+                    DialectMemory.shared.mergeRejected(host: host, keys: Set(dropped))
+                }
+                return result
+            }
+            last = result
+        }
+        return last!
     }
 
     private func postOnce(url: URL, body: [String: Any]) async throws -> ChatResponse {
@@ -259,11 +331,12 @@ struct OpenAICompatibleProvider: TranslationProvider {
 
     // MARK: - Диагностика (`--openai-latency`)
 
-    /// Результат одного зондового Hello-запроса с произвольными
-    /// дополнительными полями. Поля лимита (max_tokens/temperature) НЕ
-    /// шлются намеренно: reasoning-токены съедают completion-бюджет, и
-    /// урезанный max_tokens дал бы 200 без content вместо честного
-    /// «думаем N секунд».
+    /// Результат одного зондового запроса с произвольным текстом и
+    /// полями. Боевые лимиты (max_tokens/temperature) шлются как в
+    /// translateChunk — замер того, что реально испытывает пользователь;
+    /// у thinking-моделей с урезанным бюджетом content может прийти
+    /// пустым при reasoning_tokens > 0 — это тоже ответ на вопрос
+    /// «думает ли модель».
     struct ProbeResult {
         let status: Int
         let elapsed: Duration
@@ -271,35 +344,51 @@ struct OpenAICompatibleProvider: TranslationProvider {
         let reasoningTokens: Int
         let hasReasoning: Bool
         let snippet: String
+        let contentChars: Int
+        let finishReason: String
         let error: String?
     }
 
-    func probe(extraFields: [String: Any]) async -> ProbeResult {
-        guard let url = endpointURL(),
-              let m = model?.trimmingCharacters(in: .whitespacesAndNewlines), !m.isEmpty,
-              isConfigured()
-        else {
+    /// Зондовый запрос для `--openai-latency`. `fields == nil` — боевое
+    /// тело (budget + family-диалект), иначе — явно указанные поля вместо
+    /// диалекта: матрица «кто из агрегаторов что режет». `ladder == true`
+    /// — через боевой `postChat` со strip-ретраем, т.е. ровно то, что
+    /// испытывает пользователь; матрица диалектов ходит намеренно наго.
+    func probe(
+        text: String,
+        fields: [String: Any]? = nil,
+        modelOverride: String? = nil,
+        ladder: Bool = false
+    ) async -> ProbeResult {
+        let m = (modelOverride?.trimmingCharacters(in: .whitespacesAndNewlines))
+            .flatMap { $0.isEmpty ? nil : $0 }
+            ?? model?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let url = endpointURL(), let m, !m.isEmpty, isConfigured() else {
             return ProbeResult(status: -1, elapsed: .zero, completionTokens: 0,
-                               reasoningTokens: 0, hasReasoning: false, snippet: "", error: "not configured")
+                               reasoningTokens: 0, hasReasoning: false, snippet: "", contentChars: 0, finishReason: "", error: "not configured")
         }
         var body: [String: Any] = [
             "model": m,
             "messages": [
                 ["role": "system", "content": systemPrompt(from: "en", to: "ru")],
-                ["role": "user", "content": "Hello"],
+                ["role": "user", "content": text],
             ],
         ]
-        for (k, v) in extraFields { body[k] = v }
+        applyBudgetFields(into: &body, model: m, cap: min(4096, max(128, text.count * 3 + 64)))
+        let effective = fields ?? (disableThinking ? reasoningFields(model: m, host: url.host) : [:])
+        for (k, v) in effective { body[k] = v }
 
         let start = ContinuousClock.now
         do {
-            let result = try await postOnce(url: url, body: body)
+            let result = try await (ladder
+                ? postChat(url: url, body: body)
+                : postOnce(url: url, body: body))
             let elapsed = start.duration(to: .now)
             guard (200...299).contains(result.http.statusCode) else {
                 return ProbeResult(
                     status: result.http.statusCode, elapsed: elapsed,
                     completionTokens: 0, reasoningTokens: 0, hasReasoning: false,
-                    snippet: "", error: String(data: result.data, encoding: .utf8)
+                    snippet: "", contentChars: 0, finishReason: "", error: String(data: result.data, encoding: .utf8)
                 )
             }
             let obj = try? JSONSerialization.jsonObject(with: result.data) as? [String: Any]
@@ -307,6 +396,7 @@ struct OpenAICompatibleProvider: TranslationProvider {
             let msg = choices?.first?["message"] as? [String: Any]
             let content = (msg?["content"] as? String) ?? ""
             let hasReasoning = !((msg?["reasoning_content"] as? String) ?? "").isEmpty
+            let finish = (choices?.first?["finish_reason"] as? String) ?? "?"
             let usage = obj?["usage"] as? [String: Any]
             let details = usage?["completion_tokens_details"] as? [String: Any]
             return ProbeResult(
@@ -316,11 +406,13 @@ struct OpenAICompatibleProvider: TranslationProvider {
                 reasoningTokens: details?["reasoning_tokens"] as? Int ?? 0,
                 hasReasoning: hasReasoning,
                 snippet: String(content.prefix(40)),
+                contentChars: content.count,
+                finishReason: finish,
                 error: nil
             )
         } catch {
             return ProbeResult(status: -1, elapsed: start.duration(to: .now), completionTokens: 0,
-                               reasoningTokens: 0, hasReasoning: false, snippet: "",
+                               reasoningTokens: 0, hasReasoning: false, snippet: "", contentChars: 0, finishReason: "",
                                error: error.localizedDescription)
         }
     }
@@ -347,6 +439,11 @@ struct OpenAICompatibleProvider: TranslationProvider {
 
     private static func looksLikeUnknownFieldError(_ data: Data) -> Bool {
         let text = String(data: data, encoding: .utf8)?.lowercased() ?? ""
+        // Явный случай из замера на OpenRouter: модели с обязательным
+        // reasoning (minimax-m2.7:free) отвечают 400 «Reasoning is
+        // mandatory … and cannot be disabled» — это тоже сигнал «убери
+        // наши дополнения и повтори», а не конец света.
+        if text.contains("mandatory") { return true }
         let rejected = ["unknown", "unrecognized", "unexpected", "extra", "not a permitted", "unexpected keyword", "invalid"]
         let target = ["field", "parameter", "argument", "keyword", "schema"]
         return rejected.contains { text.contains($0) } && target.contains { text.contains($0) }

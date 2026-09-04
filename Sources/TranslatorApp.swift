@@ -88,11 +88,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
         AppModel.shared.showPanel = { [weak self] in
             self?.togglePopover()
         }
+        AppModel.shared.hidePanel = { [weak self] in
+            guard let self, self.popover.isShown else { return }
+            self.popover.performClose(nil)
+        }
         // Шестерёнка в панели идёт тем же путём, что и пункт меню: SwiftUI
         // openSettings из поповера окно не поднимает.
         AppModel.shared.showSettings = { [weak self] in
             self?.openSettingsFromMenu()
         }
+        // Бейдж «в буфере картинка» — мягкий пуш к OCR без модалок и без
+        // самовольного перевода: точка в заголовке статус-итема наследует
+        // цвет менюбара (в отличие от template-оверлея).
+        AppModel.shared.onClipboardImageChanged = { [weak self] on in
+            self?.statusItem?.button?.title = on ? " •" : ""
+        }
+        AppModel.shared.startClipboardImageWatch()
         AppModel.shared.applyAppearance()
 
         // Разрешение выдают в Настройках системы: ловим возврат фокуса,
@@ -115,9 +126,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
             SelectionReader.requestTrust()
         }
 
+        // Первый запуск — интерактивный онбординг (доступен и по
+        // --open-onboarding для проверки без сброса флага).
+        if !UserDefaults.standard.bool(forKey: "onboarded")
+            || ProcessInfo.processInfo.arguments.contains("--open-onboarding") {
+            showOnboarding()
+        }
+
         // Тестовый вход: позволяет проверить окно настроек без кликов мышью.
         if ProcessInfo.processInfo.arguments.contains("--open-settings") {
             openSettingsFromMenu()
+        }
+        if ProcessInfo.processInfo.arguments.contains("--open-onboarding") {
+            showOnboarding()
         }
 
         // Диагностика облачных движков: реальный запрос от лица уже
@@ -137,6 +158,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
         }
         if ProcessInfo.processInfo.arguments.contains("--openai-latency") {
             Task { await runOpenAILatencySelfTest() }
+        }
+        if ProcessInfo.processInfo.arguments.contains("--newproviders-selftest") {
+            Task { await runNewProvidersSelfTest() }
         }
 
         // Самоаппдейт: подчистить осколки прерванной установки, затем
@@ -387,6 +411,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
         update.target = self
         update.isEnabled = !updateBusy
         menu.addItem(.separator())
+        let ocr = menu.addItem(
+            withTitle: AppModel.shared.localizedString("Translate screenshot from clipboard"),
+            action: #selector(ocrFromMenu),
+            keyEquivalent: ""
+        )
+        ocr.target = self
         let settings = menu.addItem(
             withTitle: AppModel.shared.localizedString("Settings…"),
             action: #selector(openSettingsFromMenu),
@@ -419,6 +449,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
 
     @objc private func quitFromMenu() {
         NSApp.terminate(nil)
+    }
+
+    @objc private func ocrFromMenu() {
+        if popover.isShown { popover.performClose(nil) }
+        AppModel.shared.translateClipboardImage()
+    }
+
+    // MARK: - Онбординг
+
+    private var onboardingWindow: NSWindow?
+
+    /// Первый запуск: не слайд-шоу скриншотов, а три живых шага —
+    /// выбрать язык, выдать доступ, реально перевыделить текст хоткеем.
+    /// Шаг «попробуй» засчитывается только по настоящему успеху
+    /// (onboardingSelectionOK ставится из пути хоткея).
+    private func showOnboarding() {
+        let view = OnboardingView(onComplete: { [weak self] in
+            UserDefaults.standard.set(true, forKey: "onboarded")
+            self?.onboardingWindow?.close()
+            self?.onboardingWindow = nil
+        })
+        let controller = NSHostingController(rootView: view.environment(AppModel.shared))
+        let window = NSWindow(contentViewController: controller)
+        window.title = AppModel.shared.localizedString("Welcome to AbubTranslate")
+        window.styleMask = [.titled, .closable]
+        window.isReleasedWhenClosed = false
+        window.isRestorable = false
+        window.center()
+        onboardingWindow = window
+        NSApp.activate()
+        window.makeKeyAndOrderFront(nil)
     }
 
     /// «О программе»: короткое описание, версия, лицензия, автор, ссылка на
@@ -509,6 +570,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
             showPopoverViaFallbackAnchor()
         }
         installOutsideClickMonitor()
+        // Панель открыли — пользователь её видит, подсказка про картинку
+        // из буфера больше не нужна.
+        AppModel.shared.hasClipboardImage = false
     }
 
     private var fallbackAnchorPanel: NSPanel?
@@ -743,6 +807,55 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
 
     // MARK: - Diagnostic self-tests
 
+    /// Живая проверка новых провайдеров на машине разработчика: Yandex без
+    /// ключа должен честно сказать notConfigured и цепочка обязана доехать
+    /// до MyMemory; LibreTranslate публичный инстанс без ключа — 401/403,
+    /// тот же фолбэк. Ключей у приложения нет и не предвидится — это
+    /// проверка проводки, а не сервисов.
+    private func runNewProvidersSelfTest() async {
+        let log = selfTestLog
+        log("=== new providers selftest ===")
+
+        let yandex = YandexTranslateProvider()
+        log("yandex isConfigured: \(yandex.isConfigured())")
+        do {
+            _ = try await yandex.translate("Hello", from: "en", to: "ru")
+            log("yandex без ключа неожиданно перевёл")
+        } catch {
+            log("yandex без ключа: \(error.localizedDescription)")
+        }
+
+        let libre = LibreTranslateProvider()
+        log("libre isConfigured: \(libre.isConfigured()) base: \(libre.effectiveBaseURL)")
+        do {
+            _ = try await libre.translate("Hello", from: "en", to: "ru")
+            log("libre без ключа: УСПЕХ (публичный инстанс пустил анонима)")
+        } catch {
+            log("libre без ключа: \(error.localizedDescription)")
+        }
+
+        let model = AppModel.shared
+        for (mode, name) in [(EngineMode.yandexCloud, "yandexCloud"), (.libreTranslate, "libreTranslate")] {
+            let previous = model.engineMode
+            model.engineMode = mode
+            // Уникальный текст на прогон: иначе второй запуск засчитывает
+            // попадание в кэш вместо настоящего прохождения цепочки.
+            model.translate(text: "Hello, this is a chain test \(UUID().uuidString.prefix(8))")
+            var outcome = "timeout"
+            for _ in 0..<40 {
+                try? await Task.sleep(for: .milliseconds(500))
+                if case .done = model.status {
+                    outcome = "done via \(model.lastProviderName ?? "?") cloud=\(model.lastUsedCloud)"
+                    break
+                }
+                if case .failed(let message) = model.status { outcome = "failed: \(message)"; break }
+            }
+            log("цепочка \(name): \(outcome)")
+            model.engineMode = previous
+        }
+        log("=== end ===")
+    }
+
     /// Прогон проверки обновлений без UI: `--args --update-selftest`.
     /// Лог — тот же файл, что у облачных самотестов.
     private func runUpdateSelfTest() async {
@@ -780,10 +893,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
         log("=== end ===")
     }
 
-    /// Диагноз «прокси режет поля выключения thinking»: матрица диалектов
-    /// на живом ключе. Каждый вариант — свой Hello en→ru; два раунда в
-    /// обратном порядке, чтобы прогрев/кэш не окрасили сравнение. Лог —
-    /// тот же файл, что у остальных самотестов.
+    /// Диагноз «почему LLM-перевод долгий»: матрица диалектов на живом
+    /// ключе + замер скорости боевым телом на переводе-подобных текстах
+    /// + альтернативные free-модели. 429 считаются — шторм от параллельных
+    /// чанков и saturated пул выглядят в логе по-разному.
     /// `open -a /Applications/AbubTranslate.app --args --openai-latency`
     private func runOpenAILatencySelfTest() async {
         let log = selfTestLog
@@ -793,46 +906,58 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
             log("нет конфигурации — сохраните URL/ключ/модель в настройках")
             return
         }
-        log("model: \(provider.model ?? "nil")")
+        log("model: \(provider.model ?? "nil") base: \(provider.baseURL ?? "nil")")
         let ids = await provider.listModelIDs()
-        let related = ids.filter { $0.lowercased().contains("deepseek") || $0.lowercased().contains("flash") }
-        log("models deepseek/flash: \(related.isEmpty ? idJoin(ids) : idJoin(related))")
+        let related = ids.filter { $0.lowercased().contains("gemma") || $0.lowercased().contains("deepseek") || $0.lowercased().contains("flash") }
+        log("models: \(idJoin(related.isEmpty ? ids : related))")
 
-        let variants: [(name: String, fields: [String: Any])] = [
+        func ms(_ d: Duration) -> Int {
+            Int(d.components.seconds) * 1000 + Int(d.components.attoseconds / 1_000_000_000_000_000)
+        }
+        var rateLimits = 0
+        func line(_ label: String, _ r: OpenAICompatibleProvider.ProbeResult) {
+            if r.status == 429 { rateLimits += 1 }
+            let tps = r.elapsed.components.seconds > 0 && r.completionTokens > 0
+                ? Double(r.completionTokens) / Double(r.elapsed.components.seconds) : 0
+            let err = r.error.map { " err=\($0.prefix(120))" } ?? ""
+            log("\(label): status=\(r.status) \(ms(r.elapsed))ms tps=\(String(format: "%.1f", tps)) finish=\(r.finishReason) completion=\(r.completionTokens) chars=\(r.contentChars) reasoning_tokens=\(r.reasoningTokens) text=\"\(r.snippet)\"\(err)")
+        }
+
+        let dialects: [(name: String, fields: [String: Any])] = [
             ("bare", [:]),
             ("thinking", ["thinking": ["type": "disabled"]]),
             ("enable_thinking", ["enable_thinking": false]),
             ("reasoning_effort", ["reasoning_effort": "none"]),
             ("openrouter_reasoning", ["reasoning": ["effort": "none"]]),
-            ("superset", [
-                "thinking": ["type": "disabled"],
-                "enable_thinking": false,
-                "reasoning": ["effort": "none"],
-            ]),
         ]
-        var results: [String: [(ms: Int, noThinking: Bool)]] = [:]
+        for variant in dialects {
+            line("dialect \(variant.name)", await provider.probe(text: "Hello", fields: variant.fields))
+            try? await Task.sleep(for: .seconds(2))
+        }
+
+        let small = "The morning meeting was moved to ten o'clock, so please review the quarterly report before that time and send your comments to the team channel. If anything in the budget section is unclear, reach out to finance directly."
+        let big = String(repeating: small + " ", count: 6)
+        // ladder: true — боевой путь с strip-ретраем и памятью хоста:
+        // первый же прогон на forgetapi-подобном должен показать 200
+        // (после внутреннего 502+strip), а со второго запроса — сразу
+        // reasoning_effort:none без ядовитого thinking.
         for round in 1...2 {
-            let ordered = round == 1 ? variants : variants.reversed()
-            for variant in ordered {
-                let r = await provider.probe(extraFields: variant.fields)
-                let ms = Int(r.elapsed.components.seconds) * 1000 + Int(r.elapsed.components.attoseconds / 1_000_000_000_000_000)
-                let noThinking = r.status == 200 && !r.hasReasoning && r.reasoningTokens == 0
-                results[variant.name, default: []].append((ms, noThinking))
-                let err = r.error.map { " err=\($0.prefix(120))" } ?? ""
-                log("r\(round) \(variant.name): status=\(r.status) \(ms)ms completion=\(r.completionTokens) reasoning_tokens=\(r.reasoningTokens) reasoning_content=\(r.hasReasoning ? "yes" : "no") text=\"\(r.snippet)\"\(err)")
-                try? await Task.sleep(for: .seconds(2))
-            }
+            line("prod small #\(round)", await provider.probe(text: small, ladder: true))
+            try? await Task.sleep(for: .seconds(2))
         }
-        // Победитель — вариант, стабильно (оба раунда) вернувший 200 без
-        // reasoning; единственный везучий ответ раунда не считается.
-        let winners = results
-            .filter { $0.value.count == 2 && $0.value.allSatisfy(\.noThinking) }
-            .sorted { ($0.value.map(\.ms).reduce(0, +)) < ($1.value.map(\.ms).reduce(0, +)) }
-        if let winner = winners.first {
-            log("кандидат: \(winner.key) (avg \(winner.value.map(\.ms).reduce(0, +) / 2)ms)")
-        } else {
-            log("кандидат: нет — ни один диалект стабильно не отключил thinking")
+        line("prod big", await provider.probe(text: big, ladder: true))
+        try? await Task.sleep(for: .seconds(2))
+
+        let alternatives = [
+            "google/gemma-4-26b-a4b-it:free",
+            "nvidia/nemotron-3.5-lightning:free",
+            "minimax/minimax-m2.7:free",
+        ]
+        for alt in alternatives {
+            line("alt \(alt)", await provider.probe(text: small, modelOverride: alt))
+            try? await Task.sleep(for: .seconds(2))
         }
+        log("итог: 429 за прогон = \(rateLimits)")
         log("=== end ===")
     }
 

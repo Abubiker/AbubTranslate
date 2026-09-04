@@ -264,3 +264,27 @@
 "Automatic fallback if LibreTranslate has no key or fails." = "Automatic fallback if LibreTranslate has no key or fails.";
 "Disable model thinking" = "Disable model thinking";
 "Turns off reasoning tokens on DeepSeek/Qwen/o-series models — the main cause of slow translations. Strict servers that reject the extra fields get an automatic retry without them." = "Turns off reasoning tokens on DeepSeek/Qwen/o-series models — the main cause of slow translations. Strict servers that reject the extra fields get an automatic retry without them.";
+
+/* Wave 1: OCR from clipboard, replace in place, cache chip, onboarding */
+"Translate screenshot from clipboard" = "Translate screenshot from clipboard";
+"Translate screenshot:" = "Translate screenshot:";
+"No image in clipboard — take a screenshot (Shift-Cmd-Control-4) or drop an image on the panel" = "No image in clipboard — take a screenshot (Shift-Cmd-Control-4) or drop an image on the panel";
+"No text found in the image" = "No text found in the image";
+"Replace selection in place" = "Replace selection in place";
+"From cache" = "From cache";
+"on-device" = "on-device";
+"Dictionary" = "Dictionary";
+"Welcome to AbubTranslate" = "Welcome to AbubTranslate";
+"Skip" = "Skip";
+"Back" = "Back";
+"Continue" = "Continue";
+"Done" = "Done";
+"Pick the language you read fastest. It is changeable in Settings anytime." = "Pick the language you read fastest. It is changeable in Settings anytime.";
+"Accessibility access" = "Accessibility access";
+"Lets AbubTranslate read the selected text without touching your clipboard. Translation also works without it — via clipboard fallback." = "Lets AbubTranslate read the selected text without touching your clipboard. Translation also works without it — via clipboard fallback.";
+"Not granted yet" = "Not granted yet";
+"Granted" = "Granted";
+"Try it right now" = "Try it right now";
+"Select any word in any window — a browser, Notes, a chat — and press %@. AbubTranslate shows the panel itself." = "Select any word in any window — a browser, Notes, a chat — and press %@. AbubTranslate shows the panel itself.";
+"Waiting for your first selection…" = "Waiting for your first selection…";
+"It works. Translation done." = "It works. Translation done.";

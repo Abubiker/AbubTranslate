@@ -614,6 +614,9 @@ struct SettingsView: View {
                 HotkeyRecorder(title: "Speak translation:", slot: .speak) { _ in
                     model.applyHotKey(.speak)
                 }
+                HotkeyRecorder(title: "Translate screenshot:", slot: .ocr) { _ in
+                    model.applyHotKey(.ocr)
+                }
             }
 
             if model.needsAccessibilityPermission {

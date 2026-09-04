@@ -1,4 +1,6 @@
 import SwiftUI
+import NaturalLanguage
+import UniformTypeIdentifiers
 @preconcurrency import Translation
 
 /// Кнопки в стиле Liquid Glass на macOS 26+, с фолбэком на старых системах.
@@ -51,6 +53,41 @@ struct PanelView: View {
         .preferredColorScheme(model.preferredColorScheme)
         .animation(.smooth(duration: 0.22), value: model.status)
         .animation(.smooth(duration: 0.2), value: model.translatedText)
+        // Картинка, брошенная на панель = OCR-перевод без единого
+        // разрешения: пиксели уже на диске, Vision читает их локально.
+        .onDrop(of: [UTType.fileURL, UTType.png, UTType.tiff], isTargeted: nil) { providers, _ in
+            guard let provider = providers.first else { return false }
+            Task { @MainActor in
+                var data: Data?
+                if let item = try? await provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier) {
+                    let url: URL?
+                    switch item {
+                    case let u as URL: url = u
+                    case let u as NSURL: url = u as URL
+                    case let d as Data:
+                        if let u = URL(dataRepresentation: d, relativeTo: nil) {
+                            url = u
+                        } else {
+                            var stale = false
+                            url = try? URL(resolvingBookmarkData: d, options: .withoutUI, relativeTo: nil, bookmarkDataIsStale: &stale)
+                        }
+                    default: url = nil
+                    }
+                    if let url, let candidate = try? Data(contentsOf: url),
+                       ImageOCRManager.isImageData(candidate) {
+                        data = candidate
+                    }
+                }
+                if data == nil {
+                    for type in [UTType.png, UTType.tiff] {
+                        if let raw = try? await provider.loadItem(forTypeIdentifier: type.identifier) as? Data,
+                           ImageOCRManager.isImageData(raw) { data = raw; break }
+                    }
+                }
+                if let data { model.recognize(data) }
+            }
+            return true
+        }
         .translationTask(model.translationConfig) { session in
             let text = model.takePendingText()
             guard !text.isEmpty else { return }
@@ -289,8 +326,8 @@ struct PanelView: View {
                         .tint(.secondary)
                 }
                 Spacer(minLength: DSTokens.sm)
-                if model.lastUsedCloud, !model.translatedText.isEmpty {
-                    providerCapsule(name: model.lastProviderName ?? model.cloudProviderName)
+                if !model.translatedText.isEmpty, let meta = resultMetaText {
+                    providerCapsule(name: meta)
                 }
                 targetLanguageMenu
             }
@@ -307,8 +344,7 @@ struct PanelView: View {
 
     @ViewBuilder
     private var resultContent: some View {
-        switch model.status {
-        case .failed(let message):
+        switch model.status {        case .failed(let message):
             VStack(alignment: .leading, spacing: DSTokens.sm) {
                 Label(message, systemImage: "exclamationmark.triangle.fill")
                     .font(.system(size: DSTokens.labelSize, weight: .medium))
@@ -356,16 +392,47 @@ struct PanelView: View {
                     .foregroundStyle(.tertiary)
                     .frame(maxWidth: .infinity, alignment: .topLeading)
             } else {
-                ScrollView {
-                    Text(model.translatedText)
-                        .font(.system(size: DSTokens.bodySize))
-                        .lineSpacing(2)
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .topLeading)
+                VStack(alignment: .leading, spacing: DSTokens.sm) {
+                    ScrollView {
+                        Text(model.translatedText)
+                            // Одиночное слово крупнее — карточка, а не
+                            // простыня: определения из системных словарей
+                            // wave 2 (Dictionary Services мёртв в публичном
+                            // SDK, LLM-определение требует облака).
+                            .font(.system(size: wordMode != nil ? DSTokens.bodyLargeSize : DSTokens.bodySize))
+                            .lineSpacing(2)
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .topLeading)
+                    }
+                    .transition(.opacity.combined(with: .move(edge: .top)))
                 }
-                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
+    }
+
+    /// Источник — одно слово (не фраза)? По нему включается словарный
+    /// layout;tokenizer NaturalLanguage отсекает «word.word» и мусор.
+    private var wordMode: String? {
+        let t = model.sourceText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !t.isEmpty, t.count <= 24, !t.contains(" "), !t.contains("\n") else { return nil }
+        let tokenizer = NLTokenizer(unit: .word)
+        tokenizer.string = t
+        return tokenizer.tokens(for: t.startIndex..<t.endIndex).count == 1 ? t : nil
+    }
+
+    /// Чип над переводом: чем и за сколько получен результат — «cache»,
+    /// облачный провайдер с таймингом или «на устройстве».
+    private var resultMetaText: String? {
+        if model.lastUsedCache { return model.localizedString("From cache") }
+        let seconds: String? = model.lastElapsed.map {
+            String(format: "%.1fs", Double($0.components.seconds) + Double($0.components.attoseconds) * 1e-18)
+        }
+        if model.lastUsedCloud {
+            let name = model.lastProviderName ?? model.cloudProviderName
+            return seconds.map { "\(name) · \($0)" } ?? name
+        }
+        let device = model.localizedString("on-device")
+        return seconds.map { "\(device) · \($0)" } ?? device
     }
 
     private func statusRow(icon: String, text: String) -> some View {
@@ -421,6 +488,13 @@ struct PanelView: View {
             }
             controlButton(systemImage: "stop.fill", help: "Stop", enabled: model.isSpeaking) {
                 model.stopSpeech()
+            }
+            controlButton(
+                systemImage: "arrow.turn.down.left",
+                help: "Replace selection in place",
+                enabled: !model.translatedText.isEmpty
+            ) {
+                model.replaceInPlace()
             }
             Spacer()
             // Шестерёнка переехала сюда из шапки: наверху она одна держала
