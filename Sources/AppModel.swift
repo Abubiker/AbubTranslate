@@ -64,6 +64,13 @@ final class AppModel {
     var lastUsedCloud = false
     var lastProviderName: String?
     var lastUsedCache = false
+    /// Провал `.appleOnly` именно из-за неподдерживаемой пары — в панели
+    /// уместно предложить «MyMemory для этой пары», а не просто констатировать.
+    var canOfferFallbackEngine = false
+    /// Растёт при смене движка из панели: настройки синхронизируют черновик
+    /// по изменению токена (engineMode — computed поверх UserDefaults,
+    /// @Observable его не видит).
+    var engineDraftSyncToken = 0
     /// Сколько длился последний боевой перевод — чип «OpenAI · 2.1s».
     var lastElapsed: Duration?
     private var translateStarted: ContinuousClock.Instant?
@@ -770,11 +777,13 @@ final class AppModel {
             status = .done
             lastUsedCloud = false
             lastUsedCache = true
+            canOfferFallbackEngine = false
             lastProviderName = nil
             lastElapsed = nil
             return
         }
         lastUsedCache = false
+        canOfferFallbackEngine = false
         translateStarted = .now
 
         lastTranslatedSource = text
@@ -820,6 +829,7 @@ final class AppModel {
                 // Только Apple, без сети
                 if await self.tryAppleTranslation(detected: detected, candidates: candidates) { return }
                 guard !Task.isCancelled else { return }
+                self.canOfferFallbackEngine = true
                 self.status = .failed(self.unsupportedMessage(for: detected))
 
             case .appleMyMemory:
@@ -1055,6 +1065,7 @@ final class AppModel {
     func finishTranslation(_ result: String) {
         translatedText = result
         status = .done
+        canOfferFallbackEngine = false
         lastElapsed = translateStarted?.duration(to: .now)
         translateStarted = nil
         if let key = pendingCacheKey {
@@ -1065,8 +1076,21 @@ final class AppModel {
 
     func failTranslation(_ message: String) {
         status = .failed(message)
+        canOfferFallbackEngine = false
         pendingCacheKey = nil
         translateStarted = nil
+    }
+
+    /// Кнопка «через MyMemory» в панели при промахе Apple-движка по паре:
+    /// движок меняется на Apple+MyMemory (то же значение, что делает
+    /// «Сохранить» в настройках), перевод повторяется сразу.
+    func enableMyMemoryAndRetranslate() {
+        engineMode = .appleMyMemory
+        engineDraftSyncToken += 1
+        canOfferFallbackEngine = false
+        guard !sourceText.isEmpty else { return }
+        lastTranslatedSource = ""
+        translate(text: sourceText)
     }
 
     /// Флаг фидбека копирования: панель показывает всплывающую ✓ и свой
@@ -1103,6 +1127,7 @@ final class AppModel {
         lastUsedCache = false
         lastElapsed = nil
         pendingCacheKey = nil
+        canOfferFallbackEngine = false
         copiedFlash = false
         status = .idle
     }

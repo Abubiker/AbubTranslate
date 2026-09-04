@@ -95,6 +95,14 @@ struct SettingsView: View {
         .onChange(of: sourceLanguage) { _, newValue in
             model.setSourceLanguageAndRetranslate(newValue == "auto" ? nil : newValue)
         }
+        // Кнопка панели сменила движок мимо «Сохранить»: подтягиваем
+        // только черновик движка, несохранённые ключи не трогаем.
+        // engineMode — computed над UserDefaults, @Observable его не видит,
+        // поэтому сигнал — отдельный хранимый токен.
+        .onChange(of: model.engineDraftSyncToken) { _, _ in
+            engineMode = model.engineMode.rawValue
+            savedEngineMode = engineMode
+        }
     }
 
     /// Черновик движка/токена/почты не сохранён при закрытии окна — тихо

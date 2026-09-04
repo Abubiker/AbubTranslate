@@ -351,6 +351,18 @@ struct PanelView: View {
                     .foregroundStyle(.orange)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .topLeading)
+                // Провал Apple-движка по паре — не тупик: одно нажатие
+                // включает Apple+MyMemory и повторяет этот же текст.
+                if model.canOfferFallbackEngine {
+                    Button {
+                        model.enableMyMemoryAndRetranslate()
+                    } label: {
+                        Text("Translate via MyMemory")
+                            .font(.system(size: DSTokens.labelSize, weight: .medium))
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                }
             }
 
         case .sameLanguage(let detected, let suggestion):
