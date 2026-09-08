@@ -412,7 +412,7 @@ struct SettingsView: View {
             TextField("Azure region", text: $azureRegion, prompt: Text("e.g. westeurope — optional for global resources"))
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: 13))
-            keySource("portal.azure.com", "https://portal.azure.com/#create/Microsoft.CognitiveServicesTextTranslation")
+            keySource("portal.azure.com", "https://portal.azure.com")
 
             Divider().opacity(0.5)
 
