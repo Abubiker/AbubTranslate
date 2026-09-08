@@ -58,12 +58,5 @@ GPL-3.0-only, текст в [LICENSE](LICENSE). Форк остаётся под
 
 ## Сборка
 
-```bash
-brew install xcodegen
-export ABUBTRANSLATE_SIGN_IDENTITY="Apple Development: ваш@email (TEAMID)"
-./Scripts/build.sh
-```
-
-Только этим скриптом. Голый `xcodebuild` подписывает ad-hoc, а designated
-requirement у ad-hoc — хеш бинарника: каждая пересборка ломает и выданный
-Accessibility-грант, и доступ к сохранённым в Keychain ключам.
+`./Scripts/build.sh` — только им, не голым `xcodebuild`. Почему и что нужно
+выставить перед первым запуском — в комментарии в начале скрипта.
