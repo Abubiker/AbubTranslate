@@ -20,10 +20,16 @@ OpenAI-совместимый сервер, включая локальный.
 
 ## Установка
 
-[Скачать AbubTranslate.dmg](https://github.com/Abubiker/AbubTranslate/releases/latest/download/AbubTranslate.dmg) — macOS 15+, Apple Silicon.
+```bash
+brew trust abubiker/tap     # только на Homebrew 6+
+brew tap Abubiker/tap
+brew install --cask abubtranslate
+```
 
-Не нотаризовано: при первом запуске Настройки → Конфиденциальность и
-безопасность → Открыть всё равно.
+Либо [скачать AbubTranslate.dmg](https://github.com/Abubiker/AbubTranslate/releases/latest/download/AbubTranslate.dmg) — macOS 15+, Apple Silicon.
+
+Не нотаризовано в обоих случаях: при первом запуске Настройки →
+Конфиденциальность и безопасность → Открыть всё равно.
 
 ## Хоткеи
 

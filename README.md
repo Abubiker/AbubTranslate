@@ -19,10 +19,16 @@ a page — recognised on device by Apple Vision, no screen-recording permission:
 
 ## Install
 
-[Download AbubTranslate.dmg](https://github.com/Abubiker/AbubTranslate/releases/latest/download/AbubTranslate.dmg) — macOS 15+, Apple Silicon.
+```bash
+brew trust abubiker/tap     # Homebrew 6+ only
+brew tap Abubiker/tap
+brew install --cask abubtranslate
+```
 
-Not notarized, so the first launch goes through System Settings → Privacy &
-Security → Open Anyway.
+Or [download AbubTranslate.dmg](https://github.com/Abubiker/AbubTranslate/releases/latest/download/AbubTranslate.dmg) — macOS 15+, Apple Silicon.
+
+Not notarized either way, so the first launch goes through System Settings →
+Privacy & Security → Open Anyway.
 
 ## Shortcuts
 
