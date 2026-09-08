@@ -1,62 +1,64 @@
 # AbubTranslate
 
-Выделить текст в любом приложении macOS, нажать `⌥⇧T` — перевод в панели.
+Select text in any macOS app, press `⌥⇧T`, read the translation.
 
-Работает на Apple Translation: на устройстве, без ключей и без сети. Можно
-подключить DeepL, Google, Azure, Yandex, LibreTranslate, MyMemory или любой
-OpenAI-совместимый сервер, включая локальный.
+Runs on Apple Translation — on device, no key, no network. Plug in DeepL,
+Google, Azure, Yandex, LibreTranslate, MyMemory or any OpenAI-compatible
+server, including one running on your own machine.
 
 ![platform](https://img.shields.io/badge/macOS-15%2B-black) ![swift](https://img.shields.io/badge/Swift-6-orange) ![license](https://img.shields.io/badge/license-GPL--3.0-blue)
 
-## Установка
+[Читать по-русски](README.ru.md)
 
-[Скачать AbubTranslate.dmg](https://github.com/Abubiker/AbubTranslate/releases/latest/download/AbubTranslate.dmg) — macOS 15+, Apple Silicon.
+## Install
 
-Не нотаризовано: при первом запуске Настройки → Конфиденциальность и
-безопасность → Открыть всё равно.
+[Download AbubTranslate.dmg](https://github.com/Abubiker/AbubTranslate/releases/latest/download/AbubTranslate.dmg) — macOS 15+, Apple Silicon.
 
-## Хоткеи
+Not notarized, so the first launch goes through System Settings → Privacy &
+Security → Open Anyway.
+
+## Shortcuts
 
 | | |
 |---|---|
-| `⌥⇧T` | перевести выделенное |
-| `⌥⇧Y` | озвучить последний перевод |
-| `⌥⇧S` | перевести картинку из буфера |
+| `⌥⇧T` | translate the selection |
+| `⌥⇧Y` | speak the last translation |
+| `⌥⇧S` | translate an image from the clipboard |
 
-## Движки
+## Engines
 
-| Движок | Где работает | Условие |
+| Engine | Runs | What it needs |
 |---|---|---|
-| Apple Translation | на устройстве | встроен, 22 языка |
-| MyMemory | облако | без ключа, 5 000 символов/сутки (50 000 с почтой) |
-| Azure Translator | облако | ключ; F0 — 2 млн символов/месяц бесплатно |
-| Google Translate | облако | ключ; платно сверх бесплатного лимита |
-| DeepL | облако | ключ; разовый кредит 1 млн символов |
-| OpenAI-совместимый | облако или локально | URL и модель; Ollama, LM Studio, прокси |
-| Yandex Cloud Translate | облако | ключ сервисного аккаунта, посимвольно с первого символа |
-| LibreTranslate | облако или локально | URL инстанса; свой в docker — без ключа |
+| Apple Translation | on device | built in, 22 languages |
+| MyMemory | cloud | no key, 5,000 chars/day (50,000 with an email) |
+| Azure Translator | cloud | key; F0 tier is 2M chars/month free |
+| Google Translate | cloud | key; paid past the free allowance |
+| DeepL | cloud | key; one-time 1M character credit |
+| OpenAI-compatible | cloud or local | URL and model; Ollama, LM Studio, proxies |
+| Yandex Cloud Translate | cloud | service account key, billed per character from the first one |
+| LibreTranslate | cloud or local | instance URL; your own in docker needs no key |
 
-Apple, локальный OpenAI-сервер и свой LibreTranslate не отправляют текст
-никуда. Остальные отправляют его на сторонний сервер.
+Apple, a local OpenAI-compatible server and a self-hosted LibreTranslate send
+nothing anywhere. The rest send the text to a third-party server.
 
-Где взять ключ и как проверить — написано в настройках приложения.
+Where to get each key, and a button to test it, are in the app's settings.
 
-## Разрешения
+## Permissions
 
-Перевод выделенного требует Универсальный доступ. Если он выдан, но не
-работает — осталась запись от прошлой сборки:
+Translating the selection needs Accessibility. If it is granted and still
+does not work, a stale entry from an earlier build is in the way:
 
 ```bash
 tccutil reset Accessibility com.opensource.abubtranslate
 ```
 
-## Лицензия
+## License
 
-GPL-3.0-only, текст в [LICENSE](LICENSE). Форк остаётся под GPL и несёт
-исходники. Для закрытого продукта — отдельная платная лицензия, пишите в
-[Issues](https://github.com/Abubiker/AbubTranslate/issues).
+GPL-3.0-only, full text in [LICENSE](LICENSE). A fork stays under GPL and
+ships its sources. For use in a closed product there is a separate
+commercial license — open an [issue](https://github.com/Abubiker/AbubTranslate/issues).
 
-## Сборка
+## Build
 
-`./Scripts/build.sh` — только им, не голым `xcodebuild`. Почему и что нужно
-выставить перед первым запуском — в комментарии в начале скрипта.
+`./Scripts/build.sh` — that script, not bare `xcodebuild`. The comment at the
+top of it explains why, and what to export before the first run.
