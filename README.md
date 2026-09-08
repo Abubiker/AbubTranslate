@@ -40,8 +40,9 @@
 панели. Третий, `⌥⇧S` — OCR: распознать и перевести картинку из буфера
 (⌥⇧S или `⇧⌘⌃4` для скриншота, либо перетащить файл на панель — разрешения
 на запись экрана не нужно, распознаёт Apple Vision локально). Все хоткеи
-настраиваются; занятая другим приложением комбинация не сохраняется,
-показывается предупреждение.
+настраиваются; занятая комбинация не сохраняется, показывается
+предупреждение — и та, что занята другим приложением, и та, что уже висит
+на другом действии самого AbubTranslate.
 
 Повторный перевод того же текста берётся из локального кэша (90 дней,
 до 20 МБ) — мгновенно и без расхода квоты облака; над переводом видно, чем
@@ -238,12 +239,15 @@ ad-hoc:      designated => cdhash H"3b95b95e…"
 выданное разрешение, и доступ к Keychain. У сертификата требование
 привязано к нему самому и переживает пересборки.
 
-Тесты чистой логики (выбор направления перевода, нарезка текста под лимит
-запроса):
+`Scripts/build.sh` перед сборкой сам прогоняет две проверки и падает на
+любой: полноту локализаций (`Scripts/check-locales.sh`) и тесты чистой
+логики. Запустить их отдельно — выбор направления перевода, нарезка текста
+под лимит запроса, сравнение версий:
 
 ```bash
 swiftc -o /tmp/selfcheck Sources/Managers/TranslationDirection.swift \
-    Sources/Managers/TextChunker.swift Tools/SelfCheck.swift && /tmp/selfcheck
+    Sources/Managers/TextChunker.swift Sources/Managers/VersionCompare.swift \
+    Tools/SelfCheck.swift && /tmp/selfcheck
 ```
 
 ### Структура
@@ -256,26 +260,36 @@ Sources/
 │   ├── PanelView.swift             # основная панель
 │   ├── SettingsView.swift          # языки, движки, хоткеи, тема
 │   ├── HotkeyRecorder.swift        # запись комбинации
+│   ├── OnboardingView.swift        # первый запуск: язык, доступ, проверка хоткея
 │   └── DesignTokens.swift          # шкала размеров/отступов/цветов
 ├── Managers/
-│   ├── SelectionReader.swift       # выделенный текст через синтетический ⌘C
+│   ├── SelectionReader.swift       # выделение через AX, синтетический ⌘C как запасной путь
 │   ├── TranslationDirection.swift  # выбор альтернативного языка (чистая логика)
 │   ├── TextChunker.swift           # нарезка под лимит запроса облачных сервисов
 │   ├── TranslationProvider.swift   # протокол провайдера, EngineMode
-│   ├── Providers/                  # MyMemory, Azure, Google, DeepL, OpenAI
+│   ├── Providers/                  # MyMemory, Azure, Google, DeepL, OpenAI, Yandex, LibreTranslate
 │   ├── CloudTranslator.swift       # HTTP-клиент MyMemory
+│   ├── TranslationCache.swift      # дисковый кэш переводов, 90 дней / 20 МБ
+│   ├── ImageOCRManager.swift       # OCR картинки из буфера через Apple Vision
+│   ├── UpdateChecker.swift         # релизы GitHub, сверка sha256, самоподмена бандла
+│   ├── VersionCompare.swift        # сравнение версий (чистая логика)
 │   ├── KeychainHelper.swift        # хранение токена/почты
 │   ├── ClipboardManager.swift      # NSPasteboard
 │   ├── LanguageDetector.swift      # NLLanguageRecognizer
 │   ├── SpeechManager.swift         # AVSpeechSynthesizer
+│   ├── LaunchAtLogin.swift         # SMAppService
 │   └── HotKeyManager.swift         # Carbon RegisterEventHotKey
 ├── {en,ru,es,fr,de,pt,zh,ja,ar,hi}.lproj/   # локализация, 10 языков
 └── Assets.xcassets/
 ```
 
 Новая строка в интерфейсе — это ключ во всех десяти `.lproj`, а не только
-в `en`/`ru`: набор ключей в файлах должен совпадать один в один, иначе на
-части языков вылезет сырой ключ вместо текста. Новый язык — ещё и код в
-`knownRegions` в `project.yml`, иначе xcodegen не положит `.lproj` в бандл.
+в `en`/`ru`: пропущенный ключ не даёт ни ошибки сборки, ни ошибки в работе —
+вместо перевода показывается сам английский ключ, и заметить это можно
+только глазами и только на том языке. Поэтому за этим следит
+`Scripts/check-locales.sh`: сверяет ключи из кода со всеми десятью файлами,
+ругается на недостающие и на дубликаты, запускается из `build.sh` до
+сборки. Новый язык — ещё и код в `knownRegions` в `project.yml`, иначе
+xcodegen не положит `.lproj` в бандл.
 
 </details>
