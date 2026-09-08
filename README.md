@@ -10,6 +10,13 @@ server, including one running on your own machine.
 
 [Читать по-русски](README.ru.md)
 
+![translating a selection](docs/demo-translate.gif)
+
+`⌥⇧S` does the same for an image in the clipboard — a screenshot, a photo of
+a page — recognised on device by Apple Vision, no screen-recording permission:
+
+![translating a screenshot](docs/demo-ocr.gif)
+
 ## Install
 
 [Download AbubTranslate.dmg](https://github.com/Abubiker/AbubTranslate/releases/latest/download/AbubTranslate.dmg) — macOS 15+, Apple Silicon.

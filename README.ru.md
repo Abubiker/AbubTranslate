@@ -10,6 +10,14 @@ OpenAI-совместимый сервер, включая локальный.
 
 [Read in English](README.md)
 
+![перевод выделенного](docs/demo-translate.gif)
+
+`⌥⇧S` делает то же с картинкой из буфера — скриншотом, фотографией
+страницы. Распознаёт Apple Vision локально, разрешение на запись экрана
+не нужно:
+
+![перевод скриншота](docs/demo-ocr.gif)
+
 ## Установка
 
 [Скачать AbubTranslate.dmg](https://github.com/Abubiker/AbubTranslate/releases/latest/download/AbubTranslate.dmg) — macOS 15+, Apple Silicon.
