@@ -250,3 +250,15 @@
 "Automatic fallback if LibreTranslate has no key or fails." = "若 LibreTranslate 无密钥或失败，自动改用 MyMemory。";
 "Disable model thinking" = "关闭模型思考";
 "Turns off reasoning tokens on DeepSeek/Qwen/o-series models — the main cause of slow translations. Strict servers that reject the extra fields get an automatic retry without them." = "关闭 DeepSeek/Qwen/o 系列的推理 token——翻译过慢的主要原因。若严格服务器拒绝多余字段，会自动去掉它们重试。";
+
+/* OpenAI 引擎、OCR、缓存、欢迎 */
+"Cloud models (OpenAI)" = "云端模型（OpenAI）";
+"OpenAI-compatible API. Requires base URL, key and model." = "兼容 OpenAI 的 API。需要基础 URL、密钥和模型。";
+"From cache" = "来自缓存";
+"on-device" = "在设备上";
+"Language pack was not downloaded" = "语言包未下载";
+"Translate screenshot from clipboard" = "翻译剪贴板中的截图";
+"No image in clipboard — take a screenshot (Shift-Cmd-Control-4) or drop an image on the panel" = "剪贴板中没有图片 — 请截图（Shift-Cmd-Control-4）或将图片拖到面板上";
+"No text found in the image" = "图片中未找到文字";
+"Welcome to AbubTranslate" = "欢迎使用 AbubTranslate";
+"Cloud models (LibreTranslate)" = "云端模型（LibreTranslate）";

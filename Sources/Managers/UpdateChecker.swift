@@ -108,7 +108,7 @@ final class UpdateChecker {
     /// обновление и запускает сетевую проверку не чаще раза в сутки.
     func checkOncePerDay() {
         if let cached = cachedAvailableVersion,
-           Self.isNewer(candidate: cached, than: currentVersion) {
+           VersionCompare.isNewer(candidate: cached, than: currentVersion) {
             status = .available(version: cached)
         }
         let last = UserDefaults.standard.double(forKey: Self.lastCheckKey)
@@ -123,7 +123,7 @@ final class UpdateChecker {
             let dto = try await Self.fetchLatest()
             UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: Self.lastCheckKey)
             let info = try Self.parse(dto)
-            if Self.isNewer(candidate: info.version, than: currentVersion) {
+            if VersionCompare.isNewer(candidate: info.version, than: currentVersion) {
                 pending = info
                 status = .available(version: info.version)
                 UserDefaults.standard.set(info.version, forKey: Self.availableKey)
@@ -188,21 +188,6 @@ final class UpdateChecker {
     }
 
     // MARK: - Pure helpers (nonisolated — тестируются без UI)
-
-    nonisolated static func isNewer(candidate: String, than version: String) -> Bool {
-        let a = versionParts(candidate)
-        let b = versionParts(version)
-        for i in 0..<max(a.count, b.count) {
-            let x = i < a.count ? a[i] : 0
-            let y = i < b.count ? b[i] : 0
-            if x != y { return x > y }
-        }
-        return false
-    }
-
-    private nonisolated static func versionParts(_ s: String) -> [Int] {
-        s.split(whereSeparator: { !$0.isNumber }).compactMap { Int($0) }
-    }
 
     private nonisolated static func fetchLatest() async throws -> ReleaseDTO {
         var request = URLRequest(url: URL(string: "https://api.github.com/repos/\(repo)/releases/latest")!)

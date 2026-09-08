@@ -29,6 +29,25 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+# Пропущенный ключ локализации не роняет сборку и виден только глазами на
+# конкретном языке — поэтому проверяем до неё, а не после релиза.
+echo "==> проверка локализаций"
+bash Scripts/check-locales.sh
+
+# Чистая логика (TranslationDirection, TextChunker) — компилируется отдельно
+# от приложения, поэтому проверяется за секунду и до сборки. Раньше жила
+# только строчкой в README и запускалась, когда вспомнят.
+echo "==> self-check чистой логики"
+selfcheck_dir="$(mktemp -d)"
+trap 'rm -rf "$selfcheck_dir"' EXIT
+# -O, а не -Ounchecked: precondition в SelfCheck должен остаться живым.
+swiftc -O -o "$selfcheck_dir/selfcheck" \
+    Sources/Managers/TranslationDirection.swift \
+    Sources/Managers/TextChunker.swift \
+    Sources/Managers/VersionCompare.swift \
+    Tools/SelfCheck.swift
+"$selfcheck_dir/selfcheck"
+
 echo "==> xcodegen generate"
 xcodegen generate
 

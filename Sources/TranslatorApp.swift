@@ -134,11 +134,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
         }
 
         // Тестовый вход: позволяет проверить окно настроек без кликов мышью.
+        // Парного блока для --open-onboarding здесь нет намеренно: этот флаг
+        // уже учтён в условии выше, и второй вызов открывал второе окно
+        // поверх первого, теряя ссылку на него.
         if ProcessInfo.processInfo.arguments.contains("--open-settings") {
             openSettingsFromMenu()
-        }
-        if ProcessInfo.processInfo.arguments.contains("--open-onboarding") {
-            showOnboarding()
         }
 
         // Диагностика облачных движков: реальный запрос от лица уже
@@ -567,6 +567,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
             popover.performClose(nil)
             return
         }
+        // NSApp.activate() нужна поповеру ради фокуса клавиатуры, но она же
+        // по правилам macOS поднимает ВСЕ окна приложения. Окно настроек
+        // переживает закрытие (isReleasedWhenClosed = false), поэтому
+        // однажды открытое и уведённое за чужие окна, оно выпрыгивало
+        // поверх работы пользователя на каждый хоткей перевода. Прячем его:
+        // вызвано намерение «перевести», а не «настроить»; вернуть — шестерёнка
+        // в панели или пункт меню.
+        settingsWindow?.orderOut(nil)
         NSApp.activate()
         if let window = button.window, window.screen != nil {
             // Кэшируем позицию иконки на каждый показ — статус-бар мог перестроиться
@@ -879,7 +887,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
             ("v1.2", "1.1", true), ("1.1", "0", true),
         ]
         for c in checks {
-            let got = UpdateChecker.isNewer(candidate: c.candidate, than: c.current)
+            let got = VersionCompare.isNewer(candidate: c.candidate, than: c.current)
             log("compare \(c.candidate) > \(c.current): \(got) \(got == c.want ? "OK" : "FAIL want \(c.want)")")
         }
         let status = await checker.check()

@@ -241,7 +241,7 @@ enum EngineMode: String, CaseIterable, Sendable {
         case .deepLCloud: return "Cloud models (DeepL)"
         case .openAICompatible: return "Cloud models (OpenAI)"
         case .yandexCloud: return "Cloud models (Yandex)"
-        case .libreTranslate: return "LibreTranslate"
+        case .libreTranslate: return "Cloud models (LibreTranslate)"
         }
     }
 
@@ -258,7 +258,10 @@ enum EngineMode: String, CaseIterable, Sendable {
         }
     }
 
-    // Legacy non-observed — оставить для ошибок провайдеров вне View
+    // Legacy non-observed — оставить для ошибок провайдеров вне View.
+    // Литералы ниже дублируют displayNameKey/descriptionKey, и только на них
+    // держится check-locales.sh: во View ключ приходит переменной, грепом не
+    // виден. Удалять — вместе с правкой скрипта.
     var displayName: String {
         switch self {
         case .appleOnly:
@@ -276,7 +279,7 @@ enum EngineMode: String, CaseIterable, Sendable {
         case .yandexCloud:
             return appLocalizedString("Cloud models (Yandex)")
         case .libreTranslate:
-            return appLocalizedString("LibreTranslate")
+            return appLocalizedString("Cloud models (LibreTranslate)")
         }
     }
 

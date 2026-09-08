@@ -751,6 +751,11 @@ final class AppModel {
     func translate(text rawText: String) {
         translationTask?.cancel()
         autoTranslateTask?.cancel()
+        // Вотчер языкового пакета принадлежит прошлому переводу: если тот
+        // кончился ошибкой, вотчер оставался жив и при доустановке пакета
+        // сам дёргал translate(), затирая экран переводом, которого никто
+        // не просил. Ниже tryAppleTranslation заведёт новый, если нужно.
+        preparingWatchdog?.cancel()
 
         let text = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else {
@@ -769,11 +774,30 @@ final class AppModel {
             target: targetLanguageCode,
             text: text
         )
-        pendingCacheKey = cacheKey
         if let cached = TranslationCache.load(cacheKey) {
+            // Озвучку прошлого перевода глушим и здесь, а не только на живом
+            // пути ниже: иначе старое аудио доигрывает поверх нового текста,
+            // а isSpeaking остаётся true — хоткей озвучки гасит старое вместо
+            // чтения нового.
+            speech.stop()
+            // Оба поля принадлежат прошлому, ещё не завершённому переводу.
+            // SwiftUI-овский .translationTask живёт отдельно от translationTask
+            // и отменой выше не снимается: он мог быть уже запланирован и
+            // добраться до finishTranslation уже после этого return. Тогда
+            // takePendingText() отдал бы ему прошлый текст, а результат осел
+            // бы в кэше под ключом текущего — на 90 дней TTL.
+            pendingCacheKey = nil
+            pendingText = ""
             lastTranslatedSource = text
             translatedText = cached
             detectedLanguage = LanguageDetector.detect(text)
+            // Язык голоса ставится и на кэш-хите: живые пути перевода пишут
+            // его сами, а этот return проходит мимо них — после смены цели
+            // кэшированный перевод читался голосом предыдущего языка.
+            // Выражение — буквально как в tryAppleTranslation: у кода со
+            // скриптом ("zh-Hans") голос ищется по "zh", и расходиться с
+            // живым путём в этом месте нельзя.
+            currentTargetCode = targetLanguage.languageCode?.identifier ?? targetLanguageCode
             status = .done
             lastUsedCloud = false
             lastUsedCache = true
@@ -817,7 +841,11 @@ final class AppModel {
         }
 
         status = .working
+        // Оба «pending» ставятся вместе и только здесь — там, где перевод
+        // действительно начинается. Ключ раньше присваивался до проверки
+        // кэша, и промежуточный кэш-хит успевал подменить его чужим.
         pendingText = text
+        pendingCacheKey = cacheKey
 
         // Цель ровно одна; движковые ветки ниже по-прежнему принимают список.
         let candidates = [targetLanguage]

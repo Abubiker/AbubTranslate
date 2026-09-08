@@ -1,9 +1,11 @@
 import Foundation
 
-// Проверка чистой логики: подсказка альтернативного языка и нарезка текста.
-// Запуск:
+// Проверка чистой логики: подсказка альтернативного языка, нарезка текста,
+// сравнение версий. Гоняется автоматически из Scripts/build.sh перед сборкой.
+// Вручную:
 //   swiftc -o /tmp/selfcheck Sources/Managers/TranslationDirection.swift \
-//       Sources/Managers/TextChunker.swift Tools/SelfCheck.swift && /tmp/selfcheck
+//       Sources/Managers/TextChunker.swift Sources/Managers/VersionCompare.swift \
+//       Tools/SelfCheck.swift && /tmp/selfcheck
 
 func lang(_ code: String) -> Locale.Language {
     Locale.Language(identifier: code)
@@ -14,6 +16,7 @@ enum SelfCheck {
     static func main() {
         checkDirection()
         checkChunker()
+        checkVersions()
     }
 
     static func checkDirection() {
@@ -76,5 +79,44 @@ enum SelfCheck {
         precondition(TextChunker.chunks("abc", limit: 0).isEmpty)
 
         print("TextChunker: OK")
+    }
+
+    static func checkVersions() {
+        func newer(_ candidate: String, _ current: String) -> Bool {
+            VersionCompare.isNewer(candidate: candidate, than: current)
+        }
+
+        // Обычный порядок.
+        precondition(newer("1.2", "1.1"))
+        precondition(!newer("1.1", "1.1"))
+        precondition(!newer("1.0", "1.1"))
+        precondition(newer("2.0", "1.9"))
+        precondition(newer("1.1", "0"))
+
+        // Числами, а не строками: "10" больше "9".
+        precondition(newer("1.10", "1.9"))
+        precondition(newer("1.1.10", "1.1.9"))
+
+        // Недостающие компоненты — нули, а не «меньше».
+        precondition(!newer("1.1", "1.1.0"))
+        precondition(newer("1.1.1", "1.1"))
+
+        // Тег с "v" приходит из GitHub как есть.
+        precondition(newer("v1.2", "1.1"))
+        precondition(!newer("v1.1", "1.1"))
+
+        // Пре-релиз не новее релиза, из которого вышел: цифры хвоста не
+        // должны становиться лишним компонентом версии.
+        precondition(!newer("1.1.3-beta2", "1.1.3"))
+        precondition(!newer("1.1.3-rc1", "1.1.3"))
+        precondition(!newer("1.1.3+build9", "1.1.3"))
+        // Но больший номер остаётся большим и с хвостом.
+        precondition(newer("1.1.4-beta1", "1.1.3"))
+
+        // Мусор не роняет и не выдумывает обновление.
+        precondition(!newer("", "1.1.3"))
+        precondition(!newer("не версия", "1.1.3"))
+
+        print("VersionCompare: OK")
     }
 }

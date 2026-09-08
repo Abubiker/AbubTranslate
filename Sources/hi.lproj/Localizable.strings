@@ -250,3 +250,15 @@
 "Automatic fallback if LibreTranslate has no key or fails." = "यदि LibreTranslate में कुंजी नहीं है या वह विफल हो तो स्वतः MyMemory।";
 "Disable model thinking" = "मॉडल की reasoning बंद करें";
 "Turns off reasoning tokens on DeepSeek/Qwen/o-series models — the main cause of slow translations. Strict servers that reject the extra fields get an automatic retry without them." = "DeepSeek/Qwen/o-सीरीज़ में reasoning टोकन बंद करता है — धीमे अनुवादों का मुख्य कारण। कड़े सर्वर अतिरिक्त फ़ील्ड अस्वीकार करें तो बिना उनके स्वतः पुनप्रयास होता है।";
+
+/* OpenAI इंजन, OCR, कैश, स्वागत */
+"Cloud models (OpenAI)" = "क्लाउड मॉडल (OpenAI)";
+"OpenAI-compatible API. Requires base URL, key and model." = "OpenAI-संगत API। बेस URL, कुंजी और मॉडल आवश्यक हैं।";
+"From cache" = "कैश से";
+"on-device" = "डिवाइस पर";
+"Language pack was not downloaded" = "भाषा पैक डाउनलोड नहीं हुआ";
+"Translate screenshot from clipboard" = "क्लिपबोर्ड से स्क्रीनशॉट का अनुवाद करें";
+"No image in clipboard — take a screenshot (Shift-Cmd-Control-4) or drop an image on the panel" = "क्लिपबोर्ड में कोई छवि नहीं — स्क्रीनशॉट लें (Shift-Cmd-Control-4) या पैनल पर छवि छोड़ें";
+"No text found in the image" = "छवि में कोई टेक्स्ट नहीं मिला";
+"Welcome to AbubTranslate" = "AbubTranslate में आपका स्वागत है";
+"Cloud models (LibreTranslate)" = "क्लाउड मॉडल (LibreTranslate)";

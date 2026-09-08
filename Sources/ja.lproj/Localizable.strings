@@ -250,3 +250,15 @@
 "Automatic fallback if LibreTranslate has no key or fails." = "LibreTranslateにキーがない場合や失敗した場合は自動でMyMemoryにフォールバック。";
 "Disable model thinking" = "モデルの思考を無効化";
 "Turns off reasoning tokens on DeepSeek/Qwen/o-series models — the main cause of slow translations. Strict servers that reject the extra fields get an automatic retry without them." = "DeepSeek/Qwen/oシリーズのreasoningトークンを無効化 — 翻訳が遅い主な原因です。追加フィールドを拒否する厳格なサーバーでは、自動的にそれなしで再試行します。";
+
+/* OpenAIエンジン、OCR、キャッシュ、ようこそ */
+"Cloud models (OpenAI)" = "クラウドモデル（OpenAI）";
+"OpenAI-compatible API. Requires base URL, key and model." = "OpenAI互換API。ベースURL、キー、モデルが必要です。";
+"From cache" = "キャッシュから";
+"on-device" = "デバイス上";
+"Language pack was not downloaded" = "言語パックがダウンロードされませんでした";
+"Translate screenshot from clipboard" = "クリップボードのスクリーンショットを翻訳";
+"No image in clipboard — take a screenshot (Shift-Cmd-Control-4) or drop an image on the panel" = "クリップボードに画像がありません — スクリーンショット（Shift-Cmd-Control-4）を撮るか、画像をパネルにドロップしてください";
+"No text found in the image" = "画像内にテキストが見つかりません";
+"Welcome to AbubTranslate" = "AbubTranslateへようこそ";
+"Cloud models (LibreTranslate)" = "クラウドモデル（LibreTranslate）";

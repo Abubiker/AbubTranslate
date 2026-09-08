@@ -200,7 +200,6 @@
 "OpenAI-compatible API. Requires base URL, key and model." = "OpenAI-compatible API. Requires base URL, key and model.";
 "OpenAI-compatible" = "OpenAI-compatible";
 "Base URL" = "Base URL";
-"API key" = "API key";
 "Model" = "Model";
 "Check" = "Check";
 "Save base URL, key and model first to check connection." = "Save base URL, key and model first to check connection.";
@@ -290,3 +289,4 @@
 "It works. Translation done." = "It works. Translation done.";
 "Translate via MyMemory" = "Translate via MyMemory";
 "Language pack was not downloaded" = "Language pack was not downloaded";
+"Cloud models (LibreTranslate)" = "Cloud models (LibreTranslate)";

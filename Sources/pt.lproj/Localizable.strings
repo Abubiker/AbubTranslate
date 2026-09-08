@@ -250,3 +250,15 @@
 "Automatic fallback if LibreTranslate has no key or fails." = "Alternativa automática se o LibreTranslate não tiver chave ou falhar.";
 "Disable model thinking" = "Desativar o raciocínio do modelo";
 "Turns off reasoning tokens on DeepSeek/Qwen/o-series models — the main cause of slow translations. Strict servers that reject the extra fields get an automatic retry without them." = "Desliga tokens de raciocínio em DeepSeek/Qwen/série-o — a principal causa de traduções lentas. Servidores rígidos que rejeitam campos extras recebem nova tentativa automática sem eles.";
+
+/* Motor OpenAI, OCR, cache, boas-vindas */
+"Cloud models (OpenAI)" = "Modelos na nuvem (OpenAI)";
+"OpenAI-compatible API. Requires base URL, key and model." = "API compatível com OpenAI. Requer URL base, chave e modelo.";
+"From cache" = "Do cache";
+"on-device" = "no dispositivo";
+"Language pack was not downloaded" = "O pacote de idioma não foi baixado";
+"Translate screenshot from clipboard" = "Traduzir captura da área de transferência";
+"No image in clipboard — take a screenshot (Shift-Cmd-Control-4) or drop an image on the panel" = "Nenhuma imagem na área de transferência — tire uma captura (Shift-Cmd-Control-4) ou solte uma imagem no painel";
+"No text found in the image" = "Nenhum texto encontrado na imagem";
+"Welcome to AbubTranslate" = "Bem-vindo ao AbubTranslate";
+"Cloud models (LibreTranslate)" = "Modelos na nuvem (LibreTranslate)";

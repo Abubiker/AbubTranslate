@@ -220,7 +220,6 @@
 "OpenAI-compatible API. Requires base URL, key and model." = "OpenAI-совместимый API. Нужны адрес, ключ и модель.";
 "OpenAI-compatible" = "OpenAI-совместимый";
 "Base URL" = "Базовый адрес";
-"API key" = "API-ключ";
 "Model" = "Модель";
 "Check" = "Проверить";
 "Save base URL, key and model first to check connection." = "Сначала сохраните адрес, ключ и модель для проверки.";
@@ -294,3 +293,9 @@
 "It works. Translation done." = "Работает. Перевод выполнен.";
 "Translate via MyMemory" = "Перевести через MyMemory";
 "Language pack was not downloaded" = "Языковой пакет не был загружен";
+
+/* Yandex Cloud + LibreTranslate: названия и описания движков */
+"Cloud models (Yandex)" = "Облачные модели (Yandex)";
+"Yandex Cloud Translate. Requires an API key, billed per character." = "Yandex Cloud Translate. Нужен API-ключ, оплата посимвольная.";
+"LibreTranslate instance. Own URL, key optional on self-hosted." = "Инстанс LibreTranslate. Свой URL, ключ необязателен на self-hosted.";
+"Cloud models (LibreTranslate)" = "Облачные модели (LibreTranslate)";
