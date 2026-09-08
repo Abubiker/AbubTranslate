@@ -392,6 +392,16 @@ struct SettingsView: View {
             .foregroundStyle(.secondary)
     }
 
+    /// Консоль, где провайдер выдаёт ключ. Подписью служит сам адрес: его не
+    /// переводят, поэтому ссылка не тянет за собой ключ в десять .lproj.
+    @ViewBuilder
+    private func keySource(_ host: String, _ urlString: String) -> some View {
+        if let url = URL(string: urlString) {
+            Link(host, destination: url)
+                .font(.system(size: 11))
+        }
+    }
+
     private var azureCard: some View {
         VStack(alignment: .leading, spacing: DSTokens.sm) {
             cardHeader(overline: "Cloud", title: "Azure Translator", icon: "cloud", description: nil)
@@ -402,6 +412,7 @@ struct SettingsView: View {
             TextField("Azure region", text: $azureRegion, prompt: Text("e.g. westeurope — optional for global resources"))
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: 13))
+            keySource("portal.azure.com", "https://portal.azure.com/#create/Microsoft.CognitiveServicesTextTranslation")
 
             Divider().opacity(0.5)
 
@@ -424,6 +435,7 @@ struct SettingsView: View {
             SecureField("Google key", text: $googleKey, prompt: Text("API key"))
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: 13))
+            keySource("console.cloud.google.com", "https://console.cloud.google.com/apis/credentials")
 
             Divider().opacity(0.5)
 
@@ -446,6 +458,7 @@ struct SettingsView: View {
             SecureField("DeepL key", text: $deepLKey, prompt: Text("API key"))
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: 13))
+            keySource("developers.deepl.com", "https://developers.deepl.com")
 
             HStack(spacing: DSTokens.sm) {
                 Button {
@@ -558,6 +571,7 @@ struct SettingsView: View {
             SecureField("Yandex key", text: $yandexKey, prompt: Text("service account API key"))
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: 13))
+            keySource("console.yandex.cloud", "https://console.yandex.cloud")
             TextField("Folder ID", text: $yandexFolderId, prompt: Text("optional for service-account keys"))
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: 13))
