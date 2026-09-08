@@ -29,7 +29,7 @@
 "System" = "सिस्टम";
 "Launch at login" = "लॉगिन पर शुरू करें";
 "Press keys…" = "कुंजियाँ दबाएँ…";
-"That shortcut is taken by another app" = "यह शॉर्टकट किसी और ऐप द्वारा इस्तेमाल हो रहा है";
+"That shortcut is already in use" = "यह शॉर्टकट पहले से इस्तेमाल हो रहा है";
 "Settings…" = "सेटिंग्स…";
 "Quit AbubTranslate" = "AbubTranslate बंद करें";
 "Nothing to translate" = "अनुवाद करने के लिए कुछ नहीं है";

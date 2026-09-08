@@ -29,7 +29,7 @@
 "System" = "System";
 "Launch at login" = "Launch at login";
 "Press keys…" = "Press keys…";
-"That shortcut is taken by another app" = "That shortcut is taken by another app";
+"That shortcut is already in use" = "That shortcut is already in use";
 "Settings…" = "Settings…";
 "Quit AbubTranslate" = "Quit AbubTranslate";
 "Nothing to translate" = "Nothing to translate";

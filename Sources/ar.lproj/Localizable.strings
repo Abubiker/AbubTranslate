@@ -29,7 +29,7 @@
 "System" = "النظام";
 "Launch at login" = "التشغيل عند تسجيل الدخول";
 "Press keys…" = "اضغط المفاتيح…";
-"That shortcut is taken by another app" = "هذا الاختصار مستخدَم بواسطة تطبيق آخر";
+"That shortcut is already in use" = "هذا الاختصار مستخدَم بالفعل";
 "Settings…" = "الإعدادات…";
 "Quit AbubTranslate" = "إنهاء AbubTranslate";
 "Nothing to translate" = "لا يوجد نص لترجمته";

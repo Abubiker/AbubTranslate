@@ -29,7 +29,7 @@
 "System" = "System";
 "Launch at login" = "Beim Anmelden starten";
 "Press keys…" = "Tasten drücken…";
-"That shortcut is taken by another app" = "Dieses Kürzel wird bereits von einer anderen App verwendet";
+"That shortcut is already in use" = "Dieses Kürzel wird bereits verwendet";
 "Settings…" = "Einstellungen…";
 "Quit AbubTranslate" = "AbubTranslate beenden";
 "Nothing to translate" = "Nichts zu übersetzen";

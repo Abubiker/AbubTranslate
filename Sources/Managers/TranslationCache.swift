@@ -28,9 +28,14 @@ enum TranslationCache {
         let url = dir.appendingPathComponent(key)
         guard let data = try? Data(contentsOf: url),
               let entry = try? JSONDecoder().decode(Entry.self, from: data),
-              Date().timeIntervalSince1970 - entry.ts < ttl
+              Date().timeIntervalSince1970 - entry.ts < ttl,
+              !entry.text.isEmpty
         else { return nil }
-        return entry.text.isEmpty ? nil : entry.text
+        // Обновляем mtime на каждое обращение — иначе pruneIfNeeded сортирует
+        // по дате записи, а не по дате использования, и вычищает "горячие"
+        // записи раньше "холодных".
+        try? FileManager.default.setAttributes([.modificationDate: Date()], ofItemAtPath: url.path)
+        return entry.text
     }
 
     static func store(_ key: String, _ translation: String) {

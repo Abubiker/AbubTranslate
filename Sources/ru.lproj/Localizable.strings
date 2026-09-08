@@ -33,7 +33,7 @@
 
 /* HotkeyRecorder */
 "Press keys…" = "Нажмите клавиши…";
-"That shortcut is taken by another app" = "Комбинация занята другим приложением";
+"That shortcut is already in use" = "Эта комбинация уже используется";
 
 /* Status menu */
 "Settings…" = "Настройки…";

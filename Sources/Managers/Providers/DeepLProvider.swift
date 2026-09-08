@@ -121,8 +121,12 @@ struct DeepLProvider: TranslationProvider {
         if status == 403 {
             return .service("DeepL: \(message)")
         }
-        if status == 456 || status == 429 {
+        if status == 456 {
             return .quotaExceeded
+        }
+        if status == 429 {
+            // Rate limit, не квота — метка (429) для ChunkRetry.
+            return .service("DeepL (429): \(message)")
         }
         if status == 400 {
             return .notSupported

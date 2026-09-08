@@ -29,7 +29,7 @@
 "System" = "系统";
 "Launch at login" = "登录时启动";
 "Press keys…" = "按下按键…";
-"That shortcut is taken by another app" = "该快捷键已被其他应用占用";
+"That shortcut is already in use" = "该快捷键已被占用";
 "Settings…" = "设置…";
 "Quit AbubTranslate" = "退出 AbubTranslate";
 "Nothing to translate" = "没有需要翻译的内容";

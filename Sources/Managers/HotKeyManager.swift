@@ -14,6 +14,7 @@ final class HotKeyManager: @unchecked Sendable {
     var onKeyDown: ((Slot) -> Void)?
 
     private var hotKeyRefs: [Slot: EventHotKeyRef] = [:]
+    private var registeredCombos: [Slot: (keyCode: UInt32, modifiers: UInt32)] = [:]
     private var eventHandler: EventHandlerRef?
     private let lock = NSLock()
 
@@ -36,6 +37,13 @@ final class HotKeyManager: @unchecked Sendable {
     @discardableResult
     func register(slot: Slot, keyCode: UInt32, modifiers: UInt32) -> Bool {
         lock.lock(); defer { lock.unlock() }
+        // Carbon регистрирует один комбо под разными ID без ошибки — оба
+        // хендлера потом сработают на одно нажатие. Проверяем сами.
+        for (otherSlot, combo) in registeredCombos where otherSlot != slot {
+            if combo.keyCode == keyCode, combo.modifiers == modifiers {
+                return false
+            }
+        }
         installEventHandlerIfNeeded()
         unregisterLocked(slot: slot)
         var ref: EventHotKeyRef?
@@ -49,6 +57,7 @@ final class HotKeyManager: @unchecked Sendable {
         )
         guard status == noErr, let ref else { return false }
         hotKeyRefs[slot] = ref
+        registeredCombos[slot] = (keyCode, modifiers)
         return true
     }
 
@@ -62,6 +71,7 @@ final class HotKeyManager: @unchecked Sendable {
             UnregisterEventHotKey(ref)
             hotKeyRefs[slot] = nil
         }
+        registeredCombos[slot] = nil
     }
 
     private func installEventHandlerIfNeeded() {

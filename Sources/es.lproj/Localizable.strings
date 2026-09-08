@@ -29,7 +29,7 @@
 "System" = "Sistema";
 "Launch at login" = "Iniciar al abrir sesión";
 "Press keys…" = "Pulsa las teclas…";
-"That shortcut is taken by another app" = "Ese atajo lo usa otra aplicación";
+"That shortcut is already in use" = "Ese atajo ya está en uso";
 "Settings…" = "Ajustes…";
 "Quit AbubTranslate" = "Salir de AbubTranslate";
 "Nothing to translate" = "Nada que traducir";

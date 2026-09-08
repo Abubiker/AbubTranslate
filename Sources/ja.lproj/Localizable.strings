@@ -29,7 +29,7 @@
 "System" = "システム";
 "Launch at login" = "ログイン時に起動";
 "Press keys…" = "キーを押してください…";
-"That shortcut is taken by another app" = "そのショートカットは別のアプリが使用しています";
+"That shortcut is already in use" = "そのショートカットはすでに使用されています";
 "Settings…" = "設定…";
 "Quit AbubTranslate" = "AbubTranslateを終了";
 "Nothing to translate" = "翻訳する内容がありません";

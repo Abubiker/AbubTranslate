@@ -126,7 +126,7 @@ struct HotkeyRecorder: View {
 
                 if hasConflict {
                     Label(
-                        AppModel.shared.localizedString("That shortcut is taken by another app"),
+                        AppModel.shared.localizedString("That shortcut is already in use"),
                         systemImage: "exclamationmark.triangle.fill"
                     )
                     .font(.system(size: 11, weight: .medium))

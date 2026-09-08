@@ -35,11 +35,4 @@ final class ClipboardManager {
         RunLoop.main.add(timer, forMode: .common)
         watchTimer = timer
     }
-
-    /// Сброс счётчика после собственного чтения: restore SelectionReader
-    /// поднимает changeCount сам, watch не должен на это реагировать даже
-    /// вне окна ClipboardGate.
-    func noteOwnChange() {
-        lastChangeCount = NSPasteboard.general.changeCount
-    }
 }
