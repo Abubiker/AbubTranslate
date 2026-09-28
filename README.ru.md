@@ -10,7 +10,7 @@ OpenAI-совместимый сервер, включая локальный.
 
 [Read in English](README.md)
 
-[![AbubTranslate за 21 секунду](docs/promo-poster.jpg)](docs/promo.mp4)
+https://github.com/user-attachments/assets/44e77667-eb6e-4932-9e11-ad6d56ecd94a
 
 ![перевод выделенного](docs/demo-translate.gif)
 

@@ -10,7 +10,7 @@ server, including one running on your own machine.
 
 [Читать по-русски](README.ru.md)
 
-[![AbubTranslate in 21 seconds](docs/promo-poster.jpg)](docs/promo.mp4)
+https://github.com/user-attachments/assets/44e77667-eb6e-4932-9e11-ad6d56ecd94a
 
 ![translating a selection](docs/demo-translate.gif)
 
