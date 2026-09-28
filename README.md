@@ -12,8 +12,8 @@ server, including one running on your own machine.
 
 ![translating a selection](docs/demo-translate.gif)
 
-`⌥⇧S` does the same for an image in the clipboard — a screenshot, a photo of
-a page — recognised on device by Apple Vision, no screen-recording permission:
+`⌥⇧S` does the same for a screenshot or a photo of a page in the clipboard.
+Apple Vision reads it on device, so no screen-recording permission:
 
 ![translating a screenshot](docs/demo-ocr.gif)
 
@@ -25,7 +25,7 @@ brew tap Abubiker/tap
 brew install --cask abubtranslate
 ```
 
-Or [download AbubTranslate.dmg](https://github.com/Abubiker/AbubTranslate/releases/latest/download/AbubTranslate.dmg) — macOS 15+, Apple Silicon.
+Or [download AbubTranslate.dmg](https://github.com/Abubiker/AbubTranslate/releases/latest/download/AbubTranslate.dmg) (macOS 15+, Apple Silicon).
 
 Not notarized either way, so the first launch goes through System Settings →
 Privacy & Security → Open Anyway.
@@ -54,7 +54,7 @@ Privacy & Security → Open Anyway.
 Apple, a local OpenAI-compatible server and a self-hosted LibreTranslate send
 nothing anywhere. The rest send the text to a third-party server.
 
-Where to get each key, and a button to test it, are in the app's settings.
+The app's settings say where to get each key and have a button to test it.
 
 ## Permissions
 

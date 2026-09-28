@@ -12,9 +12,8 @@ OpenAI-совместимый сервер, включая локальный.
 
 ![перевод выделенного](docs/demo-translate.gif)
 
-`⌥⇧S` делает то же с картинкой из буфера — скриншотом, фотографией
-страницы. Распознаёт Apple Vision локально, разрешение на запись экрана
-не нужно:
+`⌥⇧S` делает то же со скриншотом или фотографией страницы из буфера.
+Распознаёт Apple Vision локально, разрешение на запись экрана не нужно:
 
 ![перевод скриншота](docs/demo-ocr.gif)
 
@@ -26,7 +25,7 @@ brew tap Abubiker/tap
 brew install --cask abubtranslate
 ```
 
-Либо [скачать AbubTranslate.dmg](https://github.com/Abubiker/AbubTranslate/releases/latest/download/AbubTranslate.dmg) — macOS 15+, Apple Silicon.
+Либо [скачать AbubTranslate.dmg](https://github.com/Abubiker/AbubTranslate/releases/latest/download/AbubTranslate.dmg) (macOS 15+, Apple Silicon).
 
 Не нотаризовано в обоих случаях: при первом запуске Настройки →
 Конфиденциальность и безопасность → Открыть всё равно.
