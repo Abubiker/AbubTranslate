@@ -10,6 +10,8 @@ OpenAI-совместимый сервер, включая локальный.
 
 [Read in English](README.md)
 
+[![AbubTranslate за 21 секунду](docs/promo-poster.jpg)](docs/promo.mp4)
+
 ![перевод выделенного](docs/demo-translate.gif)
 
 `⌥⇧S` делает то же со скриншотом или фотографией страницы из буфера.

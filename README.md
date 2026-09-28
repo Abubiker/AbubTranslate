@@ -10,6 +10,8 @@ server, including one running on your own machine.
 
 [Читать по-русски](README.ru.md)
 
+[![AbubTranslate in 21 seconds](docs/promo-poster.jpg)](docs/promo.mp4)
+
 ![translating a selection](docs/demo-translate.gif)
 
 `⌥⇧S` does the same for a screenshot or a photo of a page in the clipboard.
