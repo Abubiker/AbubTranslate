@@ -576,12 +576,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
         // в панели или пункт меню.
         settingsWindow?.orderOut(nil)
         NSApp.activate()
-        if let window = button.window, window.screen != nil {
+        if let window = button.window, window.screen != nil, window.screen == activeScreen() {
             // Кэшируем позицию иконки на каждый показ — статус-бар мог перестроиться
             // (другие иконки добавились/пропали), фолбэку нужна свежая точка, а не протухшая.
             lastKnownIconCenterX = window.convertToScreen(button.convert(button.bounds, to: nil)).midX
             // Обычный путь: поповер из иконки в статус-баре.
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        } else if button.window?.screen != nil {
+            // Иконка видна, но не на активном экране — на некоторых версиях
+            // macOS button.window.screen залипает на встроенном дисплее и не
+            // следует за курсором на внешний монитор. Анкер строим сами через
+            // тот же фолбэк, но без привязки к позиции иконки на чужом экране.
+            showPopoverViaFallbackAnchor(preferIconAnchor: false)
         } else {
             // Статус-итем спрятан (переполненный меню-бар или менеджер иконок) —
             // анкерим поповер к невидимой панели под меню-баром активного экрана.
@@ -609,13 +615,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
         }
     }
 
-    private func showPopoverViaFallbackAnchor() {
-        // Экран под курсором — тот меню-бар, на который смотрит пользователь.
-        // NSScreen.main привязан к key-окну и на втором мониторе врёт.
+    /// Экран под курсором — тот меню-бар, на который смотрит пользователь.
+    /// NSScreen.main привязан к key-окну и на втором мониторе врёт.
+    private func activeScreen() -> NSScreen? {
         let mouse = NSEvent.mouseLocation
-        guard let screen = NSScreen.screens.first(where: { $0.frame.contains(mouse) })
+        return NSScreen.screens.first(where: { $0.frame.contains(mouse) })
             ?? NSScreen.main ?? NSScreen.screens.first
-        else { return }
+    }
+
+    private func showPopoverViaFallbackAnchor(preferIconAnchor: Bool = true) {
+        let mouse = NSEvent.mouseLocation
+        guard let screen = activeScreen() else { return }
         let menuBarHeight = NSStatusBar.system.thickness
         let anchor = fallbackAnchorPanel ?? {
             let panel = NSPanel(
@@ -640,8 +650,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSM
         // Иконка спрятана — якорим по её последней видимой позиции, а не по курсору,
         // иначе поповер прыгает по экрану вслед за мышью. Курсор — запасной вариант
         // только пока иконка ни разу не была видна в эту сессию (маловероятно —
-        // она появляется сразу при запуске).
-        let anchorX = lastKnownIconCenterX ?? mouse.x
+        // она появляется сразу при запуске). Когда сюда попали из-за
+        // «иконка на чужом экране» (preferIconAnchor: false), закэшированный X
+        // относится к другому экрану и бесполезен — берём курсор.
+        let anchorX = preferIconAnchor ? (lastKnownIconCenterX ?? mouse.x) : mouse.x
         let x = min(
             max(screen.visibleFrame.minX + halfWidth + margin, anchorX),
             screen.frame.maxX - halfWidth - margin
